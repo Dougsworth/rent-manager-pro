@@ -2,95 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* RentCollect Design System
+   Philosophy: Calm, clean, functional. Every pixel earns its place.
+   No gradients. No shadows. Borders are information.
 */
 
 @layer base {
   :root {
+    /* System font stack */
+    --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    
+    /* Background colors */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background-secondary: 210 20% 98%;
+    --foreground: 221 39% 11%;
 
+    /* Card surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 221 39% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 221 39% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary action color - Blue */
+    --primary: 217 91% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary surfaces */
+    --secondary: 210 20% 98%;
+    --secondary-foreground: 221 39% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted text and surfaces */
+    --muted: 210 20% 98%;
+    --muted-foreground: 218 11% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent color */
+    --accent: 217 91% 53%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status colors */
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 152 81% 96%;
+    
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 48 96% 96%;
+    
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-muted: 0 86% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Text hierarchy */
+    --text-primary: 221 39% 11%;
+    --text-secondary: 220 9% 46%;
+    --text-muted: 218 11% 65%;
+
+    /* Border */
+    --border: 220 13% 91%;
+    --border-light: 220 14% 96%;
+    --input: 220 13% 85%;
+    --ring: 217 91% 53%;
 
     --radius: 0.5rem;
 
+    /* Sidebar (if needed) */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 221 39% 11%;
     --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 221 39% 11%;
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 221 39% 6%;
+    --background-secondary: 221 39% 10%;
+    --foreground: 210 20% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 221 39% 8%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 221 39% 8%;
+    --popover-foreground: 210 20% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 221 39% 11%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 221 39% 15%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 221 39% 15%;
+    --muted-foreground: 218 11% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 221 39% 11%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 160 84% 45%;
+    --success-muted: 160 50% 15%;
+    
+    --warning: 32 95% 50%;
+    --warning-muted: 32 50% 15%;
+    
+    --destructive: 0 84% 55%;
+    --destructive-muted: 0 50% 15%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --text-primary: 210 20% 98%;
+    --text-secondary: 218 11% 65%;
+    --text-muted: 220 9% 46%;
+
+    --border: 221 39% 18%;
+    --border-light: 221 39% 12%;
+    --input: 221 39% 18%;
+    --ring: 217 91% 60%;
+
+    --sidebar-background: 221 39% 8%;
+    --sidebar-foreground: 218 11% 65%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 221 39% 15%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 221 39% 18%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -99,7 +134,52 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: var(--font-system);
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography scale */
+  h1 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  h2 {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  h3 {
+    @apply text-sm font-medium text-foreground;
+  }
+}
+
+@layer components {
+  /* Status badge styles */
+  .badge-paid {
+    @apply bg-success-muted text-success;
+  }
+  
+  .badge-pending {
+    @apply bg-warning-muted text-warning;
+  }
+  
+  .badge-overdue {
+    @apply bg-destructive-muted text-destructive;
+  }
+}
+
+@layer utilities {
+  /* Table header style */
+  .table-header {
+    @apply text-xs uppercase font-medium tracking-wide text-text-secondary bg-secondary;
+  }
+  
+  /* Card with border, no shadow */
+  .card-bordered {
+    @apply bg-card border border-border rounded-lg;
   }
 }
