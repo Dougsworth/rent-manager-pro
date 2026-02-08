@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { UserMenu } from "./UserMenu";
 
 const navLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/tenants", label: "Tenants" },
+  { href: "/dashboard", label: "Overview" },
+  { href: "/tenants", label: "Residents" },
   { href: "/invoices", label: "Invoices" },
   { href: "/payments", label: "Payments" },
   { href: "/settings", label: "Settings" },
@@ -17,16 +18,26 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-card border-b border-border sticky top-0 z-50">
-      <div className="container max-w-5xl mx-auto">
-        <div className="flex items-center justify-between h-14">
+    <header className="bg-white/95 backdrop-blur-lg supports-[backdrop-filter]:bg-white/80 border-b border-border sticky top-0 z-50 shadow-sm">
+      <div className="container max-w-6xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/dashboard" className="text-lg font-semibold text-foreground">
-            RentCollect
+          <Link to="/dashboard" className="flex items-center gap-3 text-xl font-bold text-foreground hover:text-primary transition-colors group">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm group-hover:shadow-md transition-all duration-200">
+              <Home className="h-5 w-5" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xl tracking-tight">
+                RentFlow
+              </span>
+              <span className="text-xs text-muted-foreground font-normal hidden sm:inline">
+                Pro
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href;
               return (
@@ -34,26 +45,21 @@ export function Navigation() {
                   key={link.href}
                   to={link.href}
                   className={cn(
-                    "px-3 py-2 text-sm font-medium transition-colors relative",
+                    "px-4 py-2 text-sm font-medium transition-all duration-200 relative rounded-full",
                     isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   )}
                 >
                   {link.label}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
-                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* User Menu (placeholder) */}
+          {/* User Menu */}
           <div className="hidden md:flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-medium text-foreground">
-              JD
-            </div>
+            <UserMenu />
           </div>
 
           {/* Mobile Menu Button */}

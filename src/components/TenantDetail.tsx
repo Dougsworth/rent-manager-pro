@@ -2,6 +2,8 @@ import type { Tenant } from "@/pages/Tenants";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { api } from "@/services/api";
+import { useState, useEffect } from "react";
 
 interface TenantDetailProps {
   tenant: Tenant;
@@ -12,21 +14,158 @@ function formatCurrency(amount: number): string {
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  // Handle null, undefined, empty string, or "None" values
+  if (!dateString || dateString === '' || dateString === 'None' || dateString === 'null' || dateString === 'undefined') {
+    return 'Not set';
+  }
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Not set';
+    }
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return 'Not set';
+  }
 }
 
-// Mock payment history
-const mockPayments = [
-  { id: 1, date: "Feb 1, 2026", amount: 45000, method: "Bank Transfer", receipt: "RCP-2026-0201" },
-  { id: 2, date: "Jan 1, 2026", amount: 45000, method: "Card", receipt: "RCP-2026-0101" },
-  { id: 3, date: "Dec 1, 2025", amount: 45000, method: "Bank Transfer", receipt: "RCP-2025-1201" },
-];
+interface TenantDetailProps {
+  tenant: Tenant;
+  onTenantUpdate?: () => void;
+  onClose?: () => void;
+}
 
-export function TenantDetail({ tenant }: TenantDetailProps) {
+export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailProps) {
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editingLeaseStart, setEditingLeaseStart] = useState(false);
+  const [editingLeaseEnd, setEditingLeaseEnd] = useState(false);
+  const [tempLeaseStart, setTempLeaseStart] = useState(tenant.leaseStart);
+  const [tempLeaseEnd, setTempLeaseEnd] = useState(tenant.leaseEnd);
+  
+  // Update temp values when tenant prop changes
+  useEffect(() => {
+    setTempLeaseStart(tenant.leaseStart);
+    setTempLeaseEnd(tenant.leaseEnd);
+  }, [tenant.leaseStart, tenant.leaseEnd]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [tenant.id]);
+
+  const loadPayments = async () => {
+    try {
+      const response = await api.getPayments();
+      if (response.data) {
+        // Filter payments for this tenant
+        const tenantPayments = response.data.filter(p => p.tenant === tenant.name);
+        setPayments(tenantPayments);
+      }
+    } catch (error) {
+      console.error('Failed to load payments:', error);
+    }
+  };
+
+  const handleSendReminder = async () => {
+    if (!confirm('Send payment reminder to ' + tenant.name + '?')) return;
+    
+    setLoading(true);
+    try {
+      await api.sendReminder(tenant.id);
+      alert('Reminder sent successfully!');
+    } catch (error) {
+      alert('Failed to send reminder. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!confirm('Create new invoice for ' + tenant.name + '?')) return;
+    
+    setLoading(true);
+    try {
+      // Calculate due date (30 days from now)
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      
+      await api.createInvoice({
+        tenantId: tenant.id,
+        amount: tenant.rent,
+        dueDate: dueDate.toISOString().split('T')[0]
+      });
+      alert('Invoice created successfully!');
+      if (onTenantUpdate) await onTenantUpdate();
+    } catch (error) {
+      alert('Failed to create invoice. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveTenant = async () => {
+    if (!confirm('Are you sure you want to remove ' + tenant.name + '? This action cannot be undone.')) return;
+    
+    setLoading(true);
+    try {
+      await api.deleteTenant(tenant.id);
+      alert('Tenant removed successfully!');
+      if (onTenantUpdate) await onTenantUpdate();
+      if (onClose) onClose();
+    } catch (error) {
+      alert('Failed to remove tenant. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveLeaseStart = async () => {
+    if (!tempLeaseStart) return;
+    
+    setLoading(true);
+    try {
+      const response = await api.updateTenant(tenant.id, { leaseStart: tempLeaseStart });
+      
+      if (response.error) {
+        alert('Failed to update lease start date: ' + response.error);
+        return;
+      }
+      
+      alert('Lease start date updated successfully!');
+      setEditingLeaseStart(false);
+      if (onTenantUpdate) await onTenantUpdate();
+    } catch (error) {
+      alert('Failed to update lease start date. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveLeaseEnd = async () => {
+    if (!tempLeaseEnd) return;
+    
+    setLoading(true);
+    try {
+      const response = await api.updateTenant(tenant.id, { leaseEnd: tempLeaseEnd });
+      
+      if (response.error) {
+        alert('Failed to update lease end date: ' + response.error);
+        return;
+      }
+      
+      alert('Lease end date updated successfully!');
+      setEditingLeaseEnd(false);
+      if (onTenantUpdate) await onTenantUpdate();
+    } catch (error) {
+      alert('Failed to update lease end date. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Status */}
@@ -54,15 +193,95 @@ export function TenantDetail({ tenant }: TenantDetailProps) {
           </div>
           <div className="flex justify-between">
             <dt className="text-sm text-muted-foreground">Phone</dt>
-            <dd className="text-sm font-medium text-foreground">{tenant.phone}</dd>
+            <dd className="text-sm font-medium text-foreground">{tenant.phone || 'Not provided'}</dd>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <dt className="text-sm text-muted-foreground">Lease Start</dt>
-            <dd className="text-sm font-medium text-foreground">{formatDate(tenant.leaseStart)}</dd>
+            <dd className="text-sm font-medium text-foreground flex items-center gap-2">
+              {editingLeaseStart ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="date"
+                    value={tempLeaseStart}
+                    onChange={(e) => setTempLeaseStart(e.target.value)}
+                    className="text-xs border border-gray-300 rounded px-1 py-1"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                  <button
+                    onClick={handleSaveLeaseStart}
+                    className="text-xs text-green-600 hover:underline"
+                    disabled={loading}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingLeaseStart(false);
+                      setTempLeaseStart(tenant.leaseStart);
+                    }}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {formatDate(tenant.leaseStart)}
+                  {(!tenant.leaseStart || tenant.leaseStart === '') && (
+                    <span
+                      onClick={() => setEditingLeaseStart(true)}
+                      className="text-xs text-blue-600 ml-2 cursor-pointer hover:underline"
+                    >
+                      Add date
+                    </span>
+                  )}
+                </>
+              )}
+            </dd>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <dt className="text-sm text-muted-foreground">Lease End</dt>
-            <dd className="text-sm font-medium text-foreground">{formatDate(tenant.leaseEnd)}</dd>
+            <dd className="text-sm font-medium text-foreground flex items-center gap-2">
+              {editingLeaseEnd ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="date"
+                    value={tempLeaseEnd}
+                    onChange={(e) => setTempLeaseEnd(e.target.value)}
+                    className="text-xs border border-gray-300 rounded px-1 py-1"
+                    min={tempLeaseStart || new Date().toISOString().split('T')[0]}
+                  />
+                  <button
+                    onClick={handleSaveLeaseEnd}
+                    className="text-xs text-green-600 hover:underline"
+                    disabled={loading}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingLeaseEnd(false);
+                      setTempLeaseEnd(tenant.leaseEnd);
+                    }}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {formatDate(tenant.leaseEnd)}
+                  {(!tenant.leaseEnd || tenant.leaseEnd === '') && (
+                    <span
+                      onClick={() => setEditingLeaseEnd(true)}
+                      className="text-xs text-blue-600 ml-2 cursor-pointer hover:underline"
+                    >
+                      Add date
+                    </span>
+                  )}
+                </>
+              )}
+            </dd>
           </div>
         </dl>
       </section>
@@ -72,7 +291,7 @@ export function TenantDetail({ tenant }: TenantDetailProps) {
         <h3 className="text-xs uppercase font-medium tracking-wide text-muted-foreground mb-3">
           Payment History
         </h3>
-        {mockPayments.length === 0 ? (
+        {payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">No payments recorded</p>
         ) : (
           <div className="border border-border rounded-lg overflow-hidden">
@@ -85,14 +304,17 @@ export function TenantDetail({ tenant }: TenantDetailProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {mockPayments.map((payment) => (
+                {payments.map((payment) => (
                   <tr key={payment.id}>
                     <td className="px-3 py-2 text-foreground">{payment.date}</td>
                     <td className="px-3 py-2 text-right text-success font-medium">
                       {formatCurrency(payment.amount)}
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <button className="text-primary hover:underline inline-flex items-center gap-1">
+                      <button 
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                        title={`Download receipt ${payment.receipt}`}
+                      >
                         <Download className="h-3 w-3" />
                       </button>
                     </td>
@@ -111,10 +333,20 @@ export function TenantDetail({ tenant }: TenantDetailProps) {
             Actions
           </h3>
           <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleSendReminder}
+              disabled={loading}
+            >
               Send Reminder
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleCreateInvoice}
+              disabled={loading}
+            >
               Create Invoice
             </Button>
           </div>
@@ -123,7 +355,11 @@ export function TenantDetail({ tenant }: TenantDetailProps) {
 
       {/* Delete */}
       <div className="pt-4 border-t border-border">
-        <button className="text-sm text-destructive hover:underline">
+        <button 
+          className="text-sm text-destructive hover:underline disabled:opacity-50"
+          onClick={handleRemoveTenant}
+          disabled={loading}
+        >
           Remove tenant
         </button>
       </div>

@@ -1,0 +1,240 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "admin",
+      "first_name": "Admin",
+      "last_name": "User",
+      "email": "admin@rentmanager.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": true,
+      "date_joined": "2026-02-07T12:00:00Z"
+    }
+  },
+  {
+    "model": "authentication.userprofile",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "phone": "+1876-555-0100",
+      "role": "admin",
+      "notification_email": true,
+      "notification_sms": false,
+      "two_factor_enabled": false
+    }
+  },
+  {
+    "model": "tenants.tenant",
+    "pk": 1,
+    "fields": {
+      "name": "Marcus Brown",
+      "email": "marcus@email.com",
+      "phone": "+1876-555-0101",
+      "unit": "Unit 1A",
+      "monthly_rent": "45000.00",
+      "security_deposit": "45000.00",
+      "lease_start": "2025-01-01",
+      "lease_end": "2026-01-01",
+      "status": "active",
+      "emergency_contact_name": "Mary Brown",
+      "emergency_contact_phone": "+1876-555-0199",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "tenants.tenant",
+    "pk": 2,
+    "fields": {
+      "name": "Angela Chen",
+      "email": "angela@email.com",
+      "phone": "+1876-555-0102",
+      "unit": "Unit 2B",
+      "monthly_rent": "42000.00",
+      "security_deposit": "42000.00",
+      "lease_start": "2025-03-01",
+      "lease_end": "2026-03-01",
+      "status": "active",
+      "emergency_contact_name": "David Chen",
+      "emergency_contact_phone": "+1876-555-0198",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "tenants.tenant",
+    "pk": 3,
+    "fields": {
+      "name": "David Williams",
+      "email": "david@email.com",
+      "phone": "+1876-555-0103",
+      "unit": "Unit 3C",
+      "monthly_rent": "48000.00",
+      "security_deposit": "48000.00",
+      "lease_start": "2025-02-01",
+      "lease_end": "2026-02-01",
+      "status": "active",
+      "emergency_contact_name": "",
+      "emergency_contact_phone": "",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "tenants.tenant",
+    "pk": 4,
+    "fields": {
+      "name": "Sarah Thompson",
+      "email": "sarah@email.com",
+      "phone": "+1876-555-0104",
+      "unit": "Unit 4D",
+      "monthly_rent": "48000.00",
+      "security_deposit": "48000.00",
+      "lease_start": "2024-12-01",
+      "lease_end": "2025-12-01",
+      "status": "active",
+      "emergency_contact_name": "John Thompson",
+      "emergency_contact_phone": "+1876-555-0197",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "tenants.tenant",
+    "pk": 5,
+    "fields": {
+      "name": "Michael Lee",
+      "email": "michael@email.com",
+      "phone": "+1876-555-0105",
+      "unit": "Unit 5E",
+      "monthly_rent": "42000.00",
+      "security_deposit": "42000.00",
+      "lease_start": "2025-04-01",
+      "lease_end": "2026-04-01",
+      "status": "active",
+      "emergency_contact_name": "",
+      "emergency_contact_phone": "",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.invoice",
+    "pk": 1,
+    "fields": {
+      "invoice_number": "INV-2026-02-0001",
+      "tenant": 1,
+      "amount": "45000.00",
+      "amount_paid": "45000.00",
+      "issue_date": "2026-02-01",
+      "due_date": "2026-02-05",
+      "paid_date": "2026-02-01",
+      "status": "paid",
+      "description": "Monthly rent for Unit 1A",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.invoice",
+    "pk": 2,
+    "fields": {
+      "invoice_number": "INV-2026-02-0002",
+      "tenant": 2,
+      "amount": "42000.00",
+      "amount_paid": "42000.00",
+      "issue_date": "2026-02-01",
+      "due_date": "2026-02-05",
+      "paid_date": "2026-02-01",
+      "status": "paid",
+      "description": "Monthly rent for Unit 2B",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.invoice",
+    "pk": 3,
+    "fields": {
+      "invoice_number": "INV-2026-02-0003",
+      "tenant": 3,
+      "amount": "48000.00",
+      "amount_paid": "0.00",
+      "issue_date": "2026-02-01",
+      "due_date": "2026-02-05",
+      "paid_date": null,
+      "status": "sent",
+      "description": "Monthly rent for Unit 3C",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.invoice",
+    "pk": 4,
+    "fields": {
+      "invoice_number": "INV-2026-02-0004",
+      "tenant": 4,
+      "amount": "48000.00",
+      "amount_paid": "0.00",
+      "issue_date": "2026-02-01",
+      "due_date": "2026-02-03",
+      "paid_date": null,
+      "status": "overdue",
+      "description": "Monthly rent for Unit 4D",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.invoice",
+    "pk": 5,
+    "fields": {
+      "invoice_number": "INV-2026-02-0005",
+      "tenant": 5,
+      "amount": "42000.00",
+      "amount_paid": "0.00",
+      "issue_date": "2026-02-01",
+      "due_date": "2026-02-05",
+      "paid_date": null,
+      "status": "sent",
+      "description": "Monthly rent for Unit 5E",
+      "notes": "",
+      "created_by": 1
+    }
+  },
+  {
+    "model": "payments.payment",
+    "pk": 1,
+    "fields": {
+      "reference_number": "RCP-2026-020001",
+      "tenant": 1,
+      "invoice": 1,
+      "amount": "45000.00",
+      "payment_date": "2026-02-01T14:34:00Z",
+      "payment_method": "bank_transfer",
+      "status": "completed",
+      "transaction_id": "TXN-001-2026",
+      "notes": "",
+      "processed_by": 1
+    }
+  },
+  {
+    "model": "payments.payment",
+    "pk": 2,
+    "fields": {
+      "reference_number": "RCP-2026-020002",
+      "tenant": 2,
+      "invoice": 2,
+      "amount": "42000.00",
+      "payment_date": "2026-02-01T10:15:00Z",
+      "payment_method": "card",
+      "status": "completed",
+      "transaction_id": "TXN-002-2026",
+      "notes": "",
+      "processed_by": 1
+    }
+  }
+]

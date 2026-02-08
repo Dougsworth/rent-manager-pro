@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterTabs } from "@/components/FilterTabs";
@@ -11,6 +11,8 @@ import { AvatarInitial } from "@/components/ui/avatar-initial";
 import { Search, Plus } from "lucide-react";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
+import { api } from "@/services/api";
+import { useSearchParams } from "react-router-dom";
 
 export type TenantStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -26,26 +28,62 @@ export interface Tenant {
   leaseEnd: string;
 }
 
-// Mock data
-const mockTenants: Tenant[] = [
-  { id: 1, name: "Marcus Brown", email: "marcus@email.com", phone: "876-555-0101", unit: "Unit 1A", rent: 45000, status: "paid", leaseStart: "2025-01-01", leaseEnd: "2026-01-01" },
-  { id: 2, name: "Angela Chen", email: "angela@email.com", phone: "876-555-0102", unit: "Unit 2B", rent: 42000, status: "paid", leaseStart: "2025-03-01", leaseEnd: "2026-03-01" },
-  { id: 3, name: "David Williams", email: "david@email.com", phone: "876-555-0103", unit: "Unit 3C", rent: 48000, status: "pending", leaseStart: "2025-02-01", leaseEnd: "2026-02-01" },
-  { id: 4, name: "Sarah Thompson", email: "sarah@email.com", phone: "876-555-0104", unit: "Unit 4D", rent: 48000, status: "overdue", leaseStart: "2024-12-01", leaseEnd: "2025-12-01" },
-  { id: 5, name: "Michael Lee", email: "michael@email.com", phone: "876-555-0105", unit: "Unit 5E", rent: 42000, status: "pending", leaseStart: "2025-04-01", leaseEnd: "2026-04-01" },
-];
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
 }
 
 export default function Tenants() {
-  const [activeTab, setActiveTab] = useState<TenantStatus>("all");
+  const [searchParams] = useSearchParams();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  
+  // Safe setter that ensures we always set an array
+  const setSafeTenantsState = (data: any) => {
+    if (Array.isArray(data)) {
+      setTenants(data);
+    } else {
+      console.warn('Attempted to set non-array as tenants:', data);
+      setTenants([]);
+    }
+  };
+  
+  // Get initial tab from URL params
+  const initialTab = (searchParams.get('status') as TenantStatus) || "all";
+  const [activeTab, setActiveTab] = useState<TenantStatus>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Ensure tenants is always an array
+  const safeTenantsArray = Array.isArray(tenants) ? tenants : [];
 
-  const filteredTenants = mockTenants.filter((tenant) => {
+  useEffect(() => {
+    loadTenants();
+  }, []);
+
+  const loadTenants = async () => {
+    setLoading(true);
+    try {
+      const response = await api.getTenants();
+      if (response.data) {
+        setSafeTenantsState(response.data);
+      } else if (response.error) {
+        console.error('API Error:', response.error);
+        setSafeTenantsState([]);
+      } else {
+        console.warn('No data or error in response:', response);
+        setSafeTenantsState([]);
+      }
+    } catch (error) {
+      console.error('Failed to load tenants:', error);
+      setSafeTenantsState([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTenants = safeTenantsArray.filter((tenant) => {
     const matchesStatus = activeTab === "all" || tenant.status === activeTab;
     const matchesSearch = tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tenant.unit.toLowerCase().includes(searchQuery.toLowerCase());
@@ -53,10 +91,10 @@ export default function Tenants() {
   });
 
   const counts = {
-    all: mockTenants.length,
-    paid: mockTenants.filter((t) => t.status === "paid").length,
-    pending: mockTenants.filter((t) => t.status === "pending").length,
-    overdue: mockTenants.filter((t) => t.status === "overdue").length,
+    all: safeTenantsArray.length,
+    paid: safeTenantsArray.filter((t) => t.status === "paid").length,
+    pending: safeTenantsArray.filter((t) => t.status === "pending").length,
+    overdue: safeTenantsArray.filter((t) => t.status === "overdue").length,
   };
 
   const tabs = [
@@ -66,11 +104,53 @@ export default function Tenants() {
     { value: "overdue" as const, label: "Overdue", count: counts.overdue },
   ];
 
+  const handleAddTenant = async (tenantData: Omit<Tenant, 'id' | 'status'>) => {
+    try {
+      const response = await api.createTenant(tenantData);
+      if (response.data) {
+        await loadTenants();
+        setShowAddModal(false);
+      } else if (response.error) {
+        // Parse error message for user-friendly display
+        let errorMessage = 'Failed to create tenant';
+        try {
+          const errorData = JSON.parse(response.error);
+          if (errorData.details?.email) {
+            errorMessage = 'A tenant with this email address already exists. Please use a different email.';
+          } else if (errorData.details?.phone) {
+            errorMessage = 'Phone number format: +1 876 XXX XXXX or leave blank';
+          } else if (errorData.details?.unit) {
+            errorMessage = 'This unit is already occupied. Please choose a different unit.';
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          errorMessage = response.error;
+        }
+        alert(errorMessage);
+      }
+    } catch (error) {
+      console.error('Failed to create tenant:', error);
+      alert('Failed to create tenant. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <PageHeader title="Tenants" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <PageHeader
         title="Tenants"
-        count={mockTenants.length}
+        count={safeTenantsArray.length}
         action={
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" />
@@ -103,14 +183,7 @@ export default function Tenants() {
               ? `No ${activeTab} tenants`
               : "No tenants yet. Add your first tenant to start collecting rent."
           }
-          action={
-            !searchQuery && activeTab === "all" ? (
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4" />
-                Add Tenant
-              </Button>
-            ) : undefined
-          }
+          action={undefined}
         />
       ) : (
         <div className="bg-card border border-border rounded-lg divide-y divide-border">
@@ -145,11 +218,21 @@ export default function Tenants() {
           </Button>
         }
       >
-        {selectedTenant && <TenantDetail tenant={selectedTenant} />}
+        {selectedTenant && (
+          <TenantDetail 
+            tenant={selectedTenant} 
+            onTenantUpdate={loadTenants}
+            onClose={() => setSelectedTenant(null)}
+          />
+        )}
       </SlideOutPanel>
 
       {/* Add Tenant Modal */}
-      <AddTenantModal open={showAddModal} onClose={() => setShowAddModal(false)} />
+      <AddTenantModal 
+        open={showAddModal} 
+        onClose={() => setShowAddModal(false)} 
+        onSubmit={handleAddTenant}
+      />
     </AppLayout>
   );
 }

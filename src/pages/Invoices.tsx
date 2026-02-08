@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterTabs } from "@/components/FilterTabs";
@@ -12,45 +12,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/services/api";
 
 type InvoiceStatus = "all" | "paid" | "pending" | "overdue";
 
 interface Invoice {
   id: number;
-  number: string;
+  invoiceNumber: string;
   tenant: string;
   unit: string;
   amount: number;
   dueDate: string;
   status: "paid" | "pending" | "overdue";
-  daysLate?: number;
+  issuedDate: string;
 }
-
-const mockInvoices: Invoice[] = [
-  { id: 1, number: "INV-2026-0001", tenant: "Marcus Brown", unit: "Unit 1A", amount: 45000, dueDate: "Feb 1, 2026", status: "paid" },
-  { id: 2, number: "INV-2026-0002", tenant: "Angela Chen", unit: "Unit 2B", amount: 42000, dueDate: "Feb 1, 2026", status: "paid" },
-  { id: 3, number: "INV-2026-0003", tenant: "David Williams", unit: "Unit 3C", amount: 48000, dueDate: "Feb 1, 2026", status: "pending" },
-  { id: 4, number: "INV-2026-0004", tenant: "Sarah Thompson", unit: "Unit 4D", amount: 48000, dueDate: "Feb 1, 2026", status: "overdue", daysLate: 4 },
-  { id: 5, number: "INV-2026-0005", tenant: "Michael Lee", unit: "Unit 5E", amount: 42000, dueDate: "Feb 1, 2026", status: "pending" },
-];
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
 }
 
 export default function Invoices() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activeTab, setActiveTab] = useState<InvoiceStatus>("all");
   const [dateRange, setDateRange] = useState("this-month");
+  const [loading, setLoading] = useState(true);
+  
+  // Safe setter that ensures we always set an array
+  const setSafeInvoicesState = (data: any) => {
+    if (Array.isArray(data)) {
+      setInvoices(data);
+    } else {
+      console.warn('Attempted to set non-array as invoices:', data);
+      setInvoices([]);
+    }
+  };
+  
+  // Ensure invoices is always an array
+  const safeInvoicesArray = Array.isArray(invoices) ? invoices : [];
 
-  const filteredInvoices = mockInvoices.filter(
+  useEffect(() => {
+    loadInvoices();
+  }, []);
+
+  const loadInvoices = async () => {
+    setLoading(true);
+    try {
+      const response = await api.getInvoices();
+      console.log('Invoices API Response:', response); // Debug log
+      if (response.data) {
+        console.log('Invoices data type:', typeof response.data, Array.isArray(response.data)); // Debug log
+        setSafeInvoicesState(response.data);
+      } else if (response.error) {
+        console.error('Invoices API Error:', response.error);
+        setSafeInvoicesState([]);
+      } else {
+        console.warn('No data or error in invoices response:', response);
+        setSafeInvoicesState([]);
+      }
+    } catch (error) {
+      console.error('Failed to load invoices:', error);
+      setSafeInvoicesState([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredInvoices = safeInvoicesArray.filter(
     (inv) => activeTab === "all" || inv.status === activeTab
   );
 
   const counts = {
-    all: mockInvoices.length,
-    paid: mockInvoices.filter((i) => i.status === "paid").length,
-    pending: mockInvoices.filter((i) => i.status === "pending").length,
-    overdue: mockInvoices.filter((i) => i.status === "overdue").length,
+    all: safeInvoicesArray.length,
+    paid: safeInvoicesArray.filter((i) => i.status === "paid").length,
+    pending: safeInvoicesArray.filter((i) => i.status === "pending").length,
+    overdue: safeInvoicesArray.filter((i) => i.status === "overdue").length,
   };
 
   const tabs = [
@@ -60,12 +95,60 @@ export default function Invoices() {
     { value: "overdue" as const, label: "Overdue", count: counts.overdue },
   ];
 
+  const handleCreateInvoice = async () => {
+    if (!confirm('Create invoices for all active tenants for the current month?')) return;
+    
+    try {
+      const response = await api.request('/invoices/bulk_create/', {
+        method: 'POST',
+        body: JSON.stringify({
+          month: new Date().getMonth() + 1,
+          year: new Date().getFullYear()
+        })
+      });
+      
+      if (response.data) {
+        alert(`Created ${response.data.created_count} invoices successfully!`);
+        await loadInvoices();
+      } else {
+        alert('Failed to create invoices');
+      }
+    } catch (error) {
+      console.error('Failed to create invoices:', error);
+      alert('Failed to create invoices');
+    }
+  };
+
+  const handleRemind = async (invoiceId: number) => {
+    if (!confirm('Send payment reminder for this invoice?')) return;
+    
+    try {
+      await api.request(`/invoices/${invoiceId}/send/`, {
+        method: 'POST'
+      });
+      alert('Reminder sent successfully!');
+    } catch (error) {
+      alert('Failed to send reminder');
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <PageHeader title="Invoices" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <PageHeader
         title="Invoices"
         action={
-          <Button>
+          <Button onClick={handleCreateInvoice}>
             <Plus className="h-4 w-4" />
             Create Invoice
           </Button>
@@ -121,7 +204,7 @@ export default function Invoices() {
               {filteredInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-secondary transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-foreground">
-                    {invoice.number}
+                    {invoice.invoiceNumber}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">{invoice.tenant}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
@@ -133,7 +216,6 @@ export default function Invoices() {
                   <td className="px-4 py-3 text-sm hidden sm:table-cell">
                     <span className={invoice.status === "overdue" ? "text-destructive" : "text-muted-foreground"}>
                       {invoice.dueDate}
-                      {invoice.daysLate && ` (${invoice.daysLate} days late)`}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -143,7 +225,12 @@ export default function Invoices() {
                     <div className="flex items-center justify-end gap-2">
                       <button className="text-sm text-primary hover:underline">View</button>
                       {invoice.status !== "paid" && (
-                        <button className="text-sm text-primary hover:underline">Remind</button>
+                        <button 
+                          className="text-sm text-primary hover:underline"
+                          onClick={() => handleRemind(invoice.id)}
+                        >
+                          Remind
+                        </button>
                       )}
                     </div>
                   </td>
@@ -155,7 +242,7 @@ export default function Invoices() {
 
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Showing 1-5 of 5</p>
+          <p className="text-sm text-muted-foreground">Showing 1-{filteredInvoices.length} of {filteredInvoices.length}</p>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled>
               <ChevronLeft className="h-4 w-4" />

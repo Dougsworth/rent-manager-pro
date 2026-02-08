@@ -8,7 +8,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="container max-w-5xl mx-auto py-6">
+      <main className="container max-w-6xl mx-auto px-4 py-8">
         {children}
       </main>
     </div>

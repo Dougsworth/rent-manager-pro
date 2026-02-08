@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rentmanager
+      POSTGRES_USER: rentuser
+      POSTGRES_PASSWORD: rentpass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rentuser -d rentmanager"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  web:
+    build: .
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://rentuser:rentpass123@db:5432/rentmanager
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-production-secret-key-here
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 rentmanager.wsgi:application"
+
+  celery:
+    build: .
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://rentuser:rentpass123@db:5432/rentmanager
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-production-secret-key-here
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A rentmanager worker -l info
+
+  celery-beat:
+    build: .
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://rentuser:rentpass123@db:5432/rentmanager
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-production-secret-key-here
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A rentmanager beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+volumes:
+  postgres_data:

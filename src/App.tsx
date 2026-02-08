@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Tenants from "./pages/Tenants";
 import Invoices from "./pages/Invoices";
@@ -21,27 +23,29 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
-          {/* Main app pages */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tenants" element={<Tenants />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/settings" element={<Settings />} />
-          
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          
-          {/* Public pages */}
-          <Route path="/pay/:token" element={<TenantPayment />} />
-          <Route path="/receipt/:id" element={<Receipt />} />
-          
-          {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Auth */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected app pages */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            
+            {/* Public pages */}
+            <Route path="/pay/:token" element={<TenantPayment />} />
+            <Route path="/receipt/:id" element={<Receipt />} />
+            
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

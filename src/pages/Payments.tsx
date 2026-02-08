@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,45 +11,165 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/services/api";
+import { AddPaymentModal } from "@/components/AddPaymentModal";
 
 interface Payment {
   id: number;
-  receipt: string;
+  receipt?: string;
   tenant: string;
   unit: string;
   amount: number;
   date: string;
   method: string;
+  status?: string;
 }
-
-const mockPayments: Payment[] = [
-  { id: 1, receipt: "RCP-2026-0201", tenant: "Marcus Brown", unit: "Unit 1A", amount: 45000, date: "Feb 1, 2026, 2:34 PM", method: "Bank Transfer" },
-  { id: 2, receipt: "RCP-2026-0202", tenant: "Angela Chen", unit: "Unit 2B", amount: 42000, date: "Feb 1, 2026, 10:15 AM", method: "Card" },
-  { id: 3, receipt: "RCP-2026-0101", tenant: "Marcus Brown", unit: "Unit 1A", amount: 45000, date: "Jan 1, 2026, 9:20 AM", method: "Bank Transfer" },
-  { id: 4, receipt: "RCP-2026-0102", tenant: "Angela Chen", unit: "Unit 2B", amount: 42000, date: "Jan 1, 2026, 11:45 AM", method: "Card" },
-  { id: 5, receipt: "RCP-2026-0103", tenant: "David Williams", unit: "Unit 3C", amount: 48000, date: "Jan 2, 2026, 3:10 PM", method: "Bank Transfer" },
-];
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
 }
 
 export default function Payments() {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [tenants, setTenants] = useState<Array<{ id: number; name: string; rent: number }>>([]);
   const [tenantFilter, setTenantFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  
+  // Safe setter that ensures we always set an array
+  const setSafePaymentsState = (data: any) => {
+    if (Array.isArray(data)) {
+      setPayments(data);
+    } else {
+      console.warn('Attempted to set non-array as payments:', data);
+      setPayments([]);
+    }
+  };
+  
+  const setSafeTenantsState = (data: any) => {
+    if (Array.isArray(data)) {
+      setTenants(data.map(t => ({ id: t.id, name: t.name, rent: t.rent || t.monthly_rent || 0 })));
+    } else {
+      console.warn('Attempted to set non-array as tenants:', data);
+      setTenants([]);
+    }
+  };
+  
+  // Ensure arrays are always arrays
+  const safePaymentsArray = Array.isArray(payments) ? payments : [];
+  const safeTenantsArray = Array.isArray(tenants) ? tenants : [];
 
-  const totalAmount = mockPayments.reduce((sum, p) => sum + p.amount, 0);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [paymentsRes, tenantsRes] = await Promise.all([
+        api.getPayments(),
+        api.getTenants(),
+      ]);
+
+      console.log('Payments API Response:', paymentsRes); // Debug log
+      console.log('Tenants API Response:', tenantsRes); // Debug log
+      
+      if (paymentsRes.data) {
+        console.log('Payments data type:', typeof paymentsRes.data, Array.isArray(paymentsRes.data)); // Debug log
+        setSafePaymentsState(paymentsRes.data);
+      } else if (paymentsRes.error) {
+        console.error('Payments API Error:', paymentsRes.error);
+        setSafePaymentsState([]);
+      } else {
+        console.warn('No data or error in payments response:', paymentsRes);
+        setSafePaymentsState([]);
+      }
+      
+      if (tenantsRes.data) {
+        console.log('Tenants data type:', typeof tenantsRes.data, Array.isArray(tenantsRes.data)); // Debug log
+        setSafeTenantsState(tenantsRes.data);
+      } else if (tenantsRes.error) {
+        console.error('Tenants API Error:', tenantsRes.error);
+        setSafeTenantsState([]);
+      } else {
+        console.warn('No data or error in tenants response:', tenantsRes);
+        setSafeTenantsState([]);
+      }
+    } catch (error) {
+      console.error('Failed to load payments:', error);
+      setSafePaymentsState([]);
+      setSafeTenantsState([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPayments = safePaymentsArray.filter(payment => {
+    if (tenantFilter !== "all" && payment.tenant !== tenantFilter) return false;
+    return true;
+  });
+
+  const totalAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+  
+  const handleAddPayment = async (paymentData: {
+    tenantId: number;
+    amount: number;
+    date: string;
+    method: string;
+  }) => {
+    try {
+      const response = await api.createPayment(paymentData);
+      if (response.data) {
+        await loadData();
+        setShowAddPayment(false);
+        alert('Payment recorded successfully!');
+      } else {
+        alert('Failed to record payment');
+      }
+    } catch (error) {
+      console.error('Failed to record payment:', error);
+      alert('Failed to record payment');
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <PageHeader title="Payments" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
       <PageHeader
         title="Payments"
         action={
-          <Button variant="outline">
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowAddPayment(true)}>
+              <Plus className="h-4 w-4" />
+              Record Payment
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              try {
+                const response = await api.request('/payments/export/', {
+                  method: 'GET'
+                });
+                // Handle CSV download
+                alert('Export functionality will download CSV');
+              } catch (error) {
+                alert('Failed to export payments');
+              }
+            }}>
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         }
       />
 
@@ -61,11 +181,11 @@ export default function Payments() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Tenants</SelectItem>
-            <SelectItem value="marcus">Marcus Brown</SelectItem>
-            <SelectItem value="angela">Angela Chen</SelectItem>
-            <SelectItem value="david">David Williams</SelectItem>
-            <SelectItem value="sarah">Sarah Thompson</SelectItem>
-            <SelectItem value="michael">Michael Lee</SelectItem>
+            {safeTenantsArray.map((tenant) => (
+              <SelectItem key={tenant.id} value={tenant.name}>
+                {tenant.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2">
@@ -92,7 +212,7 @@ export default function Payments() {
       {/* Summary Bar */}
       <div className="mb-4">
         <p className="text-sm text-muted-foreground">
-          Showing {mockPayments.length} payments totaling{" "}
+          Showing {filteredPayments.length} payments totaling{" "}
           <span className="font-medium text-foreground">{formatCurrency(totalAmount)}</span>
         </p>
       </div>
@@ -127,10 +247,10 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {mockPayments.map((payment) => (
+              {filteredPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-secondary transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-foreground">
-                    {payment.receipt}
+                    {payment.receipt || `PAY-${payment.id}`}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">{payment.tenant}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
@@ -158,7 +278,7 @@ export default function Payments() {
 
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Showing 1-5 of 5</p>
+          <p className="text-sm text-muted-foreground">Showing 1-{filteredPayments.length} of {filteredPayments.length}</p>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled>
               <ChevronLeft className="h-4 w-4" />
@@ -171,6 +291,14 @@ export default function Payments() {
           </div>
         </div>
       </div>
+      
+      {/* Add Payment Modal */}
+      <AddPaymentModal
+        open={showAddPayment}
+        onClose={() => setShowAddPayment(false)}
+        tenants={safeTenantsArray}
+        onSubmit={handleAddPayment}
+      />
     </AppLayout>
   );
 }
