@@ -20,6 +20,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
         source='created_by.get_full_name', 
         read_only=True
     )
+    issue_date = serializers.DateField()
+    due_date = serializers.DateField()
+    paid_date = serializers.DateField(allow_null=True)
     
     class Meta:
         model = Invoice
@@ -56,6 +59,8 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     
     tenant_name = serializers.CharField(source='tenant.name', read_only=True)
     tenant_unit = serializers.CharField(source='tenant.unit', read_only=True)
+    issue_date = serializers.DateField(read_only=True)
+    due_date = serializers.DateField(read_only=True)
     
     class Meta:
         model = Invoice

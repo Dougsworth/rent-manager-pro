@@ -17,6 +17,8 @@ from .serializers import (
 )
 from tenants.models import Tenant
 from authentication.utils import create_audit_log
+from .email_service import send_payment_reminder
+from .pdf_service import create_invoice_pdf_response
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -112,7 +114,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             ).exists()
             
             if existing_invoice:
-                errors.append(f"Invoice already exists for {tenant.name}")
+                errors.append(f"Invoice already exists for {tenant.name} for {month}/{year}")
                 continue
             
             # Create invoice
@@ -158,6 +160,97 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             'success': True,
             'message': f'Invoice sent to {invoice.tenant.email}'
         })
+    
+    @action(detail=True, methods=['POST'])
+    def send_reminder(self, request, pk=None):
+        """Send payment reminder for this invoice."""
+        invoice = self.get_object()
+        
+        if invoice.status == 'paid':
+            return Response({
+                'success': False,
+                'message': 'Invoice is already paid'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Calculate days overdue
+            days_overdue = None
+            if invoice.due_date < timezone.now().date():
+                days_overdue = (timezone.now().date() - invoice.due_date).days
+            
+            # Send email reminder
+            success, message = send_payment_reminder(
+                tenant_name=invoice.tenant.name,
+                tenant_email=invoice.tenant.email,
+                unit=invoice.tenant.unit,
+                rent_amount=float(invoice.balance_due),
+                days_overdue=days_overdue
+            )
+            
+            if not success:
+                raise Exception(message)
+            
+            # Create reminder record
+            PaymentReminder.objects.create(
+                tenant=invoice.tenant,
+                invoice=invoice,
+                reminder_type='email',
+                is_sent=True,
+                sent_by=request.user,
+                sent_date=timezone.now()
+            )
+            
+            create_audit_log(
+                user=request.user,
+                action='send_reminder',
+                content_type='Invoice',
+                object_id=invoice.id,
+                object_repr=str(invoice),
+                description=f"Sent payment reminder to {invoice.tenant.name}"
+            )
+            
+            return Response({
+                'success': True,
+                'message': f'Payment reminder sent to {invoice.tenant.email}'
+            })
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Failed to send reminder: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['GET'])
+    def download_pdf(self, request, pk=None):
+        """Download invoice as PDF."""
+        invoice = self.get_object()
+        
+        try:
+            pdf_response = create_invoice_pdf_response(invoice.id)
+            
+            if pdf_response is None:
+                return Response({
+                    'success': False,
+                    'message': 'Failed to generate PDF'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Log the download action
+            create_audit_log(
+                user=request.user,
+                action='download_pdf',
+                content_type='Invoice',
+                object_id=invoice.id,
+                object_repr=str(invoice),
+                description=f"Downloaded PDF for invoice {invoice.invoice_number}"
+            )
+            
+            return pdf_response
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Failed to generate PDF: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

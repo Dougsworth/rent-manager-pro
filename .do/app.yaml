@@ -1,0 +1,49 @@
+name: rent-manager-pro
+region: nyc
+services:
+- name: backend
+  source_dir: backend
+  github:
+    repo: your-username/rent-manager-pro
+    branch: main
+  run_command: gunicorn --worker-tmp-dir /dev/shm rentmanager.wsgi:application
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: DJANGO_SETTINGS_MODULE
+    value: rentmanager.settings.production
+  - key: SECRET_KEY
+    type: SECRET
+  - key: DEBUG
+    value: "False"
+  - key: ALLOWED_HOSTS
+    value: "localhost,127.0.0.1,.ondigitalocean.app"
+  - key: CORS_ALLOWED_ORIGINS
+    value: "https://rent-manager-pro-three.vercel.app"
+  - key: DATABASE_URL
+    type: SECRET
+  - key: RESEND_API_KEY
+    value: "re_6AgzmEdp_iWzHsnf2kjkYsW4WH7o5XDmJ"
+    type: SECRET
+
+databases:
+- name: rent-manager-db
+  engine: PG
+  version: "15"
+  size: basic
+  num_nodes: 1
+
+static_sites:
+- name: frontend
+  github:
+    repo: your-username/rent-manager-pro
+    branch: main
+  source_dir: /
+  build_command: cd frontend && npm run build
+  output_dir: dist
+  index_document: index.html
+  error_document: 404.html
+  routes:
+  - path: /api
+    preserve_path_prefix: false

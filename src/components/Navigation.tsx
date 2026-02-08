@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Menu, X, Home } from "lucide-react";
+import { Menu, X, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { UserMenu } from "./UserMenu";
@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/tenants", label: "Residents" },
   { href: "/invoices", label: "Invoices" },
   { href: "/payments", label: "Payments" },
+  { href: "/documents", label: "Documents" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -23,14 +24,14 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center gap-3 text-xl font-bold text-foreground hover:text-primary transition-colors group">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm group-hover:shadow-md transition-all duration-200">
-              <Home className="h-5 w-5" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+              <Building2 className="h-5 w-5" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xl tracking-tight">
-                RentFlow
+              <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                PropertyHub
               </span>
-              <span className="text-xs text-muted-foreground font-normal hidden sm:inline">
+              <span className="text-xs text-muted-foreground font-normal hidden sm:inline bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
                 Pro
               </span>
             </div>

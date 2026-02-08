@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Tenants from "./pages/Tenants";
 import Invoices from "./pages/Invoices";
 import Payments from "./pages/Payments";
+import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import TenantPayment from "./pages/TenantPayment";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
             {/* Public pages */}

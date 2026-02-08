@@ -374,7 +374,8 @@ class ApiService {
       results: Array<{
         id: number;
         invoice_number: string;
-        tenant: { name: string; unit: string };
+        tenant_name: string;
+        tenant_unit: string;
         amount: number;
         due_date: string;
         status: string;
@@ -387,8 +388,8 @@ class ApiService {
       const mappedData = response.data.results.map(invoice => ({
         id: invoice.id,
         invoiceNumber: invoice.invoice_number,
-        tenant: typeof invoice.tenant === 'object' ? invoice.tenant.name : invoice.tenant,
-        unit: typeof invoice.tenant === 'object' ? invoice.tenant.unit : '',
+        tenant: invoice.tenant_name || '',
+        unit: invoice.tenant_unit || '',
         amount: invoice.amount,
         dueDate: invoice.due_date,
         status: mapInvoiceStatus(invoice.status),

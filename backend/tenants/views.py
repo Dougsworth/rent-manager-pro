@@ -131,29 +131,51 @@ class TenantViewSet(viewsets.ModelViewSet):
         """Send payment reminder to tenant."""
         tenant = self.get_object()
         
-        # Import here to avoid circular imports
-        from payments.utils import send_payment_reminder
-        
-        reminder_type = request.data.get('type', 'email')
-        message = request.data.get('message', '')
-        
         try:
-            reminder = send_payment_reminder(
-                tenant=tenant,
-                reminder_type=reminder_type,
-                custom_message=message,
-                user=request.user
+            # Import email service
+            from payments.email_service import send_payment_reminder
+            
+            # Calculate days overdue if applicable
+            days_overdue = None
+            if tenant.get_payment_status() == 'overdue':
+                # You can implement proper overdue calculation here
+                days_overdue = 7  # Mock value for now
+            
+            # Send email via Resend
+            success, message = send_payment_reminder(
+                tenant_name=tenant.name,
+                tenant_email=tenant.email,
+                unit=tenant.unit,
+                rent_amount=float(tenant.monthly_rent),
+                days_overdue=days_overdue,
+                property_name="The Pods"
             )
             
-            return Response({
-                'success': True,
-                'message': f'Reminder sent successfully to {tenant.name}',
-                'reminder_id': reminder.id if reminder else None
-            })
+            if success:
+                # Log the reminder in the audit log
+                create_audit_log(
+                    user=request.user,
+                    action='reminder',
+                    content_type='Tenant',
+                    object_id=tenant.id,
+                    object_repr=str(tenant),
+                    description=f"Payment reminder sent to {tenant.email}"
+                )
+                
+                return Response({
+                    'success': True,
+                    'message': message
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': message
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
         except Exception as e:
             return Response({
                 'success': False,
-                'message': str(e)
+                'message': f'Failed to send reminder: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 

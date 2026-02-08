@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { api } from "@/services/api";
+import { sendPaymentReminder } from "@/services/emailService";
 import { useState, useEffect } from "react";
 
 interface TenantDetailProps {
@@ -71,14 +72,21 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
   };
 
   const handleSendReminder = async () => {
-    if (!confirm('Send payment reminder to ' + tenant.name + '?')) return;
+    if (!confirm(`Send payment reminder to ${tenant.name}?`)) return;
     
     setLoading(true);
     try {
-      await api.sendReminder(tenant.id);
-      alert('Reminder sent successfully!');
+      // Send reminder via backend (which will send email via Resend)
+      const response = await api.sendReminder(tenant.id);
+      
+      if (response.data?.success) {
+        alert(`✅ ${response.data.message}`);
+      } else {
+        alert(`❌ ${response.data?.message || 'Failed to send reminder'}`);
+      }
     } catch (error) {
-      alert('Failed to send reminder. Please try again.');
+      console.error('Reminder error:', error);
+      alert('❌ Failed to send reminder. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

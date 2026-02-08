@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from tenants.models import Tenant
 import uuid
+from datetime import date
 
 
 class Invoice(models.Model):
@@ -45,7 +46,7 @@ class Invoice(models.Model):
     )
     
     # Dates
-    issue_date = models.DateField(default=timezone.now)
+    issue_date = models.DateField(default=date.today)
     due_date = models.DateField()
     paid_date = models.DateField(null=True, blank=True)
     
@@ -77,6 +78,12 @@ class Invoice(models.Model):
             models.Index(fields=['tenant', 'status']),
             models.Index(fields=['due_date', 'status']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tenant', 'invoice_number'],
+                name='unique_invoice_number_per_tenant'
+            )
+        ]
     
     def save(self, *args, **kwargs):
         if not self.invoice_number:
@@ -84,22 +91,27 @@ class Invoice(models.Model):
         super().save(*args, **kwargs)
     
     def generate_invoice_number(self):
-        """Generate unique invoice number."""
-        year = timezone.now().year
-        month = timezone.now().month
-        
-        # Get the last invoice number for this month
+        """Generate unique invoice number per tenant."""
+        # Get the last invoice number for this tenant
         last_invoice = Invoice.objects.filter(
-            invoice_number__startswith=f"INV-{year}-{month:02d}"
-        ).order_by('-invoice_number').first()
+            tenant=self.tenant
+        ).order_by('-id').first()
         
-        if last_invoice:
-            last_number = int(last_invoice.invoice_number.split('-')[-1])
-            new_number = last_number + 1
+        if last_invoice and last_invoice.invoice_number:
+            # Extract the number from formats like "INV-0001" or "TENANT-INV-0001"
+            try:
+                # Try to find the last number in the invoice number
+                parts = last_invoice.invoice_number.split('-')
+                last_number = int(parts[-1])
+                new_number = last_number + 1
+            except (ValueError, IndexError):
+                new_number = 1
         else:
             new_number = 1
         
-        return f"INV-{year}-{month:02d}-{new_number:04d}"
+        # Format: TENANT_UNIT-INV-0001
+        tenant_prefix = self.tenant.unit.replace(' ', '').upper()
+        return f"{tenant_prefix}-INV-{new_number:04d}"
     
     def __str__(self):
         return f"{self.invoice_number} - {self.tenant.name}"
