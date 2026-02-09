@@ -64,10 +64,17 @@ def generate_invoice_pdf(invoice_id):
     content = []
     
     # Header - Company Information
-    content.append(Paragraph("PropertyHub Pro", title_style))
-    content.append(Paragraph("The Pods Property Management", styles['Heading3']))
+    content.append(Paragraph("The Pods", title_style))
     content.append(Paragraph("6 University Dr, Kingston", normal_style))
-    content.append(Paragraph("📧 info@thepods.com | 📞 876-784-8380", normal_style))
+    content.append(Paragraph("info@thepods.com | 876-784-8380", normal_style))
+    content.append(Spacer(1, 10))
+    content.append(Paragraph("Powered by Unitly", ParagraphStyle(
+        'PoweredBy',
+        parent=normal_style,
+        fontSize=8,
+        textColor=Color(0.6, 0.6, 0.6),
+        alignment=TA_CENTER
+    )))
     content.append(Spacer(1, 20))
     
     # Invoice Title and Number
@@ -209,7 +216,7 @@ def generate_invoice_pdf(invoice_id):
     )
     
     content.append(Paragraph("Thank you for your business!", footer_style))
-    content.append(Paragraph("PropertyHub Pro - Professional Property Management", footer_style))
+    content.append(Paragraph("Unitly - Modern Property Management Platform", footer_style))
     
     try:
         # Build PDF

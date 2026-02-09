@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
@@ -52,9 +52,10 @@ export default function Login() {
                 <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              RentFlow <span className="text-blue-600">Pro</span>
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Unitly</h1>
+              <p className="text-xs text-gray-500">Managing The Pods</p>
+            </div>
           </div>
         </div>
 
@@ -138,10 +139,16 @@ export default function Login() {
             </div>
           </form>
           
-          {/* Demo hint without showing credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-center text-gray-500">
-              This is a demo environment. Contact your administrator for access credentials.
+          {/* Registration link */}
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-muted-foreground mb-3">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-primary hover:underline">
+                Create your property account
+              </Link>
+            </p>
+            <p className="text-xs text-gray-500">
+              Existing users: Contact your administrator for access credentials.
             </p>
           </div>
         </div>

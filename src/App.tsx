@@ -12,6 +12,7 @@ import Payments from "./pages/Payments";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import TenantPayment from "./pages/TenantPayment";
 import Receipt from "./pages/Receipt";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ const App = () => (
             
             {/* Auth */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             
             {/* Protected app pages */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -1,11 +1,18 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Q, Count
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.utils.decorators import method_decorator
 from datetime import datetime, timedelta
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 from .models import Invoice, Payment, PaymentReminder
 from .serializers import (
     InvoiceSerializer, InvoiceListSerializer,
@@ -463,3 +470,132 @@ def overdue_tenants(request):
     data = list(tenant_data.values())
     serializer = OverdueTenantSerializer(data, many=True)
     return Response(serializer.data)
+
+
+# HandyPay Integration Views
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def handypay_webhook(request):
+    """Handle HandyPay payment webhooks."""
+    try:
+        # Get raw payload for signature verification
+        payload = request.body.decode('utf-8')
+        signature = request.META.get('HTTP_X_HANDYPAY_SIGNATURE', '')
+        
+        # Import HandyPay service
+        from .handypay_service import handypay_service
+        
+        # Verify webhook signature for security
+        if not handypay_service.verify_webhook_signature(payload, signature):
+            logger.warning("HandyPay webhook signature verification failed")
+            return HttpResponseBadRequest("Invalid signature")
+        
+        # Parse webhook data
+        try:
+            webhook_data = json.loads(payload)
+        except json.JSONDecodeError:
+            logger.error("HandyPay webhook: Invalid JSON payload")
+            return HttpResponseBadRequest("Invalid JSON")
+        
+        # Process webhook
+        success = handypay_service.process_webhook(webhook_data)
+        
+        if success:
+            logger.info(f"HandyPay webhook processed successfully: {webhook_data.get('event')}")
+            return HttpResponse("Webhook processed successfully", status=200)
+        else:
+            logger.error(f"HandyPay webhook processing failed: {webhook_data.get('event')}")
+            return HttpResponse("Webhook processing failed", status=500)
+            
+    except Exception as e:
+        logger.error(f"HandyPay webhook error: {str(e)}")
+        return HttpResponse("Internal server error", status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_payment_link(request):
+    """Create a HandyPay payment link for an invoice."""
+    try:
+        invoice_id = request.data.get('invoice_id')
+        if not invoice_id:
+            return Response({
+                'success': False,
+                'message': 'Invoice ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get invoice with related data
+        try:
+            invoice = Invoice.objects.select_related('tenant', 'organization').get(id=invoice_id)
+        except Invoice.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Invoice not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if invoice is already paid
+        if invoice.status == 'paid':
+            return Response({
+                'success': False,
+                'message': 'Invoice is already paid'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create payment link
+        from .handypay_service import handypay_service
+        payment_link_data = handypay_service.create_payment_link(invoice)
+        
+        if payment_link_data:
+            # Check if it's an error response
+            if payment_link_data.get('error'):
+                return Response({
+                    'success': False,
+                    'message': payment_link_data.get('message', 'HandyPay configuration error')
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            return Response({
+                'success': True,
+                'payment_link': payment_link_data.get('payment_url'),
+                'payment_id': payment_link_data.get('id'),
+                'message': 'Payment link created successfully'
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'Failed to create payment link'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        logger.error(f"Error creating payment link: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Internal server error'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def payment_status(request, payment_id):
+    """Get payment status from HandyPay."""
+    try:
+        from .handypay_service import handypay_service
+        payment_data = handypay_service.get_payment_status(payment_id)
+        
+        if payment_data:
+            return Response({
+                'success': True,
+                'payment_status': payment_data.get('status'),
+                'payment_data': payment_data
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'Payment not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+            
+    except Exception as e:
+        logger.error(f"Error getting payment status: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Internal server error'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

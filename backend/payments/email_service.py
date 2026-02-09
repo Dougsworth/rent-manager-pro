@@ -39,8 +39,9 @@ def send_payment_reminder(tenant_name, tenant_email, unit, rent_amount, days_ove
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <h1 style="color: #2563eb; margin: 0;">The Pods</h1>
+                            <h1 style="color: #1f2937; margin: 0;">The Pods</h1>
                             <p style="color: #6b7280; margin: 5px 0;">6 University Dr, Kingston</p>
+                            <p style="color: #9ca3af; margin: 5px 0; font-size: 12px;">Managed with Unitly</p>
                         </div>
                         
                         <h2 style="color: #1f2937;">Dear {tenant_name},</h2>

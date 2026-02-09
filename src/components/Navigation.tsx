@@ -27,14 +27,9 @@ export function Navigation() {
             <div className="p-2 rounded-lg bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
               <Building2 className="h-5 w-5" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                PropertyHub
-              </span>
-              <span className="text-xs text-muted-foreground font-normal hidden sm:inline bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                Pro
-              </span>
-            </div>
+            <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Unitly
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

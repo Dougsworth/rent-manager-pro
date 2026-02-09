@@ -14,9 +14,17 @@ class Tenant(models.Model):
         ('pending', 'Pending'),
     ]
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='tenants',
+        null=True  # Temporarily nullable for migration
+    )
+    
     # Basic Information
     name = models.CharField(max_length=255, db_index=True)
-    email = models.EmailField(unique=True, db_index=True)
+    email = models.EmailField(db_index=True)
     phone = PhoneNumberField(region='JM', blank=True)
     
     # Rental Information
@@ -65,6 +73,13 @@ class Tenant(models.Model):
         indexes = [
             models.Index(fields=['status', 'lease_end']),
             models.Index(fields=['unit', 'status']),
+            models.Index(fields=['organization', 'email']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'email'],
+                name='unique_email_per_organization'
+            )
         ]
     
     def __str__(self):
@@ -121,10 +136,18 @@ class TenantDocument(models.Model):
         ('other', 'Other'),
     ]
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='tenant_documents',
+        null=True  # Temporarily nullable for migration
+    )
+    
     tenant = models.ForeignKey(
         Tenant, 
         on_delete=models.CASCADE, 
-        related_name='documents'
+        related_name='tenant_documents'
     )
     document_type = models.CharField(max_length=50, choices=DOCUMENT_TYPES)
     name = models.CharField(max_length=255)
@@ -138,6 +161,10 @@ class TenantDocument(models.Model):
     
     class Meta:
         ordering = ['-uploaded_at']
+        indexes = [
+            models.Index(fields=['organization', 'tenant']),
+            models.Index(fields=['organization', 'document_type']),
+        ]
     
     def __str__(self):
         return f"{self.name} - {self.tenant.name}"

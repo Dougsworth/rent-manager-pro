@@ -1,0 +1,16 @@
+{
+  "name": "Unitly",
+  "short_name": "Unitly",
+  "description": "Modern property management platform",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/building-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

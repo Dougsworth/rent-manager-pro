@@ -19,10 +19,17 @@ class Invoice(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='invoices',
+        null=True  # Temporarily nullable for migration
+    )
+    
     # Invoice Information
     invoice_number = models.CharField(
         max_length=50, 
-        unique=True, 
         db_index=True,
         editable=False
     )
@@ -77,11 +84,12 @@ class Invoice(models.Model):
         indexes = [
             models.Index(fields=['tenant', 'status']),
             models.Index(fields=['due_date', 'status']),
+            models.Index(fields=['organization', 'tenant']),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=['tenant', 'invoice_number'],
-                name='unique_invoice_number_per_tenant'
+                fields=['organization', 'invoice_number'],
+                name='unique_invoice_number_per_organization'
             )
         ]
     
@@ -160,6 +168,14 @@ class Payment(models.Model):
         ('other', 'Other'),
     ]
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='payments',
+        null=True  # Temporarily nullable for migration
+    )
+    
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -231,6 +247,8 @@ class Payment(models.Model):
         indexes = [
             models.Index(fields=['tenant', 'status']),
             models.Index(fields=['payment_date', 'status']),
+            models.Index(fields=['organization', 'tenant']),
+            models.Index(fields=['organization', 'status']),
         ]
     
     def __str__(self):
@@ -277,6 +295,14 @@ class PaymentReminder(models.Model):
         ('letter', 'Physical Letter'),
     ]
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='payment_reminders',
+        null=True  # Temporarily nullable for migration
+    )
+    
     tenant = models.ForeignKey(
         Tenant, 
         on_delete=models.CASCADE, 
@@ -319,6 +345,8 @@ class PaymentReminder(models.Model):
         indexes = [
             models.Index(fields=['tenant', 'sent_date']),
             models.Index(fields=['invoice', 'sent_date']),
+            models.Index(fields=['organization', 'tenant']),
+            models.Index(fields=['organization', 'sent_date']),
         ]
     
     def __str__(self):

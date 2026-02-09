@@ -25,11 +25,28 @@ class DocumentCategory(models.Model):
         ('other', 'Other'),
     ]
     
-    name = models.CharField(max_length=50, choices=CATEGORY_CHOICES, unique=True)
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='document_categories',
+        null=True  # Temporarily nullable for migration
+    )
+    
+    name = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True)
     
     class Meta:
         verbose_name_plural = "Document Categories"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'name'],
+                name='unique_category_per_organization'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['organization', 'name']),
+        ]
     
     def __str__(self):
         return self.get_name_display()
@@ -37,6 +54,14 @@ class DocumentCategory(models.Model):
 
 class Document(models.Model):
     """Model for storing tenant documents."""
+    
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='documents',
+        null=True  # Temporarily nullable for migration
+    )
     
     # Relations
     tenant = models.ForeignKey(
@@ -92,6 +117,9 @@ class Document(models.Model):
         indexes = [
             models.Index(fields=['tenant', 'category']),
             models.Index(fields=['expiry_date']),
+            models.Index(fields=['organization', 'tenant']),
+            models.Index(fields=['organization', 'category']),
+            models.Index(fields=['organization', 'expiry_date']),
         ]
     
     def __str__(self):
@@ -123,6 +151,14 @@ class Document(models.Model):
 class DocumentTemplate(models.Model):
     """Templates for common documents."""
     
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='document_templates',
+        null=True  # Temporarily nullable for migration
+    )
+    
     name = models.CharField(max_length=255)
     category = models.ForeignKey(
         DocumentCategory,
@@ -148,6 +184,15 @@ class DocumentTemplate(models.Model):
     
     class Meta:
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'name'],
+                name='unique_template_per_organization'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['organization', 'name']),
+        ]
     
     def __str__(self):
         return self.name
@@ -155,6 +200,14 @@ class DocumentTemplate(models.Model):
 
 class DocumentSignature(models.Model):
     """Digital signatures for documents."""
+    
+    # Organization - for multi-tenancy
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='document_signatures',
+        null=True  # Temporarily nullable for migration
+    )
     
     document = models.ForeignKey(
         Document,
@@ -181,6 +234,10 @@ class DocumentSignature(models.Model):
     class Meta:
         ordering = ['-signed_at']
         unique_together = [['document', 'signer']]
+        indexes = [
+            models.Index(fields=['organization', 'document']),
+            models.Index(fields=['organization', 'signed_at']),
+        ]
     
     def __str__(self):
         return f"Signature for {self.document.title} by {self.signer.get_full_name()}"

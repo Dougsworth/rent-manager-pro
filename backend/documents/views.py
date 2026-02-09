@@ -1,10 +1,11 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from .models import Document, DocumentCategory, DocumentTemplate, DocumentSignature
 from .serializers import (
     DocumentSerializer, DocumentListSerializer, DocumentUploadSerializer,
@@ -12,16 +13,49 @@ from .serializers import (
     SignDocumentSerializer, DocumentSignatureSerializer
 )
 from authentication.utils import create_audit_log
+from organizations.models import OrganizationMembership
 
 
-class DocumentCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class OrganizationFilterMixin:
+    """Mixin to filter queryset by user's organization."""
+    
+    def get_user_organization(self):
+        """Get the organization from the request or user's membership."""
+        # First check if organization_id is in the request
+        org_id = self.request.query_params.get('organization_id')
+        if org_id:
+            # Verify user has access to this organization
+            membership = OrganizationMembership.objects.filter(
+                user=self.request.user,
+                organization_id=org_id,
+                is_active=True
+            ).first()
+            if membership:
+                return membership.organization
+        
+        # Otherwise, get the user's first active organization
+        membership = OrganizationMembership.objects.filter(
+            user=self.request.user,
+            is_active=True
+        ).select_related('organization').first()
+        
+        return membership.organization if membership else None
+
+
+class DocumentCategoryViewSet(OrganizationFilterMixin, viewsets.ReadOnlyModelViewSet):
     """ViewSet for document categories."""
-    queryset = DocumentCategory.objects.all()
     serializer_class = DocumentCategorySerializer
     permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Get document categories for user's organization."""
+        organization = self.get_user_organization()
+        if not organization:
+            return DocumentCategory.objects.none()
+        return DocumentCategory.objects.filter(organization=organization)
 
 
-class DocumentViewSet(viewsets.ModelViewSet):
+class DocumentViewSet(OrganizationFilterMixin, viewsets.ModelViewSet):
     """ViewSet for managing documents."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -32,7 +66,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Get documents with optional filtering."""
-        queryset = Document.objects.select_related(
+        organization = self.get_user_organization()
+        if not organization:
+            return Document.objects.none()
+            
+        queryset = Document.objects.filter(
+            organization=organization
+        ).select_related(
             'tenant', 'category', 'uploaded_by'
         ).prefetch_related('signatures')
         
@@ -64,7 +104,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Create document and log action."""
-        document = serializer.save()
+        organization = self.get_user_organization()
+        if not organization:
+            raise serializers.ValidationError("No organization found for user")
+            
+        document = serializer.save(
+            uploaded_by=self.request.user,
+            organization=organization
+        )
         
         create_audit_log(
             user=self.request.user,
@@ -83,7 +130,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         if serializer.is_valid():
             # Create signature
+            organization = self.get_user_organization()
+            if not organization:
+                return Response(
+                    {'error': 'No organization found'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
             signature = DocumentSignature.objects.create(
+                organization=organization,
                 document=document,
                 signer=request.user,
                 signature_image=serializer.validated_data['signature_image'],
@@ -157,14 +212,23 @@ class DocumentViewSet(viewsets.ModelViewSet):
         })
 
 
-class DocumentTemplateViewSet(viewsets.ModelViewSet):
+class DocumentTemplateViewSet(OrganizationFilterMixin, viewsets.ModelViewSet):
     """ViewSet for document templates."""
-    queryset = DocumentTemplate.objects.filter(is_active=True)
     serializer_class = DocumentTemplateSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['category']
     search_fields = ['name', 'description']
+    
+    def get_queryset(self):
+        """Get document templates for user's organization."""
+        organization = self.get_user_organization()
+        if not organization:
+            return DocumentTemplate.objects.none()
+        return DocumentTemplate.objects.filter(
+            organization=organization,
+            is_active=True
+        )
     
     @action(detail=True, methods=['POST'])
     def generate(self, request, pk=None):

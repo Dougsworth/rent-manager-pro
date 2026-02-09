@@ -34,9 +34,21 @@ class ApiService {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
 
-  private async request<T>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  async request<T>(url: string, options: RequestInit & { params?: Record<string, any> } = {}): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
+      // Handle query params
+      let urlWithParams = url;
+      if (options.params) {
+        const searchParams = new URLSearchParams();
+        Object.entries(options.params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            searchParams.append(key, value.toString());
+          }
+        });
+        urlWithParams = `${url}?${searchParams.toString()}`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}${urlWithParams}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -425,6 +437,33 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  // HandyPay Integration
+  async createPaymentLink(invoiceId: number) {
+    return this.request<{
+      success: boolean;
+      payment_link?: string;
+      payment_id?: string;
+      message: string;
+    }>('/create-payment-link/', {
+      method: 'POST',
+      body: JSON.stringify({
+        invoice_id: invoiceId
+      }),
+    });
+  }
+
+  async getPaymentStatus(paymentId: string) {
+    return this.request<{
+      success: boolean;
+      payment_status?: string;
+      payment_data?: any;
+      message?: string;
+    }>(`/payment-status/${paymentId}/`);
+  }
 }
 
 export const api = new ApiService();
+
+// Export the type for use in components
+export type { ApiResponse };

@@ -16,20 +16,20 @@ import {
 interface Document {
   id: number;
   title: string;
-  tenantName: string;
-  categoryName: string;
-  fileType: string;
-  documentDate: string;
-  expiryDate: string | null;
-  isExpired: boolean;
-  isSigned: boolean;
-  fileSize: number;
+  tenant_name: string;
+  category_name: string;
+  file_type: string;
+  document_date: string;
+  expiry_date: string | null;
+  is_expired: boolean;
+  is_signed: boolean;
+  file_size: number;
 }
 
 interface DocumentCategory {
   id: string;
   name: string;
-  displayName: string;
+  display_name: string;
 }
 
 function formatFileSize(bytes: number): string {
@@ -152,7 +152,7 @@ export default function Documents() {
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.name}>
-                {category.displayName}
+                {category.display_name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -184,43 +184,43 @@ export default function Documents() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-sm line-clamp-1">{document.title}</h3>
-                  <p className="text-xs text-muted-foreground">{document.tenantName}</p>
+                  <p className="text-xs text-muted-foreground">{document.tenant_name || 'General'}</p>
                 </div>
               </div>
               <span className="text-xs font-medium text-muted-foreground">
-                {document.fileType}
+                {document.file_type}
               </span>
             </div>
             
             <div className="space-y-2 mb-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Category:</span>
-                <span>{document.categoryName}</span>
+                <span>{document.category_name}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Date:</span>
-                <span>{formatDate(document.documentDate)}</span>
+                <span>{formatDate(document.document_date)}</span>
               </div>
-              {document.expiryDate && (
+              {document.expiry_date && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Expires:</span>
-                  <span className={document.isExpired ? "text-destructive" : ""}>
-                    {formatDate(document.expiryDate)}
+                  <span className={document.is_expired ? "text-destructive" : ""}>
+                    {formatDate(document.expiry_date)}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Size:</span>
-                <span>{formatFileSize(document.fileSize)}</span>
+                <span>{formatFileSize(document.file_size)}</span>
               </div>
             </div>
             
             {/* Status Badges */}
             <div className="flex gap-2 mb-3">
-              {document.isSigned && (
+              {document.is_signed && (
                 <StatusBadge variant="success" size="sm">Signed</StatusBadge>
               )}
-              {document.isExpired && (
+              {document.is_expired && (
                 <StatusBadge variant="destructive" size="sm">Expired</StatusBadge>
               )}
             </div>
@@ -271,8 +271,8 @@ export default function Documents() {
           <h3 className="font-semibold">Document Expiry Alerts</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          You have {documents.filter(d => d.isExpired).length} expired documents and{' '}
-          {documents.filter(d => !d.isExpired && d.expiryDate).length} documents expiring soon.
+          You have {documents.filter(d => d.is_expired).length} expired documents and{' '}
+          {documents.filter(d => !d.is_expired && d.expiry_date).length} documents expiring soon.
         </p>
       </div>
     </AppLayout>

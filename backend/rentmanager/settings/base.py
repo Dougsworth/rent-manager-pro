@@ -37,6 +37,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    'organizations',  # Must come first for foreign key references
     'authentication',
     'tenants',
     'payments',
@@ -55,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'organizations.middleware.OrganizationMiddleware',
+    'organizations.middleware.OrganizationFilterMiddleware',
 ]
 
 ROOT_URLCONF = 'rentmanager.urls'
@@ -203,6 +206,16 @@ CACHES = {
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# HandyPay Payment Gateway Configuration
+HANDYPAY_API_KEY = config('HANDYPAY_API_KEY', default='')
+HANDYPAY_API_SECRET = config('HANDYPAY_API_SECRET', default='')
+HANDYPAY_WEBHOOK_SECRET = config('HANDYPAY_WEBHOOK_SECRET', default='')
+HANDYPAY_BASE_URL = config('HANDYPAY_BASE_URL', default='https://api.handypay.me/v1')
+HANDYPAY_SANDBOX = config('HANDYPAY_SANDBOX', default=True, cast=bool)
+
+# Site URL for webhooks and redirects
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 # Logging Configuration
 LOGGING = {

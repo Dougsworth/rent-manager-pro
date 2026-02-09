@@ -83,7 +83,7 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         ]
     
     def create(self, validated_data):
-        validated_data['uploaded_by'] = self.context['request'].user
+        # uploaded_by is now set in the view
         return super().create(validated_data)
 
 
