@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { api } from "@/services/api";
 import { sendPaymentReminder } from "@/services/emailService";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface TenantDetailProps {
   tenant: Tenant;
@@ -42,6 +43,7 @@ interface TenantDetailProps {
 
 export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailProps) {
   const [payments, setPayments] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingLeaseStart, setEditingLeaseStart] = useState(false);
   const [editingLeaseEnd, setEditingLeaseEnd] = useState(false);
@@ -56,18 +58,29 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
 
   useEffect(() => {
     loadPayments();
+    loadReminders();
   }, [tenant.id]);
 
   const loadPayments = async () => {
     try {
       const response = await api.getPayments();
       if (response.data) {
-        // Filter payments for this tenant
         const tenantPayments = response.data.filter(p => p.tenant === tenant.name);
         setPayments(tenantPayments);
       }
     } catch (error) {
       console.error('Failed to load payments:', error);
+    }
+  };
+
+  const loadReminders = async () => {
+    try {
+      const response = await api.getReminderHistory(tenant.id);
+      if (response.data?.results) {
+        setReminders(response.data.results);
+      }
+    } catch {
+      // Silently fail - reminders are not critical
     }
   };
 
@@ -80,13 +93,13 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
       const response = await api.sendReminder(tenant.id);
       
       if (response.data?.success) {
-        alert(`✅ ${response.data.message}`);
+        toast.success(response.data.message);
       } else {
-        alert(`❌ ${response.data?.message || 'Failed to send reminder'}`);
+        toast.error(response.data?.message || 'Failed to send reminder');
       }
     } catch (error) {
       console.error('Reminder error:', error);
-      alert('❌ Failed to send reminder. Please check your connection and try again.');
+      toast.error('Failed to send reminder. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -106,10 +119,10 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
         amount: tenant.rent,
         dueDate: dueDate.toISOString().split('T')[0]
       });
-      alert('Invoice created successfully!');
+      toast.success('Invoice created successfully!');
       if (onTenantUpdate) await onTenantUpdate();
-    } catch (error) {
-      alert('Failed to create invoice. Please try again.');
+    } catch {
+      toast.error('Failed to create invoice. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -121,11 +134,11 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
     setLoading(true);
     try {
       await api.deleteTenant(tenant.id);
-      alert('Tenant removed successfully!');
+      toast.success('Tenant removed successfully!');
       if (onTenantUpdate) await onTenantUpdate();
       if (onClose) onClose();
-    } catch (error) {
-      alert('Failed to remove tenant. Please try again.');
+    } catch {
+      toast.error('Failed to remove tenant. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -139,15 +152,15 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
       const response = await api.updateTenant(tenant.id, { leaseStart: tempLeaseStart });
       
       if (response.error) {
-        alert('Failed to update lease start date: ' + response.error);
+        toast.error('Failed to update lease start date: ' + response.error);
         return;
       }
-      
-      alert('Lease start date updated successfully!');
+
+      toast.success('Lease start date updated successfully!');
       setEditingLeaseStart(false);
       if (onTenantUpdate) await onTenantUpdate();
-    } catch (error) {
-      alert('Failed to update lease start date. Please try again.');
+    } catch {
+      toast.error('Failed to update lease start date. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -161,15 +174,15 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
       const response = await api.updateTenant(tenant.id, { leaseEnd: tempLeaseEnd });
       
       if (response.error) {
-        alert('Failed to update lease end date: ' + response.error);
+        toast.error('Failed to update lease end date: ' + response.error);
         return;
       }
-      
-      alert('Lease end date updated successfully!');
+
+      toast.success('Lease end date updated successfully!');
       setEditingLeaseEnd(false);
       if (onTenantUpdate) await onTenantUpdate();
-    } catch (error) {
-      alert('Failed to update lease end date. Please try again.');
+    } catch {
+      toast.error('Failed to update lease end date. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -319,9 +332,17 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
                       {formatCurrency(payment.amount)}
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <button 
+                      <button
                         className="text-primary hover:underline inline-flex items-center gap-1"
                         title={`Download receipt ${payment.receipt}`}
+                        onClick={async () => {
+                          try {
+                            await api.downloadReceipt(payment.id);
+                          } catch {
+                            const { toast } = await import('sonner');
+                            toast.error('Failed to download receipt');
+                          }
+                        }}
                       >
                         <Download className="h-3 w-3" />
                       </button>
@@ -333,6 +354,43 @@ export function TenantDetail({ tenant, onTenantUpdate, onClose }: TenantDetailPr
           </div>
         )}
       </section>
+
+      {/* Reminder History Section */}
+      {reminders.length > 0 && (
+        <section>
+          <h3 className="text-xs uppercase font-medium tracking-wide text-muted-foreground mb-3">
+            Reminder History
+          </h3>
+          <div className="mb-2">
+            <p className="text-sm text-muted-foreground">
+              {reminders.length} reminder{reminders.length !== 1 ? 's' : ''} sent
+              {reminders[0]?.sent_date && ` · Last: ${new Date(reminders[0].sent_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+            </p>
+          </div>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Date</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Type</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Invoice</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {reminders.slice(0, 5).map((reminder) => (
+                  <tr key={reminder.id}>
+                    <td className="px-3 py-2 text-foreground">
+                      {new Date(reminder.sent_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground capitalize">{reminder.reminder_type}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{reminder.invoice_number || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Actions Section */}
       {(tenant.status === "pending" || tenant.status === "overdue") && (

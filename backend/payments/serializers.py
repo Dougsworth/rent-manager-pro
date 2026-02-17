@@ -195,9 +195,11 @@ class RecentPaymentSerializer(serializers.Serializer):
 
 class OverdueTenantSerializer(serializers.Serializer):
     """Serializer for overdue tenants on dashboard."""
-    
+
     id = serializers.IntegerField()
     name = serializers.CharField()
     unit = serializers.CharField()
     amount = serializers.DecimalField(max_digits=10, decimal_places=2)
     daysOverdue = serializers.IntegerField()
+    lastReminderDate = serializers.CharField(allow_null=True, required=False)
+    reminderCount = serializers.IntegerField(required=False, default=0)

@@ -12,9 +12,14 @@ urlpatterns = [
     path('', include(router.urls)),
     
     # Add specific remind endpoint to match frontend expectation
-    path('tenants/<int:pk>/remind/', 
+    path('tenants/<int:pk>/remind/',
          TenantViewSet.as_view({'post': 'send_reminder'}),
          name='tenant-remind'),
+
+    # Bulk send reminders to all overdue tenants
+    path('tenants/bulk-send-reminders/',
+         TenantViewSet.as_view({'post': 'bulk_send_reminders'}),
+         name='tenant-bulk-reminders'),
     
     # Nested routes for tenant documents
     path('tenants/<int:tenant_id>/documents/', 

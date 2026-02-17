@@ -6,8 +6,9 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Send } from "lucide-react";
 import { api } from "@/services/api";
+import { toast } from "sonner";
 
 interface Stats {
   expected: number;
@@ -33,6 +34,8 @@ interface OverdueTenant {
   unit: string;
   amount: number;
   daysOverdue: number;
+  lastReminderDate: string | null;
+  reminderCount: number;
 }
 
 function formatCurrency(amount: number): string {
@@ -58,6 +61,7 @@ export default function Dashboard() {
   const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [overdueTenants, setOverdueTenants] = useState<OverdueTenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingBulk, setSendingBulk] = useState(false);
 
   const collectionPercentage = stats.expected > 0 
     ? Math.round((stats.collected / stats.expected) * 100) 
@@ -246,8 +250,39 @@ export default function Dashboard() {
         {/* Overdue Tenants */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="px-6 py-5 border-b border-border bg-gradient-to-r from-orange-50 to-transparent">
-            <h2 className="text-lg font-semibold text-foreground">Overdue Tenants</h2>
-            <p className="text-sm text-muted-foreground mt-1">Accounts requiring attention</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Overdue Tenants</h2>
+                <p className="text-sm text-muted-foreground mt-1">Accounts requiring attention</p>
+              </div>
+              {overdueTenants.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={sendingBulk}
+                  onClick={async () => {
+                    if (!confirm('Send reminders to all overdue tenants?')) return;
+                    setSendingBulk(true);
+                    try {
+                      const res = await api.bulkSendReminders();
+                      if (res.data) {
+                        toast.success(res.data.message);
+                        await loadDashboardData();
+                      } else {
+                        toast.error('Failed to send reminders');
+                      }
+                    } catch {
+                      toast.error('Failed to send reminders');
+                    } finally {
+                      setSendingBulk(false);
+                    }
+                  }}
+                >
+                  <Send className="h-4 w-4" />
+                  {sendingBulk ? 'Sending...' : 'Send All Reminders'}
+                </Button>
+              )}
+            </div>
           </div>
           <div className="p-6">
             {overdueTenants.length === 0 ? (
@@ -272,23 +307,35 @@ export default function Dashboard() {
                       </div>
                       <StatusBadge variant="overdue">{tenant.daysOverdue} days late</StatusBadge>
                     </div>
+                    {(tenant.reminderCount > 0 || tenant.lastReminderDate) && (
+                      <div className="mb-2">
+                        <p className="text-xs text-muted-foreground">
+                          {tenant.reminderCount} reminder{tenant.reminderCount !== 1 ? 's' : ''} sent
+                          {tenant.lastReminderDate && ` · Last: ${tenant.lastReminderDate}`}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-foreground">
                         {formatCurrency(tenant.amount)}
                       </p>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!confirm(`Send reminder to ${tenant.name}?`)) return;
-                          
+
                           try {
-                            await api.sendReminder(tenant.id);
-                            alert('Reminder sent successfully!');
+                            const res = await api.sendReminder(tenant.id);
+                            if (res.data?.success) {
+                              toast.success(res.data.message || 'Reminder sent!');
+                            } else {
+                              toast.error(res.data?.message || 'Failed to send reminder');
+                            }
                             await loadDashboardData();
-                          } catch (error) {
-                            alert('Failed to send reminder');
+                          } catch {
+                            toast.error('Failed to send reminder');
                           }
                         }}
                       >

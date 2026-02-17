@@ -130,29 +130,49 @@ class TenantViewSet(viewsets.ModelViewSet):
     def send_reminder(self, request, pk=None):
         """Send payment reminder to tenant."""
         tenant = self.get_object()
-        
+
         try:
-            # Import email service
             from payments.email_service import send_payment_reminder
-            
-            # Calculate days overdue if applicable
+            from payments.models import Invoice, PaymentReminder
+            from django.utils import timezone
+
+            # Find the most overdue invoice for this tenant
+            overdue_invoice = Invoice.objects.filter(
+                tenant=tenant,
+                status__in=['sent', 'partially_paid'],
+                due_date__lt=timezone.now().date()
+            ).order_by('due_date').first()
+
             days_overdue = None
-            if tenant.get_payment_status() == 'overdue':
-                # You can implement proper overdue calculation here
-                days_overdue = 7  # Mock value for now
-            
-            # Send email via Resend
+            rent_amount = float(tenant.monthly_rent)
+            if overdue_invoice:
+                days_overdue = (timezone.now().date() - overdue_invoice.due_date).days
+                rent_amount = float(overdue_invoice.balance_due)
+
             success, message = send_payment_reminder(
                 tenant_name=tenant.name,
                 tenant_email=tenant.email,
                 unit=tenant.unit,
-                rent_amount=float(tenant.monthly_rent),
+                rent_amount=rent_amount,
                 days_overdue=days_overdue,
                 property_name="The Pods"
             )
-            
+
             if success:
-                # Log the reminder in the audit log
+                # Create PaymentReminder record
+                if overdue_invoice:
+                    PaymentReminder.objects.create(
+                        tenant=tenant,
+                        invoice=overdue_invoice,
+                        reminder_type='email',
+                        recipient=tenant.email,
+                        subject=f"Payment Reminder - {tenant.unit}",
+                        message=message,
+                        is_sent=True,
+                        sent_by=request.user,
+                        sent_date=timezone.now()
+                    )
+
                 create_audit_log(
                     user=request.user,
                     action='reminder',
@@ -161,7 +181,7 @@ class TenantViewSet(viewsets.ModelViewSet):
                     object_repr=str(tenant),
                     description=f"Payment reminder sent to {tenant.email}"
                 )
-                
+
                 return Response({
                     'success': True,
                     'message': message
@@ -171,12 +191,73 @@ class TenantViewSet(viewsets.ModelViewSet):
                     'success': False,
                     'message': message
                 }, status=status.HTTP_400_BAD_REQUEST)
-                
+
         except Exception as e:
             return Response({
                 'success': False,
                 'message': f'Failed to send reminder: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['POST'])
+    def bulk_send_reminders(self, request):
+        """Send reminders to all tenants with overdue invoices."""
+        from payments.email_service import send_payment_reminder
+        from payments.models import Invoice, PaymentReminder
+        from django.utils import timezone
+
+        overdue_invoices = Invoice.objects.filter(
+            status__in=['sent', 'partially_paid'],
+            due_date__lt=timezone.now().date()
+        ).select_related('tenant').order_by('tenant', 'due_date')
+
+        # Group by tenant - send one reminder per tenant for their most overdue invoice
+        tenant_invoices = {}
+        for invoice in overdue_invoices:
+            if invoice.tenant.id not in tenant_invoices:
+                tenant_invoices[invoice.tenant.id] = invoice
+
+        sent_count = 0
+        errors = []
+
+        for tenant_id, invoice in tenant_invoices.items():
+            tenant = invoice.tenant
+            days_overdue = (timezone.now().date() - invoice.due_date).days
+
+            try:
+                success, message = send_payment_reminder(
+                    tenant_name=tenant.name,
+                    tenant_email=tenant.email,
+                    unit=tenant.unit,
+                    rent_amount=float(invoice.balance_due),
+                    days_overdue=days_overdue,
+                    property_name="The Pods"
+                )
+
+                if success:
+                    PaymentReminder.objects.create(
+                        tenant=tenant,
+                        invoice=invoice,
+                        reminder_type='email',
+                        recipient=tenant.email,
+                        subject=f"Payment Reminder - {tenant.unit}",
+                        message=message,
+                        is_sent=True,
+                        sent_by=request.user,
+                        sent_date=timezone.now()
+                    )
+                    sent_count += 1
+                else:
+                    errors.append(f"Failed for {tenant.name}: {message}")
+            except Exception as e:
+                errors.append(f"Failed for {tenant.name}: {str(e)}")
+
+        return Response({
+            'success': True,
+            'sent_count': sent_count,
+            'total': len(tenant_invoices),
+            'errors': errors,
+            'message': f'Sent {sent_count} of {len(tenant_invoices)} reminders'
+        })
 
 
 class TenantDocumentViewSet(viewsets.ModelViewSet):

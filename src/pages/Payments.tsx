@@ -118,19 +118,14 @@ export default function Payments() {
     amount: number;
     date: string;
     method: string;
+    invoice?: number;
   }) => {
-    try {
-      const response = await api.createPayment(paymentData);
-      if (response.data) {
-        await loadData();
-        setShowAddPayment(false);
-        alert('Payment recorded successfully!');
-      } else {
-        alert('Failed to record payment');
-      }
-    } catch (error) {
-      console.error('Failed to record payment:', error);
-      alert('Failed to record payment');
+    const response = await api.createPayment(paymentData);
+    if (response.data) {
+      await loadData();
+      return response;
+    } else {
+      throw new Error('Failed to record payment');
     }
   };
 
@@ -157,13 +152,14 @@ export default function Payments() {
             </Button>
             <Button variant="outline" onClick={async () => {
               try {
-                const response = await api.request('/payments/export/', {
+                await api.request('/payments/export/', {
                   method: 'GET'
                 });
-                // Handle CSV download
-                alert('Export functionality will download CSV');
-              } catch (error) {
-                alert('Failed to export payments');
+                const { toast } = await import('sonner');
+                toast.success('Export functionality will download CSV');
+              } catch {
+                const { toast } = await import('sonner');
+                toast.error('Failed to export payments');
               }
             }}>
               <Download className="h-4 w-4" />
@@ -266,7 +262,17 @@ export default function Payments() {
                     {payment.method}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button className="text-primary hover:underline inline-flex items-center gap-1">
+                    <button
+                      className="text-primary hover:underline inline-flex items-center gap-1"
+                      onClick={async () => {
+                        try {
+                          await api.downloadReceipt(payment.id);
+                        } catch {
+                          const { toast } = await import('sonner');
+                          toast.error('Failed to download receipt');
+                        }
+                      }}
+                    >
                       <Download className="h-4 w-4" />
                     </button>
                   </td>

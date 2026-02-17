@@ -255,16 +255,18 @@ class Payment(models.Model):
         return f"Payment {self.reference_number} - {self.tenant.name}"
     
     def save(self, *args, **kwargs):
-        # Generate receipt number if not exists
-        if not self.reference_number or self.reference_number == str(uuid.uuid4()):
+        is_new = self._state.adding
+
+        # Generate receipt number for new payments
+        if is_new and (not self.reference_number or len(str(self.reference_number)) == 36):
             self.reference_number = self.generate_receipt_number()
-        
-        # Update invoice if payment is completed
-        if self.invoice and self.status == 'completed':
+
+        super().save(*args, **kwargs)
+
+        # Update invoice amount_paid only on creation to prevent double-counting
+        if is_new and self.invoice and self.status == 'completed':
             self.invoice.amount_paid += self.amount
             self.invoice.update_status()
-        
-        super().save(*args, **kwargs)
     
     def generate_receipt_number(self):
         """Generate unique receipt number."""

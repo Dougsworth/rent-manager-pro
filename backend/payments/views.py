@@ -25,7 +25,7 @@ from .serializers import (
 from tenants.models import Tenant
 from authentication.utils import create_audit_log
 from .email_service import send_payment_reminder
-from .pdf_service import create_invoice_pdf_response
+from .pdf_service import create_invoice_pdf_response, create_receipt_pdf_response
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -342,8 +342,39 @@ class PaymentViewSet(viewsets.ModelViewSet):
             content_type='Payment',
             description=f"Exported {queryset.count()} payments to CSV"
         )
-        
+
         return response
+
+    @action(detail=True, methods=['GET'])
+    def download_receipt(self, request, pk=None):
+        """Download payment receipt as PDF."""
+        payment = self.get_object()
+
+        try:
+            pdf_response = create_receipt_pdf_response(payment.id)
+
+            if pdf_response is None:
+                return Response({
+                    'success': False,
+                    'message': 'Failed to generate receipt PDF'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            create_audit_log(
+                user=request.user,
+                action='download_receipt',
+                content_type='Payment',
+                object_id=payment.id,
+                object_repr=str(payment),
+                description=f"Downloaded receipt for payment {payment.reference_number}"
+            )
+
+            return pdf_response
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Failed to generate receipt PDF: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PaymentReminderViewSet(viewsets.ModelViewSet):
@@ -447,7 +478,7 @@ def overdue_tenants(request):
         status__in=['sent', 'partially_paid'],
         due_date__lt=timezone.now().date()
     ).select_related('tenant')
-    
+
     # Group by tenant and calculate totals
     tenant_data = {}
     for invoice in overdue_invoices:
@@ -458,15 +489,25 @@ def overdue_tenants(request):
                 'name': invoice.tenant.name,
                 'unit': invoice.tenant.unit,
                 'amount': 0,
-                'daysOverdue': 0
+                'daysOverdue': 0,
+                'lastReminderDate': None,
+                'reminderCount': 0,
             }
-        
+
         tenant_data[tenant_id]['amount'] += invoice.balance_due
         tenant_data[tenant_id]['daysOverdue'] = max(
             tenant_data[tenant_id]['daysOverdue'],
             invoice.days_overdue
         )
-    
+
+    # Add reminder info per tenant
+    for tenant_id, info in tenant_data.items():
+        reminders = PaymentReminder.objects.filter(tenant_id=tenant_id)
+        info['reminderCount'] = reminders.count()
+        last_reminder = reminders.order_by('-sent_date').first()
+        if last_reminder:
+            info['lastReminderDate'] = last_reminder.sent_date.strftime('%b %d, %Y')
+
     data = list(tenant_data.values())
     serializer = OverdueTenantSerializer(data, many=True)
     return Response(serializer.data)

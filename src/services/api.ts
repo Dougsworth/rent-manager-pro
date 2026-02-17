@@ -119,6 +119,8 @@ class ApiService {
       unit: string;
       amount: number;
       daysOverdue: number;
+      lastReminderDate: string | null;
+      reminderCount: number;
     }>>('/dashboard/overdue-tenants/');
   }
 
@@ -357,24 +359,102 @@ class ApiService {
     return { data: [] };
   }
 
+  async getPayment(id: number) {
+    return this.request<{
+      id: number;
+      reference_number: string;
+      receipt: string;
+      tenant: number;
+      tenant_name: string;
+      tenant_unit: string;
+      invoice: number | null;
+      invoice_number: string | null;
+      amount: number;
+      payment_date: string;
+      payment_method: string;
+      status: string;
+    }>(`/payments/${id}/`);
+  }
+
+  async downloadReceipt(id: number) {
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${API_BASE_URL}/payments/${id}/download_receipt/`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download receipt');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const disposition = response.headers.get('Content-Disposition');
+    const filename = disposition?.match(/filename="(.+)"/)?.[1] || `receipt_${id}.pdf`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  }
+
   async createPayment(data: {
     tenantId: number;
     amount: number;
     date: string;
     method: string;
+    invoice?: number;
   }) {
-    const backendData = {
+    const backendData: Record<string, any> = {
       tenant: data.tenantId,
       amount: data.amount,
       payment_date: data.date,
       payment_method: data.method,
       status: 'completed'
     };
-    
-    return this.request('/payments/', {
+
+    if (data.invoice) {
+      backendData.invoice = data.invoice;
+    }
+
+    return this.request<{
+      id: number;
+      reference_number: string;
+      receipt: string;
+      amount: number;
+      tenant_name: string;
+    }>('/payments/', {
       method: 'POST',
       body: JSON.stringify(backendData),
     });
+  }
+
+  async getInvoicesForTenant(tenantId: number) {
+    const response = await this.request<{
+      count: number;
+      results: Array<{
+        id: number;
+        invoice_number: string;
+        amount: number;
+        amount_paid: number;
+        balance_due: number;
+        due_date: string;
+        status: string;
+      }>;
+    }>('/invoices/', {
+      params: { tenant: tenantId }
+    });
+
+    if (response.data && response.data.results) {
+      // Filter to unpaid invoices only
+      return {
+        data: response.data.results.filter(inv =>
+          ['sent', 'partially_paid', 'overdue'].includes(inv.status)
+        )
+      };
+    }
+    return { data: [] };
   }
 
   // Invoices
@@ -433,8 +513,38 @@ class ApiService {
   }
 
   async sendReminder(tenantId: number) {
-    return this.request(`/tenants/${tenantId}/remind/`, {
+    return this.request<{ success: boolean; message: string }>(`/tenants/${tenantId}/remind/`, {
       method: 'POST',
+    });
+  }
+
+  async bulkSendReminders() {
+    return this.request<{
+      success: boolean;
+      sent_count: number;
+      total: number;
+      errors: string[];
+      message: string;
+    }>('/tenants/bulk-send-reminders/', {
+      method: 'POST',
+    });
+  }
+
+  async getReminderHistory(tenantId: number) {
+    return this.request<{
+      count: number;
+      results: Array<{
+        id: number;
+        tenant_name: string;
+        invoice_number: string;
+        reminder_type: string;
+        sent_date: string;
+        recipient: string;
+        subject: string;
+        is_sent: boolean;
+      }>;
+    }>('/payment-reminders/', {
+      params: { tenant: tenantId }
     });
   }
 
