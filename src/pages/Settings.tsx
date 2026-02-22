@@ -54,7 +54,7 @@ export default function Settings() {
   const [showAddUnitFor, setShowAddUnitFor] = useState<string | null>(null);
 
   // Notification preferences state
-  const defaultPrefs = { payments: true, overdue: true, invoices: true };
+  const defaultPrefs = { payments: true, overdue: true, invoices: true, auto_remind: false };
   const [notifPrefs, setNotifPrefs] = useState(defaultPrefs);
   const [savingNotifs, setSavingNotifs] = useState(false);
   const [savedNotifs, setSavedNotifs] = useState(false);
@@ -456,6 +456,7 @@ export default function Settings() {
             { id: 'payments' as const, label: 'Payment Received', description: 'Get notified when tenants make payments' },
             { id: 'overdue' as const, label: 'Overdue Payments', description: 'Get alerts for overdue rent payments' },
             { id: 'invoices' as const, label: 'Invoice Sent', description: 'Confirmation when invoices are sent to tenants' },
+            { id: 'auto_remind' as const, label: 'Automatic Reminders', description: 'Automatically email tenants daily when their invoices are overdue' },
           ].map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div>

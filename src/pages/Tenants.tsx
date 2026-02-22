@@ -16,6 +16,7 @@ import { Search, Plus, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
+import { Pagination, paginate } from '@/components/Pagination';
 
 export type TenantStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -33,6 +34,8 @@ export default function Tenants() {
   const [selectedTenant, setSelectedTenant] = useState<TenantWithDetails | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const loadTenants = async () => {
     if (!user) return;
@@ -110,6 +113,11 @@ export default function Tenants() {
       tenant.unit_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  const paginatedTenants = paginate(filteredTenants, currentPage, PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab]);
 
   const counts = {
     all: tenants.length,
@@ -194,7 +202,7 @@ export default function Tenants() {
         />
       ) : (
         <div className="bg-card border border-border rounded-lg divide-y divide-border">
-          {filteredTenants.map((tenant) => (
+          {paginatedTenants.map((tenant) => (
             <button
               key={tenant.id}
               onClick={() => setSelectedTenant(tenant)}
@@ -215,6 +223,12 @@ export default function Tenants() {
               </div>
             </button>
           ))}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredTenants.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
 

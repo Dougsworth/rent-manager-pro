@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Printer, Download, Calendar, Loader2 } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -114,7 +115,7 @@ export default function Receipt() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Date:</span>
-                    <span className="font-medium">{payment.payment_date}</span>
+                    <span className="font-medium">{formatDate(payment.payment_date)}</span>
                   </div>
                   {invoice?.description && (
                     <div className="flex justify-between">
@@ -187,7 +188,7 @@ export default function Receipt() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Calendar className="h-4 w-4" />
-                  Generated on {new Date().toLocaleDateString()}
+                  Generated on {formatDate(new Date().toISOString())}
                 </div>
               </div>
             </div>

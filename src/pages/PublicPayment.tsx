@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Upload, Loader2, CheckCircle, XCircle, Clock, X, AlertCircle } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -141,8 +142,8 @@ export default function PublicPayment() {
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                <p>Due: {invoice.due_date}</p>
-                <p>Issued: {invoice.issue_date}</p>
+                <p>Due: {formatDate(invoice.due_date)}</p>
+                <p>Issued: {formatDate(invoice.issue_date)}</p>
               </div>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
             </div>

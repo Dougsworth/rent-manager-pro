@@ -10,6 +10,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { Plus, Search, Download, Loader2, X, Link } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
+import { formatDate } from '@/utils/formatDate';
+import { Pagination, paginate } from '@/components/Pagination';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -26,6 +28,8 @@ export default function Invoices() {
   const [creating, setCreating] = useState(false);
   const [newInvoice, setNewInvoice] = useState({ tenant_id: '', amount: '', due_date: '', description: '' });
   const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const loadData = async () => {
     if (!user) return;
@@ -76,6 +80,11 @@ export default function Invoices() {
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const paginatedInvoices = paginate(filteredInvoices, currentPage, PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   if (loading) {
     return (
@@ -236,7 +245,7 @@ export default function Invoices() {
               </tr>
             </thead>
             <tbody>
-              {filteredInvoices.map((invoice) => (
+              {paginatedInvoices.map((invoice) => (
                 <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="hidden sm:table-cell py-3 px-4 text-sm font-medium text-blue-600">{invoice.invoice_number}</td>
                   <td className="py-3 px-4 text-sm text-gray-900">
@@ -246,7 +255,7 @@ export default function Invoices() {
                     {invoice.property_name}{invoice.unit_name ? `, ${invoice.unit_name}` : ''}
                   </td>
                   <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{invoice.due_date}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600">{formatDate(invoice.due_date)}</td>
                   <td className="py-3 px-4">
                     <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
                   </td>
@@ -270,6 +279,13 @@ export default function Invoices() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredInvoices.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
 
         {filteredInvoices.length === 0 && (
           <div className="py-8 text-center">

@@ -19,7 +19,7 @@ export interface Database {
           bank_account_name: string;
           bank_account_number: string;
           bank_branch: string;
-          notification_preferences: { payments: boolean; overdue: boolean; invoices: boolean };
+          notification_preferences: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind: boolean };
           created_at: string;
           updated_at: string;
         };
@@ -40,7 +40,7 @@ export interface Database {
           bank_account_name?: string;
           bank_account_number?: string;
           bank_branch?: string;
-          notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean };
+          notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
         };
         Update: {
           role?: 'landlord' | 'tenant';
@@ -58,7 +58,7 @@ export interface Database {
           bank_account_name?: string;
           bank_account_number?: string;
           bank_branch?: string;
-          notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean };
+          notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
         };
         Relationships: [];
       };

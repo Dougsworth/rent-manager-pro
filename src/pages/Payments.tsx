@@ -12,6 +12,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Search, DollarSign, Loader2, Plus, X, Download, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportToCsv } from '@/utils/exportCsv';
+import { useToast } from '@/components/ui/toast';
+import { formatDate } from '@/utils/formatDate';
+import { Pagination, paginate } from '@/components/Pagination';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -47,6 +50,9 @@ export default function Payments() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const loadData = async () => {
     if (!user) return;
@@ -100,9 +106,11 @@ export default function Payments() {
     setActionLoading(proof.id);
     try {
       await approveProof(proof.id, user.id, proof.invoice_id, proof.tenant_id, proof.invoice_amount);
+      toast('Payment proof approved successfully.');
       await loadData();
     } catch (err) {
       console.error('Failed to approve proof:', err);
+      toast('Failed to approve proof.', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -112,11 +120,13 @@ export default function Payments() {
     setActionLoading(proofId);
     try {
       await rejectProof(proofId, rejectNote);
+      toast('Payment proof rejected.');
       setRejectingId(null);
       setRejectNote('');
       await loadData();
     } catch (err) {
       console.error('Failed to reject proof:', err);
+      toast('Failed to reject proof.', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -150,6 +160,11 @@ export default function Payments() {
     const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const paginatedPayments = paginate(filteredPayments, currentPage, PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   // Filter unpaid invoices for the selected tenant
   const unpaidInvoices = invoices.filter(i => i.tenant_id === newPayment.tenant_id && i.status !== 'paid');
@@ -439,7 +454,7 @@ export default function Payments() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPayments.map((payment) => (
+                  {paginatedPayments.map((payment) => (
                     <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="hidden md:table-cell py-3 px-4 text-sm font-medium text-blue-600">{payment.payment_number}</td>
                       <td className="py-3 px-4 text-sm text-gray-900">
@@ -449,7 +464,7 @@ export default function Payments() {
                         {payment.property_name}{payment.unit_name ? `, ${payment.unit_name}` : ''}
                       </td>
                       <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(payment.amount)}</td>
-                      <td className="hidden sm:table-cell py-3 px-4 text-sm text-gray-600">{payment.payment_date}</td>
+                      <td className="hidden sm:table-cell py-3 px-4 text-sm text-gray-600">{formatDate(payment.payment_date)}</td>
                       <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">{methodLabels[payment.method] ?? payment.method}</td>
                       <td className="py-3 px-4">
                         <StatusBadge variant={statusVariantMap[payment.status] ?? 'default'}>
@@ -466,6 +481,13 @@ export default function Payments() {
                 </tbody>
               </table>
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredPayments.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
 
             {filteredPayments.length === 0 && (
               <div className="py-8 text-center">
@@ -512,7 +534,7 @@ export default function Payments() {
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Invoice: <span className="font-medium text-gray-900">{proof.invoice_number}</span></p>
                       <p>Amount: <span className="font-medium text-gray-900">{formatCurrency(proof.invoice_amount)}</span></p>
-                      <p>Uploaded: {new Date(proof.created_at).toLocaleDateString()}</p>
+                      <p>Uploaded: {formatDate(proof.created_at)}</p>
                     </div>
 
                     {/* Actions */}

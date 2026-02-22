@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, Loader2 } from "lucide-react";
 import { getPaymentsForTenant } from "@/services/payments";
+import { formatDate } from "@/utils/formatDate";
 
 interface Tenant {
   id: number | string;
@@ -87,7 +88,7 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
           <div className="flex justify-between">
             <span className="text-sm text-muted-foreground">Lease Period</span>
             <span className="text-sm text-foreground">
-              {tenant.leaseStart} - {tenant.leaseEnd}
+              {tenant.leaseStart ? formatDate(tenant.leaseStart) : '—'} - {tenant.leaseEnd ? formatDate(tenant.leaseEnd) : '—'}
             </span>
           </div>
           <div className="flex justify-between">
@@ -141,7 +142,7 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
                       J${Number(p.amount).toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {p.payment_date} &middot; {methodLabels[p.method] ?? p.method}
+                      {formatDate(p.payment_date)} &middot; {methodLabels[p.method] ?? p.method}
                     </p>
                   </div>
                   <StatusBadge variant={p.status === 'completed' ? 'paid' : p.status === 'failed' ? 'overdue' : 'pending'}>

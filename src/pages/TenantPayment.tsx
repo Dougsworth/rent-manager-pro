@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Calendar, Upload, Loader2, CheckCircle, XCircle, Clock, Image as ImageIcon, X } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -218,7 +219,7 @@ export default function TenantPayment() {
                             <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
                           </div>
                           <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                            <span>Due: {invoice.due_date}</span>
+                            <span>Due: {formatDate(invoice.due_date)}</span>
                             <span>{invoice.invoice_number}</span>
                           </div>
                         </div>
@@ -310,7 +311,7 @@ export default function TenantPayment() {
                           <StatusBadge variant="paid">paid</StatusBadge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <span>Due: {invoice.due_date}</span>
+                          <span>Due: {formatDate(invoice.due_date)}</span>
                           <span>{invoice.invoice_number}</span>
                         </div>
                       </div>

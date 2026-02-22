@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -156,7 +157,7 @@ export default function Dashboard() {
                     </td>
                     <td className="px-5 py-3 text-sm text-muted-foreground hidden sm:table-cell">{payment.unit_name}</td>
                     <td className="px-5 py-3 text-sm text-right font-medium text-success">{formatCurrency(payment.amount)}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground hidden md:table-cell">{payment.payment_date}</td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(payment.payment_date)}</td>
                     <td className="px-5 py-3 text-sm text-muted-foreground hidden lg:table-cell">{methodLabels[payment.method] ?? payment.method}</td>
                   </tr>
                 ))}
