@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { updateProfile, updateCompanyInfo, updateNotificationPreferences } from '@/services/profile';
 import { getProperties, createProperty, createUnit } from '@/services/properties';
 import type { PropertyWithUnits } from '@/types/app.types';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, Plus, ChevronDown, ChevronRight
+  Home, Plus, ChevronDown, ChevronRight, CheckCircle2, Mail, Eye, EyeOff
 } from 'lucide-react';
 
 export default function Settings() {
@@ -52,7 +53,32 @@ export default function Settings() {
   const [savingNotifs, setSavingNotifs] = useState(false);
   const [savedNotifs, setSavedNotifs] = useState(false);
 
+  // Security form state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savedPassword, setSavedPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Billing "Get Notified" state
+  const [proEmail, setProEmail] = useState('');
+  const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
+
+  // Sync form fields when profile loads asynchronously
   useEffect(() => {
+    if (!profile) return;
+    setFirstName(profile.first_name ?? '');
+    setLastName(profile.last_name ?? '');
+    setEmail(profile.email ?? '');
+    setPhone(profile.phone ?? '');
+    setCompanyName(profile.company_name ?? '');
+    setCompanyAddress(profile.company_address ?? '');
+    setCompanyCity(profile.company_city ?? '');
+    setCompanyCountry(profile.company_country ?? '');
+    setCompanyWebsite(profile.company_website ?? '');
+    setCompanyTaxId(profile.company_tax_id ?? '');
     const prefs = (profile as any)?.notification_preferences;
     if (prefs) setNotifPrefs(prefs);
   }, [profile]);
@@ -417,29 +443,147 @@ export default function Settings() {
         <div className="p-4 border rounded-lg bg-blue-50">
           <p className="font-medium text-gray-900">Free Plan</p>
           <p className="text-2xl font-bold text-gray-900 mt-2">J$0<span className="text-sm font-normal">/month</span></p>
-          <ul className="mt-3 space-y-1 text-sm text-gray-600">
-            <li>Up to 10 properties</li>
-            <li>Email reminders</li>
-            <li>CSV export</li>
+          <ul className="mt-3 space-y-2 text-sm text-gray-600">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              Up to 10 properties
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              Email reminders
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              CSV export
+            </li>
           </ul>
         </div>
       </div>
       <div>
-        <div className="p-4 border rounded-lg bg-gray-50 opacity-60">
-          <p className="font-medium text-gray-500">Pro Plan &mdash; Coming Soon</p>
-          <p className="text-sm text-gray-400 mt-1">Unlimited properties, custom branding, priority support</p>
+        <div className="p-4 border rounded-lg bg-gray-50">
+          <p className="font-medium text-gray-900">Pro Plan &mdash; Coming Soon</p>
+          <p className="text-sm text-gray-500 mt-1">Unlimited properties, custom branding, priority support</p>
+          {proEmailSubmitted ? (
+            <div className="mt-4 flex items-center gap-2 text-sm text-green-600 font-medium">
+              <Check className="h-4 w-4" />
+              We'll notify you when Pro is available!
+            </div>
+          ) : (
+            <div className="mt-4 flex gap-2">
+              <Input
+                type="email"
+                placeholder="your@email.com"
+                value={proEmail}
+                onChange={(e) => setProEmail(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (proEmail.trim()) setProEmailSubmitted(true);
+                }}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Get Notified
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setSavedPassword(true);
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setSavedPassword(false), 3000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to update password.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const renderSecuritySection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Account Security</h3>
-        <p className="text-sm text-gray-600">
-          Password management is handled through Supabase Auth. Use the password reset flow from the login page to change your password.
-        </p>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          <div>
+            <Label htmlFor="newPassword">New Password</Label>
+            <div className="relative">
+              <Input
+                id="newPassword"
+                type={showNewPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
+                placeholder="Min 6 characters"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+                placeholder="Re-enter new password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          {passwordError && (
+            <p className="text-sm text-red-600">{passwordError}</p>
+          )}
+          {savedPassword && (
+            <p className="text-sm text-green-600 flex items-center gap-1">
+              <Check className="h-4 w-4" /> Password updated successfully.
+            </p>
+          )}
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={savingPassword}>
+            {savingPassword ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Shield className="h-4 w-4 mr-2" />
+            )}
+            Update Password
+          </Button>
+        </form>
       </div>
     </div>
   );

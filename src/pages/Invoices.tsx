@@ -97,7 +97,7 @@ export default function Invoices() {
       {showCreate && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowCreate(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-6">
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 mx-auto max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Create Invoice</h2>
               <button onClick={() => setShowCreate(false)} className="rounded-lg p-2 hover:bg-gray-100">

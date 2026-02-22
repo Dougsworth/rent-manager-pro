@@ -75,7 +75,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-card rounded-lg shadow-xl z-50 p-6">
+      <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 mx-auto max-w-lg max-h-[90vh] overflow-y-auto bg-card rounded-lg shadow-xl z-50 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Add Tenant</h2>
           <button
@@ -92,7 +92,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -175,7 +175,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2 sm:pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100">
               Cancel
             </Button>

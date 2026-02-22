@@ -62,8 +62,12 @@ export default function Dashboard() {
   const handleSendReminder = async (tenantId: string, invoiceId: string) => {
     setSendingReminder(invoiceId);
     try {
-      await sendReminder(tenantId, invoiceId);
-      toast('Reminder sent successfully!', 'success');
+      const result = await sendReminder(tenantId, invoiceId);
+      if (result?.skipped) {
+        toast('Reminders are disabled in notification settings.', 'error');
+      } else {
+        toast('Reminder sent successfully!', 'success');
+      }
     } catch (err) {
       console.error('Failed to send reminder:', err);
       toast('Failed to send reminder. Please try again.', 'error');

@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Search, DollarSign, Loader2, Plus, X } from 'lucide-react';
+import { Search, DollarSign, Loader2, Plus, X, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { exportToCsv } from '@/utils/exportCsv';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -139,7 +140,7 @@ export default function Payments() {
       {showRecord && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowRecord(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-6">
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 mx-auto max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Record Payment</h2>
               <button onClick={() => setShowRecord(false)} className="rounded-lg p-2 hover:bg-gray-100">
@@ -306,6 +307,32 @@ export default function Payments() {
                 <option value="pending">Pending</option>
                 <option value="failed">Failed</option>
               </select>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const rows = filteredPayments.map((p) => ({
+                    payment_number: p.payment_number,
+                    tenant: `${p.tenant_first_name} ${p.tenant_last_name}`,
+                    property: `${p.property_name}${p.unit_name ? `, ${p.unit_name}` : ''}`,
+                    amount: p.amount,
+                    payment_date: p.payment_date,
+                    method: methodLabels[p.method] ?? p.method,
+                    status: p.status,
+                  }));
+                  exportToCsv('payments.csv', rows, [
+                    { key: 'payment_number', header: 'Payment ID' },
+                    { key: 'tenant', header: 'Tenant' },
+                    { key: 'property', header: 'Property' },
+                    { key: 'amount', header: 'Amount' },
+                    { key: 'payment_date', header: 'Date' },
+                    { key: 'method', header: 'Method' },
+                    { key: 'status', header: 'Status' },
+                  ]);
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
             </div>
           </div>
         </div>

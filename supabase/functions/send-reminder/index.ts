@@ -75,9 +75,18 @@ Deno.serve(async (req) => {
     // Fetch landlord company name
     const { data: profile } = await supabase
       .from('profiles')
-      .select('company_name, first_name, last_name')
+      .select('company_name, first_name, last_name, notification_preferences')
       .eq('id', user.id)
       .single();
+
+    // Gate on notification preferences — skip if overdue reminders are disabled
+    const overduePref = (profile as any)?.notification_preferences?.overdue;
+    if (overduePref === false) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'notifications_disabled' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const companyName = profile?.company_name || `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim() || 'Your Landlord';
     const tenantName = `${tenant.first_name} ${tenant.last_name}`;
