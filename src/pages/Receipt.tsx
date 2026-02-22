@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Printer, Calendar, Loader2 } from 'lucide-react';
+import { CheckCircle, Printer, Download, Calendar, Loader2 } from 'lucide-react';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -72,10 +72,14 @@ export default function Receipt() {
             <h1 className="text-2xl font-bold text-gray-900">Payment Receipt</h1>
             <p className="text-gray-600">Receipt #{payment.payment_number}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 print:hidden">
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-2" />
               Print
+            </Button>
+            <Button variant="outline" onClick={handlePrint}>
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
             </Button>
           </div>
         </div>
@@ -91,7 +95,7 @@ export default function Receipt() {
             <p className="text-gray-600">Your payment has been successfully processed</p>
           </CardHeader>
 
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Payment Details</h3>
@@ -171,7 +175,7 @@ export default function Receipt() {
               </div>
             </div>
 
-            <div className="mt-8 pt-8 border-t bg-gray-50 -mx-8 -mb-8 p-8 rounded-b-lg">
+            <div className="mt-8 pt-8 border-t bg-gray-50 -mx-4 sm:-mx-8 -mb-4 sm:-mb-8 p-4 sm:p-8 rounded-b-lg">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-center sm:text-left">
                   <p className="text-sm text-gray-600">

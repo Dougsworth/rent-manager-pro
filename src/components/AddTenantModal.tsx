@@ -75,7 +75,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-card rounded-lg shadow-xl z-50 p-6">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-card rounded-lg shadow-xl z-50 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Add Tenant</h2>
           <button
@@ -93,7 +93,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <Input
@@ -154,7 +154,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="leaseStart">Lease Start</Label>
               <Input

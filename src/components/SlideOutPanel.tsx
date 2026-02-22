@@ -39,13 +39,13 @@ export function SlideOutPanel({
       {/* Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full max-w-md bg-card shadow-xl z-50 transition-transform",
+          "fixed right-0 top-0 h-full w-full sm:max-w-md bg-card shadow-xl z-50 transition-transform",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between border-b border-border px-4 sm:px-6 py-4">
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
             <div className="flex items-center gap-2">
               {actions}
@@ -59,7 +59,7 @@ export function SlideOutPanel({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">{children}</div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
         </div>
       </div>
     </>

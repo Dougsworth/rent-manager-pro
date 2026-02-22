@@ -97,7 +97,7 @@ export default function Invoices() {
       {showCreate && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowCreate(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-xl z-50 p-6">
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Create Invoice</h2>
               <button onClick={() => setShowCreate(false)} className="rounded-lg p-2 hover:bg-gray-100">
@@ -224,9 +224,9 @@ export default function Invoices() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Invoice ID</th>
+                <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-900">Invoice ID</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Tenant</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Property</th>
+                <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Property</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Due Date</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
@@ -235,11 +235,11 @@ export default function Invoices() {
             <tbody>
               {filteredInvoices.map((invoice) => (
                 <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm font-medium text-blue-600">{invoice.invoice_number}</td>
+                  <td className="hidden sm:table-cell py-3 px-4 text-sm font-medium text-blue-600">{invoice.invoice_number}</td>
                   <td className="py-3 px-4 text-sm text-gray-900">
                     {invoice.tenant_first_name} {invoice.tenant_last_name}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">
                     {invoice.property_name}{invoice.unit_name ? `, ${invoice.unit_name}` : ''}
                   </td>
                   <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</td>

@@ -139,7 +139,7 @@ export default function Payments() {
       {showRecord && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowRecord(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-xl z-50 p-6">
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Record Payment</h2>
               <button onClick={() => setShowRecord(false)} className="rounded-lg p-2 hover:bg-gray-100">
@@ -242,7 +242,7 @@ export default function Payments() {
         </>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <DollarSign className="h-8 w-8 text-green-600" />
@@ -314,12 +314,12 @@ export default function Payments() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Payment ID</th>
+                <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Payment ID</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Tenant</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Property</th>
+                <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Property</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Date</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Method</th>
+                <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-900">Date</th>
+                <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Method</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
               </tr>
@@ -327,16 +327,16 @@ export default function Payments() {
             <tbody>
               {filteredPayments.map((payment) => (
                 <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm font-medium text-blue-600">{payment.payment_number}</td>
+                  <td className="hidden md:table-cell py-3 px-4 text-sm font-medium text-blue-600">{payment.payment_number}</td>
                   <td className="py-3 px-4 text-sm text-gray-900">
                     {payment.tenant_first_name} {payment.tenant_last_name}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">
                     {payment.property_name}{payment.unit_name ? `, ${payment.unit_name}` : ''}
                   </td>
                   <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(payment.amount)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{payment.payment_date}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{methodLabels[payment.method] ?? payment.method}</td>
+                  <td className="hidden sm:table-cell py-3 px-4 text-sm text-gray-600">{payment.payment_date}</td>
+                  <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">{methodLabels[payment.method] ?? payment.method}</td>
                   <td className="py-3 px-4">
                     <StatusBadge variant={statusVariantMap[payment.status] ?? 'default'}>
                       {payment.status}
