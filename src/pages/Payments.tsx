@@ -90,9 +90,9 @@ export default function Payments() {
     .filter(p => p.status === 'completed')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const totalPending = payments
-    .filter(p => p.status === 'pending')
-    .reduce((sum, p) => sum + p.amount, 0);
+  const totalPending = invoices
+    .filter(i => i.status === 'pending' || i.status === 'overdue')
+    .reduce((sum, i) => sum + i.amount, 0);
 
   const totalFailed = payments
     .filter(p => p.status === 'failed')
@@ -257,7 +257,7 @@ export default function Payments() {
           <div className="flex items-center">
             <DollarSign className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-sm font-medium text-gray-600">Outstanding</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPending)}</p>
             </div>
           </div>

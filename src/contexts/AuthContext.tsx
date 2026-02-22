@@ -77,6 +77,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: { data: metadata },
     });
+
+    // Fire-and-forget welcome email for new landlords
+    if (!error && metadata.role === 'landlord') {
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-landlord-welcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          first_name: metadata.first_name,
+          last_name: metadata.last_name,
+        }),
+      }).catch((err) => console.error('Landlord welcome email failed:', err));
+    }
+
     return { error: error?.message ?? null };
   };
 

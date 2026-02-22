@@ -341,34 +341,40 @@ export default function Settings() {
                     {/* Always-visible inline add unit row */}
                     <form
                       onSubmit={(e) => handleAddUnit(e, property.id)}
-                      className="flex items-center gap-2 bg-white p-2.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors"
+                      className="bg-white p-2.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors"
                     >
-                      <Plus className="h-4 w-4 text-gray-400 shrink-0 ml-1" />
-                      <Input
-                        required
-                        placeholder="Unit name"
-                        value={showAddUnitFor === property.id ? newUnitName : ''}
-                        onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
-                        onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitName(e.target.value); }}
-                        className="h-9 border-gray-300 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        required
-                        placeholder="Rent (J$)"
-                        value={showAddUnitFor === property.id ? newUnitRent : ''}
-                        onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
-                        onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitRent(e.target.value); }}
-                        className="h-9 border-gray-300 text-sm w-32 shrink-0"
-                      />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 h-9 px-4"
-                        disabled={addingUnit}
-                      >
-                        {addingUnit ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
-                      </Button>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Plus className="h-4 w-4 text-gray-400 shrink-0 hidden sm:block" />
+                          <Input
+                            required
+                            placeholder="Unit name"
+                            value={showAddUnitFor === property.id ? newUnitName : ''}
+                            onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
+                            onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitName(e.target.value); }}
+                            className="h-9 border-gray-300 text-sm"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            required
+                            placeholder="Rent (J$)"
+                            value={showAddUnitFor === property.id ? newUnitRent : ''}
+                            onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
+                            onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitRent(e.target.value); }}
+                            className="h-9 border-gray-300 text-sm flex-1"
+                          />
+                          <Button
+                            type="submit"
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 h-9 px-4"
+                            disabled={addingUnit}
+                          >
+                            {addingUnit ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
+                          </Button>
+                        </div>
+                      </div>
                     </form>
                   </div>
                 )}

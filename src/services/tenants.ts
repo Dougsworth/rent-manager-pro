@@ -58,6 +58,24 @@ export async function addTenant(landlordId: string, tenant: {
     .single();
 
   if (error) throw error;
+
+  // Fire-and-forget welcome email
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tenant_id: (data as any).id }),
+      }).catch((err) => console.error('Welcome email failed:', err));
+    }
+  } catch (err) {
+    console.error('Welcome email trigger error:', err);
+  }
+
   return data;
 }
 
