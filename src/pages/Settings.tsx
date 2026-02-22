@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { updateProfile, updateCompanyInfo, updateNotificationPreferences } from '@/services/profile';
+import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
 import { getProperties, createProperty, createUnit } from '@/services/properties';
 import type { PropertyWithUnits } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, Plus, ChevronDown, ChevronRight, CheckCircle2, Mail, Eye, EyeOff
+  Home, Plus, ChevronDown, ChevronRight, CheckCircle2, Mail, Eye, EyeOff, Landmark
 } from 'lucide-react';
 
 export default function Settings() {
@@ -32,6 +32,12 @@ export default function Settings() {
   const [companyCountry, setCompanyCountry] = useState(profile?.company_country ?? '');
   const [companyWebsite, setCompanyWebsite] = useState(profile?.company_website ?? '');
   const [companyTaxId, setCompanyTaxId] = useState(profile?.company_tax_id ?? '');
+
+  // Bank details form state
+  const [bankName, setBankName] = useState(profile?.bank_name ?? '');
+  const [bankAccountName, setBankAccountName] = useState(profile?.bank_account_name ?? '');
+  const [bankAccountNumber, setBankAccountNumber] = useState(profile?.bank_account_number ?? '');
+  const [bankBranch, setBankBranch] = useState(profile?.bank_branch ?? '');
 
   // Properties state
   const [properties, setProperties] = useState<PropertyWithUnits[]>([]);
@@ -79,6 +85,10 @@ export default function Settings() {
     setCompanyCountry(profile.company_country ?? '');
     setCompanyWebsite(profile.company_website ?? '');
     setCompanyTaxId(profile.company_tax_id ?? '');
+    setBankName(profile.bank_name ?? '');
+    setBankAccountName(profile.bank_account_name ?? '');
+    setBankAccountNumber(profile.bank_account_number ?? '');
+    setBankBranch(profile.bank_branch ?? '');
     const prefs = (profile as any)?.notification_preferences;
     if (prefs) setNotifPrefs(prefs);
   }, [profile]);
@@ -86,6 +96,7 @@ export default function Settings() {
   const sections = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'company', label: 'Company', icon: Building },
+    { id: 'bank', label: 'Bank Details', icon: Landmark },
     { id: 'properties', label: 'Properties', icon: Home },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'billing', label: 'Billing', icon: CreditCard },
@@ -126,6 +137,13 @@ export default function Settings() {
           company_country: companyCountry,
           company_website: companyWebsite,
           company_tax_id: companyTaxId,
+        });
+      } else if (activeSection === 'bank') {
+        await updateBankDetails(user.id, {
+          bank_name: bankName,
+          bank_account_name: bankAccountName,
+          bank_account_number: bankAccountNumber,
+          bank_branch: bankBranch,
         });
       }
       await refreshProfile();
@@ -226,6 +244,33 @@ export default function Settings() {
           <div>
             <Label htmlFor="taxId">Tax ID</Label>
             <Input id="taxId" value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderBankSection = () => (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Details</h3>
+        <p className="text-sm text-gray-500 mb-4">These details will be included in payment reminder emails sent to your tenants.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <Label htmlFor="bankName">Bank Name</Label>
+            <Input id="bankName" placeholder="e.g. National Commercial Bank" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="bankAccountName">Account Name</Label>
+            <Input id="bankAccountName" placeholder="e.g. John Smith Properties" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="bankAccountNumber">Account Number</Label>
+            <Input id="bankAccountNumber" placeholder="e.g. 1234567890" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="bankBranch">Branch / Routing Number</Label>
+            <Input id="bankBranch" placeholder="e.g. Half Way Tree" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)} />
           </div>
         </div>
       </div>
@@ -598,6 +643,7 @@ export default function Settings() {
     switch (activeSection) {
       case 'profile': return renderProfileSection();
       case 'company': return renderCompanySection();
+      case 'bank': return renderBankSection();
       case 'properties': return renderPropertiesSection();
       case 'notifications': return renderNotificationsSection();
       case 'billing': return renderBillingSection();
@@ -610,7 +656,7 @@ export default function Settings() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        {(activeSection === 'profile' || activeSection === 'company') && (
+        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
           <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSave} disabled={saving}>
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

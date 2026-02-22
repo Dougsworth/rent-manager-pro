@@ -15,6 +15,10 @@ export interface Database {
           company_country: string;
           company_website: string;
           company_tax_id: string;
+          bank_name: string;
+          bank_account_name: string;
+          bank_account_number: string;
+          bank_branch: string;
           notification_preferences: { payments: boolean; overdue: boolean; invoices: boolean };
           created_at: string;
           updated_at: string;
@@ -32,6 +36,10 @@ export interface Database {
           company_country?: string;
           company_website?: string;
           company_tax_id?: string;
+          bank_name?: string;
+          bank_account_name?: string;
+          bank_account_number?: string;
+          bank_branch?: string;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean };
         };
         Update: {
@@ -46,6 +54,10 @@ export interface Database {
           company_country?: string;
           company_website?: string;
           company_tax_id?: string;
+          bank_name?: string;
+          bank_account_name?: string;
+          bank_account_number?: string;
+          bank_branch?: string;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean };
         };
         Relationships: [];

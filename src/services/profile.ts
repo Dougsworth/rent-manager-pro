@@ -36,6 +36,23 @@ export async function updateCompanyInfo(userId: string, updates: {
   return data;
 }
 
+export async function updateBankDetails(userId: string, updates: {
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_branch?: string;
+}) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function updateNotificationPreferences(
   userId: string,
   preferences: { payments: boolean; overdue: boolean; invoices: boolean }

@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     // Fetch landlord company name
     const { data: profile } = await supabase
       .from('profiles')
-      .select('company_name, first_name, last_name, notification_preferences')
+      .select('company_name, first_name, last_name, notification_preferences, bank_name, bank_account_name, bank_account_number, bank_branch')
       .eq('id', user.id)
       .single();
 
@@ -92,6 +92,25 @@ Deno.serve(async (req) => {
     const companyName = profile?.company_name || `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim() || 'Your Landlord';
     const tenantName = `${tenant.first_name} ${tenant.last_name}`;
     const amountFormatted = `J$${Number(invoice.amount).toLocaleString()}`;
+
+    // Build bank details section if any bank fields are populated
+    const hasBankDetails = profile?.bank_name || profile?.bank_account_name || profile?.bank_account_number || profile?.bank_branch;
+    let bankDetailsHtml = '';
+    if (hasBankDetails) {
+      const bankRows: string[] = [];
+      if (profile.bank_name) bankRows.push(`<tr><td style="padding: 12px 16px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Bank</td><td style="padding: 12px 16px; font-weight: 600; color: #111827; border-bottom: 1px solid #e5e7eb;">${profile.bank_name}</td></tr>`);
+      if (profile.bank_account_name) bankRows.push(`<tr><td style="padding: 12px 16px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Account Name</td><td style="padding: 12px 16px; font-weight: 600; color: #111827; border-bottom: 1px solid #e5e7eb;">${profile.bank_account_name}</td></tr>`);
+      if (profile.bank_account_number) bankRows.push(`<tr><td style="padding: 12px 16px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Account Number</td><td style="padding: 12px 16px; font-weight: 600; color: #111827; border-bottom: 1px solid #e5e7eb;">${profile.bank_account_number}</td></tr>`);
+      if (profile.bank_branch) bankRows.push(`<tr><td style="padding: 12px 16px; color: #6b7280;">Branch / Routing</td><td style="padding: 12px 16px; font-weight: 600; color: #111827;">${profile.bank_branch}</td></tr>`);
+      // Remove border-bottom from the last row
+      const lastIdx = bankRows.length - 1;
+      bankRows[lastIdx] = bankRows[lastIdx].replace(/border-bottom: 1px solid #e5e7eb;/g, '');
+      bankDetailsHtml = `
+            <p style="color: #374151; font-weight: 600; line-height: 1.6; margin: 24px 0 8px 0;">Payment Details</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px 0; background-color: #f9fafb; border-radius: 8px;">
+              ${bankRows.join('\n              ')}
+            </table>`;
+    }
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
@@ -128,6 +147,7 @@ Deno.serve(async (req) => {
                 <td style="padding: 12px 16px; font-weight: 600; color: #111827;">${invoice.due_date}</td>
               </tr>
             </table>
+            ${bankDetailsHtml}
             <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">Please make your payment at your earliest convenience.</p>
             <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">— ${companyName}</p>
         `, companyName),
