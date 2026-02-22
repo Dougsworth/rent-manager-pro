@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     // Fetch invoice details
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
-      .select('amount, due_date, invoice_number')
+      .select('amount, due_date, invoice_number, payment_token')
       .eq('id', invoice_id)
       .single();
 
@@ -148,6 +148,13 @@ Deno.serve(async (req) => {
               </tr>
             </table>
             ${bankDetailsHtml}
+            ${invoice.payment_token ? `
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${Deno.env.get('SITE_URL') || 'https://easyrentcollect.com'}/pay/${invoice.payment_token}"
+                 style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 8px; font-size: 16px;">
+                Pay Now &amp; Upload Proof
+              </a>
+            </div>` : ''}
             <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">Please make your payment at your earliest convenience.</p>
             <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">— ${companyName}</p>
         `, companyName),

@@ -157,6 +157,7 @@ export interface Database {
           issue_date: string;
           status: 'paid' | 'pending' | 'overdue';
           description: string;
+          payment_token: string;
           created_at: string;
           updated_at: string;
         };
@@ -170,6 +171,7 @@ export interface Database {
           issue_date?: string;
           status?: 'paid' | 'pending' | 'overdue';
           description?: string;
+          payment_token?: string;
         };
         Update: {
           amount?: number;
@@ -249,7 +251,16 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_invoice_by_token: {
+        Args: { p_token: string };
+        Returns: unknown;
+      };
+      submit_proof_by_token: {
+        Args: { p_token: string; p_image_url: string };
+        Returns: unknown;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

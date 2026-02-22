@@ -11,8 +11,18 @@ import Payments from './pages/Payments';
 import Settings from './pages/Settings';
 import Receipt from './pages/Receipt';
 import TenantPayment from './pages/TenantPayment';
+import PublicPayment from './pages/PublicPayment';
 
 function App() {
+  // Public payment route — no auth required
+  if (window.location.pathname.startsWith('/pay/')) {
+    return (
+      <Routes>
+        <Route path="/pay/:token" element={<PublicPayment />} />
+      </Routes>
+    );
+  }
+
   const { user, loading, isTenant } = useAuth();
 
   if (loading) {

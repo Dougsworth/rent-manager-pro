@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Plus, Search, Download, Loader2, X } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { Plus, Search, Download, Loader2, X, Link } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 
 function formatCurrency(amount: number): string {
@@ -24,6 +25,7 @@ export default function Invoices() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newInvoice, setNewInvoice] = useState({ tenant_id: '', amount: '', due_date: '', description: '' });
+  const { toast } = useToast();
 
   const loadData = async () => {
     if (!user) return;
@@ -230,6 +232,7 @@ export default function Invoices() {
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Due Date</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900">Link</th>
               </tr>
             </thead>
             <tbody>
@@ -246,6 +249,21 @@ export default function Invoices() {
                   <td className="py-3 px-4 text-sm text-gray-600">{invoice.due_date}</td>
                   <td className="py-3 px-4">
                     <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const url = `${window.location.origin}/pay/${invoice.payment_token}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          toast('Payment link copied to clipboard.');
+                        });
+                      }}
+                    >
+                      <Link className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
                   </td>
                 </tr>
               ))}

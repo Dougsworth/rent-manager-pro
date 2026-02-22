@@ -50,3 +50,25 @@ export interface DashboardStats {
 export interface PropertyWithUnits extends Property {
   units: Unit[];
 }
+
+export interface PublicInvoiceData {
+  invoice_id: string;
+  invoice_number: string;
+  amount: number;
+  due_date: string;
+  issue_date: string;
+  status: 'paid' | 'pending' | 'overdue';
+  description: string;
+  tenant_name: string;
+  bank_name: string;
+  bank_account_name: string;
+  bank_account_number: string;
+  bank_branch: string;
+  proofs: {
+    id: string;
+    image_url: string;
+    status: 'pending' | 'approved' | 'rejected';
+    reviewer_note: string;
+    created_at: string;
+  }[];
+}
