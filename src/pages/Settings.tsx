@@ -48,11 +48,14 @@ export default function Settings() {
 
   // Notification preferences state
   const defaultPrefs = { payments: true, overdue: true, invoices: true };
-  const [notifPrefs, setNotifPrefs] = useState(
-    (profile as any)?.notification_preferences ?? defaultPrefs
-  );
+  const [notifPrefs, setNotifPrefs] = useState(defaultPrefs);
   const [savingNotifs, setSavingNotifs] = useState(false);
   const [savedNotifs, setSavedNotifs] = useState(false);
+
+  useEffect(() => {
+    const prefs = (profile as any)?.notification_preferences;
+    if (prefs) setNotifPrefs(prefs);
+  }, [profile]);
 
   const sections = [
     { id: 'profile', label: 'Profile', icon: User },

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
 import { Search, Plus, Loader2, Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
 
@@ -24,6 +25,7 @@ function formatCurrency(amount: number): string {
 
 export default function Tenants() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [tenants, setTenants] = useState<TenantWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TenantStatus>("all");
@@ -71,7 +73,7 @@ export default function Tenants() {
         .eq('status', 'overdue')
         .order('due_date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!overdueInvoice) {
         // Fall back to latest pending invoice
@@ -82,20 +84,20 @@ export default function Tenants() {
           .eq('status', 'pending')
           .order('due_date', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (!pendingInvoice) {
-          alert('No overdue or pending invoices found for this tenant.');
+          toast('No overdue or pending invoices found for this tenant.', 'warning');
           return;
         }
         await sendReminder(selectedTenant.id, pendingInvoice.id);
       } else {
         await sendReminder(selectedTenant.id, overdueInvoice.id);
       }
-      alert('Reminder sent successfully!');
+      toast('Reminder sent successfully!', 'success');
     } catch (err) {
       console.error('Failed to send reminder:', err);
-      alert('Failed to send reminder. Please try again.');
+      toast('Failed to send reminder. Please try again.', 'error');
     } finally {
       setSendingReminder(false);
     }

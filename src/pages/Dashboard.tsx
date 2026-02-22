@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -30,6 +31,7 @@ const methodLabels: Record<string, string> = {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({ expected: 0, collected: 0, outstanding: 0, overdue: 0, tenantCount: 0 });
   const [recentPayments, setRecentPayments] = useState<PaymentWithDetails[]>([]);
   const [overdueTenants, setOverdueTenants] = useState<{ id: string; tenant_id: string; invoice_id: string; name: string; unit: string; amount: number; daysOverdue: number }[]>([]);
@@ -61,10 +63,10 @@ export default function Dashboard() {
     setSendingReminder(invoiceId);
     try {
       await sendReminder(tenantId, invoiceId);
-      alert('Reminder sent successfully!');
+      toast('Reminder sent successfully!', 'success');
     } catch (err) {
       console.error('Failed to send reminder:', err);
-      alert('Failed to send reminder. Please try again.');
+      toast('Failed to send reminder. Please try again.', 'error');
     } finally {
       setSendingReminder(null);
     }

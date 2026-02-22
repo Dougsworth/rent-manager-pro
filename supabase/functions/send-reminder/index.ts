@@ -15,19 +15,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
+    // Auth client — uses anon key + user's JWT to verify identity
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Service client — bypasses RLS for DB queries
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
     const { tenant_id, invoice_id } = await req.json();
     if (!tenant_id || !invoice_id) {
