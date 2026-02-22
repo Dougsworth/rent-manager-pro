@@ -220,6 +220,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      payment_proofs: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          tenant_id: string;
+          landlord_id: string;
+          image_url: string;
+          status: 'pending' | 'approved' | 'rejected';
+          reviewer_note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoice_id: string;
+          tenant_id: string;
+          landlord_id: string;
+          image_url: string;
+          status?: 'pending' | 'approved' | 'rejected';
+          reviewer_note?: string;
+        };
+        Update: {
+          status?: 'pending' | 'approved' | 'rejected';
+          reviewer_note?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

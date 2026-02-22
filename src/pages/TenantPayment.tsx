@@ -1,370 +1,168 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { getInvoicesForTenant } from '@/services/invoices';
+import { uploadProofImage, submitPaymentProof, getProofsForInvoice } from '@/services/paymentProofs';
+import type { Invoice, PaymentProof, Profile } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { 
-  CreditCard, 
-  Building2, 
-  Calendar, 
-  DollarSign, 
-  Lock, 
-  CheckCircle,
-  AlertCircle,
-  Clock
-} from 'lucide-react';
+import { Calendar, Upload, Loader2, CheckCircle, XCircle, Clock, Image as ImageIcon, X } from 'lucide-react';
 
-interface OutstandingInvoice {
-  id: string;
-  amount: string;
-  dueDate: string;
-  description: string;
-  status: 'overdue' | 'pending';
-  lateFee?: string;
+function formatCurrency(amount: number): string {
+  return `J$${amount.toLocaleString()}`;
 }
 
-const mockInvoices: OutstandingInvoice[] = [
-  {
-    id: 'INV-002',
-    amount: 'J$52,000',
-    dueDate: '2024-02-01',
-    description: 'Monthly Rent - February 2024',
-    status: 'pending'
-  },
-  {
-    id: 'INV-001',
-    amount: 'J$45,000',
-    dueDate: '2024-01-15',
-    description: 'Monthly Rent - January 2024',
-    status: 'overdue',
-    lateFee: 'J$2,250'
-  }
-];
+interface TenantRecord {
+  id: string;
+  landlord_id: string;
+  first_name: string;
+  last_name: string;
+}
 
 export default function TenantPayment() {
-  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank' | 'cash'>('card');
-  const [step, setStep] = useState<'select' | 'payment' | 'confirmation'>('select');
-  const [cardDetails, setCardDetails] = useState({
-    number: '',
-    expiry: '',
-    cvv: '',
-    name: ''
-  });
+  const { user } = useAuth();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [proofsByInvoice, setProofsByInvoice] = useState<Record<string, PaymentProof[]>>({});
+  const [tenantRecord, setTenantRecord] = useState<TenantRecord | null>(null);
+  const [landlordProfile, setLandlordProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const tenantInfo = {
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    property: '456 Oak Ave, Unit 2B'
+  const loadData = async () => {
+    if (!user) return;
+    try {
+      // Get tenant record linked to this profile
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('id, landlord_id, first_name, last_name')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (!tenant) {
+        setLoading(false);
+        return;
+      }
+      setTenantRecord(tenant);
+
+      // Fetch landlord profile for bank details
+      const { data: landlord } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', tenant.landlord_id)
+        .single();
+      setLandlordProfile(landlord as Profile | null);
+
+      // Fetch invoices
+      const invData = await getInvoicesForTenant(tenant.id) as Invoice[];
+      setInvoices(invData);
+
+      // Fetch proofs for each invoice
+      const proofMap: Record<string, PaymentProof[]> = {};
+      await Promise.all(
+        invData.map(async (inv) => {
+          const proofs = await getProofsForInvoice(inv.id) as PaymentProof[];
+          proofMap[inv.id] = proofs;
+        })
+      );
+      setProofsByInvoice(proofMap);
+    } catch (err) {
+      console.error('Failed to load tenant data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalAmount = selectedInvoices.reduce((sum, invoiceId) => {
-    const invoice = mockInvoices.find(inv => inv.id === invoiceId);
-    if (!invoice) return sum;
-    const amount = parseInt(invoice.amount.replace('J$', '').replace(',', ''));
-    const lateFee = invoice.lateFee ? parseInt(invoice.lateFee.replace('J$', '').replace(',', '')) : 0;
-    return sum + amount + lateFee;
-  }, 0);
+  useEffect(() => {
+    loadData();
+  }, [user]);
 
-  const handleInvoiceToggle = (invoiceId: string) => {
-    setSelectedInvoices(prev =>
-      prev.includes(invoiceId)
-        ? prev.filter(id => id !== invoiceId)
-        : [...prev, invoiceId]
+  const handleFileSelect = (invoiceId: string) => {
+    setUploadingFor(invoiceId);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleSubmitProof = async () => {
+    if (!selectedFile || !uploadingFor || !tenantRecord) return;
+    setSubmitting(true);
+    try {
+      const imageUrl = await uploadProofImage(selectedFile);
+      await submitPaymentProof(uploadingFor, tenantRecord.id, tenantRecord.landlord_id, imageUrl);
+      setUploadingFor(null);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to submit proof:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const cancelUpload = () => {
+    setUploadingFor(null);
+    setSelectedFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  const getLatestProof = (invoiceId: string): PaymentProof | undefined => {
+    const proofs = proofsByInvoice[invoiceId];
+    return proofs?.[0];
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
     );
-  };
+  }
 
-  const handlePaymentSubmit = () => {
-    setStep('confirmation');
-  };
-
-  const renderSelectStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Outstanding Payments</h2>
-        <p className="text-gray-600 mb-6">Select the invoices you'd like to pay</p>
-        
-        <div className="space-y-4">
-          {mockInvoices.map((invoice) => (
-            <Card key={invoice.id} className={`cursor-pointer transition-colors ${
-              selectedInvoices.includes(invoice.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-            }`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedInvoices.includes(invoice.id)}
-                      onChange={() => handleInvoiceToggle(invoice.id)}
-                      className="rounded border-gray-300"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{invoice.description}</p>
-                        <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>Due: {invoice.dueDate}</span>
-                        <span>Invoice: {invoice.id}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">{invoice.amount}</p>
-                    {invoice.lateFee && (
-                      <p className="text-sm text-red-600">Late fee: {invoice.lateFee}</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {selectedInvoices.length > 0 && (
-          <Card className="mt-6 bg-gray-50">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-medium">Total Amount:</span>
-                <span className="text-2xl font-bold text-blue-600">
-                  J${totalAmount.toLocaleString()}
-                </span>
-              </div>
-              <Button
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
-                onClick={() => setStep('payment')}
-                disabled={selectedInvoices.length === 0}
-              >
-                Proceed to Payment
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+  if (!tenantRecord) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">No tenant record linked to your account.</p>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const renderPaymentStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Details</h2>
-        
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Total to Pay:</span>
-              <span className="text-2xl font-bold text-blue-600">
-                J${totalAmount.toLocaleString()}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              {selectedInvoices.length} invoice{selectedInvoices.length > 1 ? 's' : ''} selected
-            </p>
-          </CardContent>
-        </Card>
+  const unpaidInvoices = invoices.filter(inv => inv.status !== 'paid');
+  const paidInvoices = invoices.filter(inv => inv.status === 'paid');
 
-        <div className="mb-6">
-          <Label className="text-base font-medium mb-3 block">Payment Method</Label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              { id: 'card', label: 'Credit/Debit Card', icon: CreditCard, description: 'Instant processing' },
-              { id: 'bank', label: 'Bank Transfer', icon: Building2, description: '1-2 business days' },
-              { id: 'cash', label: 'Cash Payment', icon: DollarSign, description: 'In-person only' },
-            ].map((method) => {
-              const Icon = method.icon;
-              return (
-                <button
-                  key={method.id}
-                  onClick={() => setPaymentMethod(method.id as any)}
-                  className={`p-4 border rounded-lg text-left transition-colors ${
-                    paymentMethod === method.id
-                      ? 'border-blue-500 bg-blue-50 text-blue-900'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <Icon className="h-6 w-6 mb-2" />
-                  <p className="font-medium">{method.label}</p>
-                  <p className="text-sm text-gray-600">{method.description}</p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {paymentMethod === 'card' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Card Information
-              </CardTitle>
-              <p className="text-sm text-gray-600">Your payment information is secure and encrypted</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <Input
-                  id="cardNumber"
-                  placeholder="1234 5678 9012 3456"
-                  value={cardDetails.number}
-                  onChange={(e) => setCardDetails(prev => ({ ...prev, number: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="cardName">Name on Card</Label>
-                <Input
-                  id="cardName"
-                  placeholder="John Doe"
-                  value={cardDetails.name}
-                  onChange={(e) => setCardDetails(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiry">Expiry Date</Label>
-                  <Input
-                    id="expiry"
-                    placeholder="MM/YY"
-                    value={cardDetails.expiry}
-                    onChange={(e) => setCardDetails(prev => ({ ...prev, expiry: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    placeholder="123"
-                    value={cardDetails.cvv}
-                    onChange={(e) => setCardDetails(prev => ({ ...prev, cvv: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {paymentMethod === 'bank' && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-blue-600">
-                  <AlertCircle className="h-5 w-5" />
-                  <span className="font-medium">Bank Transfer Instructions</span>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <p><strong>Account Name:</strong> ABC Property Management</p>
-                  <p><strong>Account Number:</strong> 123-456-7890</p>
-                  <p><strong>Bank:</strong> National Commercial Bank</p>
-                  <p><strong>Reference:</strong> {selectedInvoices.join(', ')}</p>
-                </div>
-                <p className="text-sm text-gray-600">
-                  Please include the reference number in your transfer description.
-                  Payment confirmation may take 1-2 business days.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {paymentMethod === 'cash' && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-orange-600">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-medium">Cash Payment Information</span>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <p><strong>Office Address:</strong> 123 Business St, Kingston, Jamaica</p>
-                  <p><strong>Office Hours:</strong> Monday - Friday, 9:00 AM - 5:00 PM</p>
-                  <p><strong>Contact:</strong> +1 (876) 555-0123</p>
-                </div>
-                <p className="text-sm text-gray-600">
-                  Please bring this payment reference and a valid ID when making your cash payment.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setStep('select')}
-            className="flex-1"
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handlePaymentSubmit}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
-          >
-            {paymentMethod === 'card' ? 'Pay Now' : 'Confirm Payment'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderConfirmationStep = () => (
-    <div className="text-center space-y-6">
-      <div className="flex justify-center">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-          <CheckCircle className="h-10 w-10 text-green-600" />
-        </div>
-      </div>
-      
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          {paymentMethod === 'card' ? 'Payment Successful!' : 'Payment Submitted!'}
-        </h2>
-        <p className="text-gray-600">
-          {paymentMethod === 'card' 
-            ? 'Your payment has been processed successfully.'
-            : 'Your payment request has been submitted and is being processed.'
-          }
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span>Amount Paid:</span>
-              <span className="font-semibold">J${totalAmount.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Transaction ID:</span>
-              <span className="font-mono text-sm">TXN-{Date.now()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Payment Date:</span>
-              <span>{new Date().toLocaleDateString()}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button variant="outline" className="flex-1">
-          Download Receipt
-        </Button>
-        <Button className="flex-1">
-          Back to Dashboard
-        </Button>
-      </div>
-    </div>
-  );
+  const hasBankDetails = landlordProfile?.bank_name || landlordProfile?.bank_account_name || landlordProfile?.bank_account_number;
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Make Payment</h1>
-              <p className="text-gray-600">{tenantInfo.name} • {tenantInfo.property}</p>
+              <h1 className="text-2xl font-bold text-gray-900">My Payments</h1>
+              <p className="text-gray-600">{tenantRecord.first_name} {tenantRecord.last_name}</p>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Calendar className="h-4 w-4" />
@@ -374,41 +172,163 @@ export default function TenantPayment() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
-            <div className={`flex items-center ${step === 'select' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === 'select' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}>
-                1
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
+        {/* Bank Transfer Instructions */}
+        {hasBankDetails && (
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="font-semibold text-gray-900 mb-3">Bank Transfer Details</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Transfer your rent to the account below, then upload a screenshot of your confirmation.
+              </p>
+              <div className="space-y-2 text-sm">
+                {landlordProfile?.bank_name && (
+                  <p><span className="text-gray-500">Bank:</span> <strong>{landlordProfile.bank_name}</strong></p>
+                )}
+                {landlordProfile?.bank_account_name && (
+                  <p><span className="text-gray-500">Account Name:</span> <strong>{landlordProfile.bank_account_name}</strong></p>
+                )}
+                {landlordProfile?.bank_account_number && (
+                  <p><span className="text-gray-500">Account Number:</span> <strong>{landlordProfile.bank_account_number}</strong></p>
+                )}
+                {landlordProfile?.bank_branch && (
+                  <p><span className="text-gray-500">Branch:</span> <strong>{landlordProfile.bank_branch}</strong></p>
+                )}
               </div>
-              <span className="ml-2 font-medium">Select Invoices</span>
-            </div>
-            <div className="w-16 h-0.5 bg-gray-300"></div>
-            <div className={`flex items-center ${step === 'payment' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}>
-                2
-              </div>
-              <span className="ml-2 font-medium">Payment</span>
-            </div>
-            <div className="w-16 h-0.5 bg-gray-300"></div>
-            <div className={`flex items-center ${step === 'confirmation' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === 'confirmation' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}>
-                3
-              </div>
-              <span className="ml-2 font-medium">Confirmation</span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Unpaid Invoices */}
+        {unpaidInvoices.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Outstanding Invoices</h2>
+            <div className="space-y-4">
+              {unpaidInvoices.map((invoice) => {
+                const latestProof = getLatestProof(invoice.id);
+                const isUploading = uploadingFor === invoice.id;
+
+                return (
+                  <Card key={invoice.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900">{invoice.description || 'Monthly Rent'}</p>
+                            <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                            <span>Due: {invoice.due_date}</span>
+                            <span>{invoice.invoice_number}</span>
+                          </div>
+                        </div>
+                        <p className="text-xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
+                      </div>
+
+                      {/* Proof status indicator */}
+                      {latestProof && !isUploading && (
+                        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm mb-3 ${
+                          latestProof.status === 'pending' ? 'bg-yellow-50 text-yellow-800' :
+                          latestProof.status === 'approved' ? 'bg-green-50 text-green-800' :
+                          'bg-red-50 text-red-800'
+                        }`}>
+                          {latestProof.status === 'pending' && <Clock className="h-4 w-4" />}
+                          {latestProof.status === 'approved' && <CheckCircle className="h-4 w-4" />}
+                          {latestProof.status === 'rejected' && <XCircle className="h-4 w-4" />}
+                          <span className="font-medium">
+                            {latestProof.status === 'pending' && 'Proof submitted — pending review'}
+                            {latestProof.status === 'approved' && 'Payment approved'}
+                            {latestProof.status === 'rejected' && 'Proof rejected'}
+                          </span>
+                          {latestProof.status === 'rejected' && latestProof.reviewer_note && (
+                            <span className="ml-1">— {latestProof.reviewer_note}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Upload UI */}
+                      {isUploading && previewUrl ? (
+                        <div className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-700">Preview</p>
+                            <button onClick={cancelUpload} className="p-1 hover:bg-gray-100 rounded">
+                              <X className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
+                          <img src={previewUrl} alt="Payment proof" className="max-h-64 rounded-lg object-contain mx-auto" />
+                          <div className="flex gap-3">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleFileSelect(invoice.id)}
+                            >
+                              Change Image
+                            </Button>
+                            <Button
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                              onClick={handleSubmitProof}
+                              disabled={submitting}
+                            >
+                              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                              Submit Proof
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Show upload button if no pending proof or was rejected */
+                        (!latestProof || latestProof.status === 'rejected') && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleFileSelect(invoice.id)}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            I've Paid — Upload Proof
+                          </Button>
+                        )
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
-        </div>
+        )}
 
-        {step === 'select' && renderSelectStep()}
-        {step === 'payment' && renderPaymentStep()}
-        {step === 'confirmation' && renderConfirmationStep()}
+        {/* Paid Invoices */}
+        {paidInvoices.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Paid Invoices</h2>
+            <div className="space-y-3">
+              {paidInvoices.map((invoice) => (
+                <Card key={invoice.id} className="bg-gray-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{invoice.description || 'Monthly Rent'}</p>
+                          <StatusBadge variant="paid">paid</StatusBadge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                          <span>Due: {invoice.due_date}</span>
+                          <span>{invoice.invoice_number}</span>
+                        </div>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">{formatCurrency(invoice.amount)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {invoices.length === 0 && (
+          <div className="text-center py-12">
+            <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No invoices yet.</p>
+          </div>
+        )}
       </div>
     </div>
   );

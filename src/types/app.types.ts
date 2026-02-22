@@ -7,6 +7,14 @@ export type Unit = Database['public']['Tables']['units']['Row'];
 export type DbTenant = Database['public']['Tables']['tenants']['Row'];
 export type Invoice = Database['public']['Tables']['invoices']['Row'];
 export type Payment = Database['public']['Tables']['payments']['Row'];
+export type PaymentProof = Database['public']['Tables']['payment_proofs']['Row'];
+
+export interface PaymentProofWithDetails extends PaymentProof {
+  tenant_first_name: string;
+  tenant_last_name: string;
+  invoice_number: string;
+  invoice_amount: number;
+}
 
 // UI-facing joined types
 export interface TenantWithDetails extends DbTenant {
