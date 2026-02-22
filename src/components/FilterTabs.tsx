@@ -18,21 +18,21 @@ export function FilterTabs<T extends string>({
   onTabChange,
 }: FilterTabsProps<T>) {
   return (
-    <div className="inline-flex bg-secondary rounded-lg p-1">
+    <div className="inline-flex bg-gray-100 rounded-lg p-1">
       {tabs.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
           className={cn(
-            "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+            "px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150",
             activeTab === tab.value
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
           )}
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className="ml-1.5 text-xs text-muted-foreground">
+            <span className="ml-1.5 text-xs text-gray-400">
               ({tab.count})
             </span>
           )}

@@ -9,10 +9,10 @@ interface PageHeaderProps {
 export function PageHeader({ title, count, action }: PageHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <h1 className="text-2xl font-bold text-foreground">
+      <h1 className="text-2xl font-bold text-gray-900">
         {title}
         {count !== undefined && (
-          <span className="text-muted-foreground font-normal ml-2">({count})</span>
+          <span className="text-gray-400 font-normal ml-2">({count})</span>
         )}
       </h1>
       {action && <div>{action}</div>}

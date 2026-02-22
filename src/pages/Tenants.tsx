@@ -160,7 +160,7 @@ export default function Tenants() {
         title="Tenants"
         count={tenants.length}
         action={
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowAddModal(true)}>
+          <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" />
             Add Tenant
           </Button>
@@ -171,7 +171,7 @@ export default function Tenants() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <FilterTabs<TenantStatus> tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search tenants..."
             value={searchQuery}
@@ -201,24 +201,24 @@ export default function Tenants() {
           }
         />
       ) : (
-        <div className="bg-card border border-border rounded-lg divide-y divide-border">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
           {paginatedTenants.map((tenant) => (
             <button
               key={tenant.id}
               onClick={() => setSelectedTenant(tenant)}
-              className="w-full flex items-center gap-4 p-4 hover:bg-secondary transition-colors text-left"
+              className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
             >
               <AvatarInitial name={`${tenant.first_name} ${tenant.last_name}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {tenant.first_name} {tenant.last_name}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   {tenant.unit_name}{tenant.property_name ? ` - ${tenant.property_name}` : ''}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-foreground">{formatCurrency(tenant.rent_amount)}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatCurrency(tenant.rent_amount)}</p>
                 <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
               </div>
             </button>

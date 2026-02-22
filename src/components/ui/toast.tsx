@@ -46,25 +46,25 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   }, [onDismiss]);
 
   const icons = {
-    success: <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />,
+    success: <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />,
     error: <XCircle className="h-5 w-5 text-red-500 shrink-0" />,
-    warning: <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0" />,
+    warning: <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />,
   };
 
-  const borders = {
-    success: 'border-green-200 bg-green-50',
-    error: 'border-red-200 bg-red-50',
-    warning: 'border-yellow-200 bg-yellow-50',
+  const styles = {
+    success: 'border-emerald-200 bg-white',
+    error: 'border-red-200 bg-white',
+    warning: 'border-amber-200 bg-white',
   };
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg animate-in slide-in-from-right ${borders[toast.type]}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg animate-in slide-in-from-right ${styles[toast.type]}`}
     >
       {icons[toast.type]}
       <p className="text-sm font-medium text-gray-900 flex-1">{toast.message}</p>
-      <button onClick={onDismiss} className="shrink-0 text-gray-400 hover:text-gray-600">
-        <X className="h-4 w-4" />
+      <button onClick={onDismiss} className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );

@@ -266,7 +266,7 @@ export default function TenantPayment() {
                               Change Image
                             </Button>
                             <Button
-                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                              className="flex-1"
                               onClick={handleSubmitProof}
                               disabled={submitting}
                             >

@@ -109,63 +109,71 @@ export default function Dashboard() {
         <StatCard
           label="Outstanding"
           value={formatCurrency(stats.outstanding)}
-          subtext={`${stats.tenantCount - (recentPayments.length)} pending`}
+          subtext={stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
+          subtextVariant={stats.outstanding > 0 ? "warning" : "success"}
         />
         <StatCard
           label="Overdue"
           value={stats.overdue.toString()}
-          subtext={stats.overdue > 0 ? "Needs attention" : "All good"}
+          subtext={stats.overdue > 0 ? "Needs attention" : "No overdue payments"}
           subtextVariant={stats.overdue > 0 ? "danger" : "success"}
         />
       </div>
 
-      {/* Collection Progress */}
-      <div className="mb-6">
-        <ProgressBar value={collectionPercentage} label="Collection Progress" />
+      {/* Collection Progress — compact inline bar */}
+      <div className="mb-6 flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
+        <p className="text-sm font-medium text-gray-700 whitespace-nowrap">Collection</p>
+        <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${collectionPercentage}%` }}
+          />
+        </div>
+        <p className="text-sm font-bold text-blue-600 whitespace-nowrap">{collectionPercentage}%</p>
       </div>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Recent Payments */}
-        <div className="lg:col-span-3 bg-card border border-border rounded-lg">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Recent Payments</h2>
+        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-900">Recent Payments</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-secondary">
-                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-muted-foreground">Tenant</th>
-                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-muted-foreground hidden sm:table-cell">Unit</th>
-                  <th className="px-5 py-3 text-right text-xs uppercase font-medium tracking-wide text-muted-foreground">Amount</th>
-                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-muted-foreground hidden md:table-cell">Date</th>
-                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-muted-foreground hidden lg:table-cell">Method</th>
+                <tr className="bg-gray-50">
+                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-gray-500">Tenant</th>
+                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-gray-500 hidden sm:table-cell">Unit</th>
+                  <th className="px-5 py-3 text-right text-xs uppercase font-medium tracking-wide text-gray-500">Amount</th>
+                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-gray-500 hidden md:table-cell">Date</th>
+                  <th className="px-5 py-3 text-left text-xs uppercase font-medium tracking-wide text-gray-500 hidden lg:table-cell">Method</th>
                 </tr>
               </thead>
               <tbody>
                 {recentPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-500">
                       No payments recorded yet
                     </td>
                   </tr>
                 ) : recentPayments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-border hover:bg-secondary transition-colors">
-                    <td className="px-5 py-3 text-sm text-foreground">
+                  <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 text-sm text-gray-900">
                       {payment.tenant_first_name} {payment.tenant_last_name}
-                      <span className="sm:hidden text-xs text-muted-foreground block">{payment.unit_name}</span>
+                      <span className="sm:hidden text-xs text-gray-500 block">{payment.unit_name}</span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground hidden sm:table-cell">{payment.unit_name}</td>
-                    <td className="px-5 py-3 text-sm text-right font-medium text-success">{formatCurrency(payment.amount)}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(payment.payment_date)}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground hidden lg:table-cell">{methodLabels[payment.method] ?? payment.method}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 hidden sm:table-cell">{payment.unit_name}</td>
+                    <td className="px-5 py-3 text-sm text-right font-medium text-emerald-600">{formatCurrency(payment.amount)}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 hidden md:table-cell">{formatDate(payment.payment_date)}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 hidden lg:table-cell">{methodLabels[payment.method] ?? payment.method}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3 border-t border-border">
-            <Link to="/payments" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+          <div className="px-5 py-3 border-t border-gray-100">
+            <Link to="/payments" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
               View all payments
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -173,26 +181,26 @@ export default function Dashboard() {
         </div>
 
         {/* Overdue Tenants */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Overdue Tenants</h2>
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-900">Overdue Tenants</h2>
           </div>
           <div className="p-5">
             {overdueTenants.length === 0 ? (
-              <p className="text-sm text-success text-center py-4">All tenants are current</p>
+              <p className="text-sm text-emerald-600 text-center py-4">All tenants are up to date</p>
             ) : (
               <div className="space-y-4">
                 {overdueTenants.map((tenant) => (
-                  <div key={tenant.id} className="p-4 border border-border rounded-lg hover:bg-secondary transition-colors">
+                  <div key={tenant.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{tenant.name}</p>
-                        <p className="text-xs text-muted-foreground">{tenant.unit}</p>
+                        <p className="text-sm font-medium text-gray-900">{tenant.name}</p>
+                        <p className="text-xs text-gray-500">{tenant.unit}</p>
                       </div>
                       <StatusBadge variant="overdue">{tenant.daysOverdue} days late</StatusBadge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">{formatCurrency(tenant.amount)}</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(tenant.amount)}</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -215,8 +223,8 @@ export default function Dashboard() {
             )}
           </div>
           {overdueTenants.length > 0 && (
-            <div className="px-5 py-3 border-t border-border">
-              <Link to="/tenants?status=overdue" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+            <div className="px-5 py-3 border-t border-gray-100">
+              <Link to="/tenants?status=overdue" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
                 View all
                 <ArrowRight className="h-4 w-4" />
               </Link>

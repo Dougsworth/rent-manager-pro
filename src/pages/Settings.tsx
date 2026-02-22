@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
   Home, Plus, ChevronDown, ChevronRight, CheckCircle2, Mail, Eye, EyeOff, Landmark
@@ -307,7 +308,7 @@ export default function Settings() {
             </div>
           </div>
           <div className="flex gap-3 pt-1">
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={addingProperty}>
+            <Button type="submit" className="" disabled={addingProperty}>
               {addingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Property
             </Button>
@@ -317,7 +318,7 @@ export default function Settings() {
           </div>
         </form>
       ) : (
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-base" onClick={() => setShowAddProperty(true)}>
+        <Button className="w-full py-6 text-base" onClick={() => setShowAddProperty(true)}>
           <Plus className="h-5 w-5 mr-2" />
           Add Property
         </Button>
@@ -413,7 +414,7 @@ export default function Settings() {
                           <Button
                             type="submit"
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 h-9 px-4"
+                            className="shrink-0 h-9 px-4"
                             disabled={addingUnit}
                           >
                             {addingUnit ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
@@ -458,22 +459,20 @@ export default function Settings() {
             { id: 'invoices' as const, label: 'Invoice Sent', description: 'Confirmation when invoices are sent to tenants' },
             { id: 'auto_remind' as const, label: 'Automatic Reminders', description: 'Automatically email tenants daily when their invoices are overdue' },
           ].map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
               <div>
                 <p className="font-medium text-gray-900">{item.label}</p>
                 <p className="text-sm text-gray-500">{item.description}</p>
               </div>
-              <input
-                type="checkbox"
-                className="rounded"
+              <Switch
                 checked={notifPrefs[item.id]}
-                onChange={(e) => setNotifPrefs({ ...notifPrefs, [item.id]: e.target.checked })}
+                onCheckedChange={(checked) => setNotifPrefs({ ...notifPrefs, [item.id]: checked })}
               />
             </div>
           ))}
         </div>
         <div className="pt-4">
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveNotifs} disabled={savingNotifs}>
+          <Button className="" onClick={handleSaveNotifs} disabled={savingNotifs}>
             {savingNotifs ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : savedNotifs ? (
@@ -627,7 +626,7 @@ export default function Settings() {
               <Check className="h-4 w-4" /> Password updated successfully.
             </p>
           )}
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={savingPassword}>
+          <Button type="submit" className="" disabled={savingPassword}>
             {savingPassword ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -658,7 +657,7 @@ export default function Settings() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSave} disabled={saving}>
+          <Button className="" onClick={handleSave} disabled={saving}>
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : saved ? (

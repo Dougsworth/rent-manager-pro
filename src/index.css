@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #2563eb;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
+  --color-secondary: #f8fafc;
   --color-secondary-foreground: #0f172a;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
@@ -20,6 +20,11 @@
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
   --color-ring: #2563eb;
+  --color-success: #16a34a;
+  --color-success-muted: #dcfce7;
+  --color-warning: #d97706;
+  --color-warning-muted: #fef3c7;
+  --color-destructive-muted: #fee2e2;
 }
 
 @layer base {
@@ -28,9 +33,64 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background-color: #f8fafc;
     color: var(--color-foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Better date inputs */
+  input[type="date"] {
+    position: relative;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 0.8;
+  }
+
+  /* Better number input — hide spinners */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 }
 

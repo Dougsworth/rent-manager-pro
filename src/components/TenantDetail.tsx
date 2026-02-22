@@ -58,41 +58,41 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
     <div className="space-y-6">
       {/* Contact Information */}
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Contact Information</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Information</h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-foreground">{tenant.email}</span>
+            <Mail className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-700">{tenant.email}</span>
           </div>
           <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-foreground">{tenant.phone}</span>
+            <Phone className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-700">{tenant.phone}</span>
           </div>
         </div>
       </div>
 
       {/* Lease Information */}
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Lease Information</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Lease Information</h3>
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Unit</span>
-            <span className="text-sm text-foreground">{tenant.unit}</span>
+            <span className="text-sm text-gray-500">Unit</span>
+            <span className="text-sm text-gray-900">{tenant.unit}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Monthly Rent</span>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-sm text-gray-500">Monthly Rent</span>
+            <span className="text-sm font-medium text-gray-900">
               J${tenant.rent.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Lease Period</span>
-            <span className="text-sm text-foreground">
+            <span className="text-sm text-gray-500">Lease Period</span>
+            <span className="text-sm text-gray-900">
               {tenant.leaseStart ? formatDate(tenant.leaseStart) : '—'} - {tenant.leaseEnd ? formatDate(tenant.leaseEnd) : '—'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">Payment Status</span>
+            <span className="text-sm text-gray-500">Payment Status</span>
             <StatusBadge variant={tenant.status}>{tenant.status}</StatusBadge>
           </div>
         </div>
@@ -130,18 +130,18 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
       {/* Payment History */}
       {showHistory && (
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Payment History</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment History</h3>
           {payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No payments recorded</p>
+            <p className="text-sm text-gray-500 text-center py-4">No payments recorded</p>
           ) : (
             <div className="space-y-2">
               {payments.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <div key={p.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-gray-900">
                       J${Number(p.amount).toLocaleString()}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-500">
                       {formatDate(p.payment_date)} &middot; {methodLabels[p.method] ?? p.method}
                     </p>
                   </div>

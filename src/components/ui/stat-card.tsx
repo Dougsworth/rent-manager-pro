@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const subtextVariants = cva(
-  "text-xs",
+  "text-xs font-medium",
   {
     variants: {
       variant: {
-        default: "text-muted-foreground",
-        success: "text-success",
-        warning: "text-warning",
-        danger: "text-destructive",
+        default: "text-gray-500",
+        success: "text-emerald-600",
+        warning: "text-amber-600",
+        danger: "text-red-600",
       },
     },
     defaultVariants: {
@@ -34,11 +34,14 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <div className={cn("bg-card border border-border rounded-lg p-5", className)}>
-      <p className="text-xs uppercase text-muted-foreground font-medium tracking-wide mb-1">
+    <div className={cn(
+      "rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md",
+      className
+    )}>
+      <p className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-1">
         {label}
       </p>
-      <p className="text-2xl font-bold text-foreground mb-1">{value}</p>
+      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
       {subtext && (
         <p className={cn(subtextVariants({ variant: subtextVariant }))}>
           {subtext}

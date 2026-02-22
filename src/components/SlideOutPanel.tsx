@@ -32,26 +32,26 @@ export function SlideOutPanel({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full sm:max-w-md bg-card shadow-xl z-50 transition-transform",
+          "fixed right-0 top-0 h-full w-full sm:max-w-md bg-white shadow-2xl z-50 transition-transform",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-4 sm:px-6 py-4">
-            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-4">
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
             <div className="flex items-center gap-2">
               {actions}
               <button
                 onClick={onClose}
-                className="rounded-lg p-2 hover:bg-secondary transition-colors"
+                className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>

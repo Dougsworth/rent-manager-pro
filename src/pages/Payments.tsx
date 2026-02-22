@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Select } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, DollarSign, Loader2, Plus, X, Download, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportToCsv } from '@/utils/exportCsv';
@@ -182,7 +184,7 @@ export default function Payments() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
         <div className="flex gap-3">
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowRecord(true)}>
+          <Button onClick={() => setShowRecord(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Record Payment
           </Button>
@@ -219,134 +221,121 @@ export default function Payments() {
       </div>
 
       {/* Record Payment Modal */}
-      {showRecord && (
-        <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowRecord(false)} />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 mx-auto max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Record Payment</h2>
-              <button onClick={() => setShowRecord(false)} className="rounded-lg p-2 hover:bg-gray-100">
-                <X className="h-5 w-5" />
-              </button>
+      <Dialog open={showRecord} onOpenChange={setShowRecord}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRecord} className="space-y-4">
+            <div>
+              <Label htmlFor="pay-tenant">Tenant</Label>
+              <Select
+                id="pay-tenant"
+                required
+                value={newPayment.tenant_id}
+                onValueChange={(val) => setNewPayment({ ...newPayment, tenant_id: val, invoice_id: '' })}
+                placeholder="Select a tenant"
+                className="mt-1"
+                options={tenants.map(t => ({
+                  value: t.id,
+                  label: `${t.first_name} ${t.last_name}`,
+                }))}
+              />
             </div>
-            <form onSubmit={handleRecord} className="space-y-4">
+            {newPayment.tenant_id && unpaidInvoices.length > 0 && (
               <div>
-                <Label htmlFor="pay-tenant">Tenant</Label>
-                <select
-                  id="pay-tenant"
-                  required
-                  value={newPayment.tenant_id}
-                  onChange={(e) => setNewPayment({ ...newPayment, tenant_id: e.target.value, invoice_id: '' })}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a tenant</option>
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                  ))}
-                </select>
-              </div>
-              {newPayment.tenant_id && unpaidInvoices.length > 0 && (
-                <div>
-                  <Label htmlFor="pay-invoice">Link to Invoice (optional)</Label>
-                  <select
-                    id="pay-invoice"
-                    value={newPayment.invoice_id}
-                    onChange={(e) => {
-                      const inv = unpaidInvoices.find(i => i.id === e.target.value);
-                      setNewPayment({
-                        ...newPayment,
-                        invoice_id: e.target.value,
-                        amount: inv ? inv.amount.toString() : newPayment.amount,
-                      });
-                    }}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">None</option>
-                    {unpaidInvoices.map(i => (
-                      <option key={i.id} value={i.id}>
-                        {i.invoice_number} — {formatCurrency(i.amount)} (due {i.due_date})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div>
-                <Label htmlFor="pay-amount">Amount (JMD)</Label>
-                <Input
-                  id="pay-amount"
-                  type="number"
-                  required
-                  value={newPayment.amount}
-                  onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                  placeholder="e.g. 45000"
+                <Label htmlFor="pay-invoice">Link to Invoice (optional)</Label>
+                <Select
+                  id="pay-invoice"
+                  value={newPayment.invoice_id}
+                  onValueChange={(val) => {
+                    const inv = unpaidInvoices.find(i => i.id === val);
+                    setNewPayment({
+                      ...newPayment,
+                      invoice_id: val,
+                      amount: inv ? inv.amount.toString() : newPayment.amount,
+                    });
+                  }}
+                  placeholder="None"
+                  className="mt-1"
+                  options={[
+                    { value: '', label: 'None' },
+                    ...unpaidInvoices.map(i => ({
+                      value: i.id,
+                      label: `${i.invoice_number} — ${formatCurrency(i.amount)} (due ${i.due_date})`,
+                    })),
+                  ]}
                 />
               </div>
-              <div>
-                <Label htmlFor="pay-method">Method</Label>
-                <select
-                  id="pay-method"
-                  value={newPayment.method}
-                  onChange={(e) => setNewPayment({ ...newPayment, method: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="card">Card</option>
-                  <option value="cash">Cash</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="pay-date">Payment Date</Label>
-                <Input
-                  id="pay-date"
-                  type="date"
-                  value={newPayment.payment_date}
-                  onChange={(e) => setNewPayment({ ...newPayment, payment_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="pay-notes">Notes</Label>
-                <Input
-                  id="pay-notes"
-                  value={newPayment.notes}
-                  onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
-                  placeholder="Optional notes"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowRecord(false)} className="flex-1">Cancel</Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={recording}>
-                  {recording && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Record
-                </Button>
-              </div>
-            </form>
-          </div>
-        </>
-      )}
+            )}
+            <div>
+              <Label htmlFor="pay-amount">Amount (JMD)</Label>
+              <Input
+                id="pay-amount"
+                type="number"
+                required
+                value={newPayment.amount}
+                onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
+                placeholder="e.g. 45000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="pay-method">Method</Label>
+              <Select
+                id="pay-method"
+                value={newPayment.method}
+                onValueChange={(val) => setNewPayment({ ...newPayment, method: val })}
+                className="mt-1"
+                options={[
+                  { value: 'bank_transfer', label: 'Bank Transfer' },
+                  { value: 'card', label: 'Card' },
+                  { value: 'cash', label: 'Cash' },
+                  { value: 'other', label: 'Other' },
+                ]}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pay-date">Payment Date</Label>
+              <Input
+                id="pay-date"
+                type="date"
+                value={newPayment.payment_date}
+                onChange={(e) => setNewPayment({ ...newPayment, payment_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pay-notes">Notes</Label>
+              <Input
+                id="pay-notes"
+                value={newPayment.notes}
+                onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
+                placeholder="Optional notes"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowRecord(false)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={recording}>
+                {recording && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Record
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Image Enlarge Modal */}
-      {imageModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setImageModal(null)} />
-          <div className="fixed inset-4 z-50 flex items-center justify-center">
-            <div className="relative max-w-3xl max-h-full">
-              <button
-                onClick={() => setImageModal(null)}
-                className="absolute -top-3 -right-3 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 z-10"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <img src={imageModal} alt="Payment proof" className="max-h-[85vh] rounded-lg object-contain" />
-            </div>
-          </div>
-        </>
-      )}
+      <Dialog open={!!imageModal} onOpenChange={(open) => { if (!open) setImageModal(null); }}>
+        <DialogContent className="max-w-3xl p-2 bg-transparent border-none shadow-none">
+          {imageModal && (
+            <img src={imageModal} alt="Payment proof" className="max-h-[85vh] w-full rounded-xl object-contain" />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {activeTab === 'payments' && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center">
                 <DollarSign className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
@@ -355,16 +344,16 @@ export default function Payments() {
                 </div>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center">
                 <DollarSign className="h-8 w-8 text-yellow-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-sm font-medium text-gray-600">Unpaid Invoices</p>
                   <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPending)}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center">
                 <DollarSign className="h-8 w-8 text-red-600" />
                 <div className="ml-4">
@@ -373,7 +362,7 @@ export default function Payments() {
                 </div>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center">
                 <DollarSign className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
@@ -384,7 +373,7 @@ export default function Payments() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-4 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -399,16 +388,17 @@ export default function Payments() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <select
+                  <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="completed">Completed</option>
-                    <option value="pending">Pending</option>
-                    <option value="failed">Failed</option>
-                  </select>
+                    onValueChange={setStatusFilter}
+                    className="w-40"
+                    options={[
+                      { value: 'all', label: 'All Status' },
+                      { value: 'completed', label: 'Completed' },
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'failed', label: 'Failed' },
+                    ]}
+                  />
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -503,13 +493,13 @@ export default function Payments() {
       {activeTab === 'proofs' && (
         <div className="space-y-4">
           {pendingProofs.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border py-12 text-center">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-12 text-center">
               <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No pending payment proofs to review.</p>
             </div>
           ) : (
             pendingProofs.map((proof) => (
-              <div key={proof.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+              <div key={proof.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   {/* Image thumbnail */}
                   <button
@@ -555,7 +545,7 @@ export default function Payments() {
                           </Button>
                           <Button
                             size="sm"
-                            className="bg-red-600 hover:bg-red-700 text-white"
+                            variant="destructive"
                             onClick={() => handleReject(proof.id)}
                             disabled={actionLoading === proof.id}
                           >
@@ -568,7 +558,7 @@ export default function Payments() {
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                           onClick={() => handleApprove(proof)}
                           disabled={actionLoading === proof.id}
                         >

@@ -5,13 +5,13 @@ interface AvatarInitialProps {
   className?: string;
 }
 
-const colors = [
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-yellow-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-indigo-500",
+const gradients = [
+  "bg-gradient-to-br from-blue-500 to-blue-700",
+  "bg-gradient-to-br from-emerald-500 to-emerald-700",
+  "bg-gradient-to-br from-amber-500 to-amber-700",
+  "bg-gradient-to-br from-purple-500 to-purple-700",
+  "bg-gradient-to-br from-pink-500 to-pink-700",
+  "bg-gradient-to-br from-indigo-500 to-indigo-700",
 ];
 
 function getInitials(name: string): string {
@@ -25,18 +25,18 @@ function getColorIndex(name: string): number {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return Math.abs(hash) % colors.length;
+  return Math.abs(hash) % gradients.length;
 }
 
 export function AvatarInitial({ name, className }: AvatarInitialProps) {
   const initials = getInitials(name);
-  const colorClass = colors[getColorIndex(name)];
+  const gradientClass = gradients[getColorIndex(name)];
 
   return (
     <div
       className={cn(
-        "w-10 h-10 rounded-full flex items-center justify-center text-white font-medium",
-        colorClass,
+        "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm",
+        gradientClass,
         className
       )}
     >

@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const statusBadgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-colors",
   {
     variants: {
       variant: {
-        paid: "bg-success-muted text-success",
-        pending: "bg-warning-muted text-warning",
-        overdue: "bg-destructive-muted text-destructive",
-        default: "bg-secondary text-foreground",
+        paid: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
+        pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
+        overdue: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
+        default: "bg-gray-50 text-gray-600 ring-1 ring-gray-500/20",
       },
     },
     defaultVariants: {

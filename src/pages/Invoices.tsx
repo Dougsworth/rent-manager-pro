@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
-import { Plus, Search, Download, Loader2, X, Link } from 'lucide-react';
+import { Select } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Search, Download, Loader2, Link } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { formatDate } from '@/utils/formatDate';
 import { Pagination, paginate } from '@/components/Pagination';
@@ -98,84 +100,76 @@ export default function Invoices() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
+        <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Invoice
         </Button>
       </div>
 
       {/* Create Invoice Modal */}
-      {showCreate && (
-        <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowCreate(false)} />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 mx-auto max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-50 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Create Invoice</h2>
-              <button onClick={() => setShowCreate(false)} className="rounded-lg p-2 hover:bg-gray-100">
-                <X className="h-5 w-5" />
-              </button>
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Invoice</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <Label htmlFor="inv-tenant">Tenant</Label>
+              <Select
+                id="inv-tenant"
+                required
+                value={newInvoice.tenant_id}
+                onValueChange={(val) => setNewInvoice({ ...newInvoice, tenant_id: val })}
+                placeholder="Select a tenant"
+                className="mt-1"
+                options={tenants.map(t => ({
+                  value: t.id,
+                  label: `${t.first_name} ${t.last_name} — ${t.unit_name}`,
+                }))}
+              />
             </div>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <Label htmlFor="inv-tenant">Tenant</Label>
-                <select
-                  id="inv-tenant"
-                  required
-                  value={newInvoice.tenant_id}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, tenant_id: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a tenant</option>
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.first_name} {t.last_name} — {t.unit_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="inv-amount">Amount (JMD)</Label>
-                <Input
-                  id="inv-amount"
-                  type="number"
-                  required
-                  value={newInvoice.amount}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, amount: e.target.value })}
-                  placeholder="e.g. 45000"
-                />
-              </div>
-              <div>
-                <Label htmlFor="inv-due">Due Date</Label>
-                <Input
-                  id="inv-due"
-                  type="date"
-                  required
-                  value={newInvoice.due_date}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, due_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="inv-desc">Description</Label>
-                <Input
-                  id="inv-desc"
-                  value={newInvoice.description}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, description: e.target.value })}
-                  placeholder="e.g. Monthly Rent — March 2026"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={creating}>
-                  {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Create
-                </Button>
-              </div>
-            </form>
-          </div>
-        </>
-      )}
+            <div>
+              <Label htmlFor="inv-amount">Amount (JMD)</Label>
+              <Input
+                id="inv-amount"
+                type="number"
+                required
+                value={newInvoice.amount}
+                onChange={(e) => setNewInvoice({ ...newInvoice, amount: e.target.value })}
+                placeholder="e.g. 45000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="inv-due">Due Date</Label>
+              <Input
+                id="inv-due"
+                type="date"
+                required
+                value={newInvoice.due_date}
+                onChange={(e) => setNewInvoice({ ...newInvoice, due_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="inv-desc">Description</Label>
+              <Input
+                id="inv-desc"
+                value={newInvoice.description}
+                onChange={(e) => setNewInvoice({ ...newInvoice, description: e.target.value })}
+                placeholder="e.g. Monthly Rent — March 2026"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -190,16 +184,17 @@ export default function Invoices() {
               </div>
             </div>
             <div className="flex gap-2">
-              <select
+              <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
+                onValueChange={setStatusFilter}
+                className="w-40"
+                options={[
+                  { value: 'all', label: 'All Status' },
+                  { value: 'paid', label: 'Paid' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'overdue', label: 'Overdue' },
+                ]}
+              />
               <Button
                 variant="outline"
                 size="sm"
