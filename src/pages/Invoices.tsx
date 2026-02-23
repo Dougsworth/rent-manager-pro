@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getInvoices, createInvoice } from '@/services/invoices';
 import { getTenants } from '@/services/tenants';
 import type { InvoiceWithTenant, TenantWithDetails } from '@/types/app.types';
+import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +11,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search, Download, Loader2, Link } from 'lucide-react';
+import { Plus, Search, Download, Loader2, Link, FileText } from 'lucide-react';
 import { exportToCsv } from '@/utils/exportCsv';
 import { formatDate } from '@/utils/formatDate';
 import { Pagination, paginate } from '@/components/Pagination';
@@ -85,26 +86,28 @@ export default function Invoices() {
 
   const paginatedInvoices = paginate(filteredInvoices, currentPage, PAGE_SIZE);
 
-  // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Invoice
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        title="Invoices"
+        description="Create and manage rent invoices"
+        action={
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Invoice
+          </Button>
+        }
+      />
 
       {/* Create Invoice Modal */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -169,92 +172,90 @@ export default function Invoices() {
         </DialogContent>
       </Dialog>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search invoices..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Select
-                value={statusFilter}
-                onValueChange={setStatusFilter}
-                className="w-40"
-                options={[
-                  { value: 'all', label: 'All Status' },
-                  { value: 'paid', label: 'Paid' },
-                  { value: 'pending', label: 'Pending' },
-                  { value: 'overdue', label: 'Overdue' },
-                ]}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const rows = filteredInvoices.map((inv) => ({
-                    invoice_number: inv.invoice_number,
-                    tenant: `${inv.tenant_first_name} ${inv.tenant_last_name}`,
-                    property: inv.property_name,
-                    unit: inv.unit_name,
-                    amount: inv.amount,
-                    due_date: inv.due_date,
-                    status: inv.status,
-                  }));
-                  exportToCsv('invoices.csv', rows, [
-                    { key: 'invoice_number', header: 'Invoice ID' },
-                    { key: 'tenant', header: 'Tenant Name' },
-                    { key: 'property', header: 'Property' },
-                    { key: 'unit', header: 'Unit' },
-                    { key: 'amount', header: 'Amount' },
-                    { key: 'due_date', header: 'Due Date' },
-                    { key: 'status', header: 'Status' },
-                  ]);
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
+      <div className="bg-white rounded-xl border border-slate-200">
+        {/* Search / Filter bar */}
+        <div className="flex flex-col sm:flex-row gap-3 border-b border-slate-200 px-6 py-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search invoices..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              className="w-40"
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'paid', label: 'Paid' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'overdue', label: 'Overdue' },
+              ]}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const rows = filteredInvoices.map((inv) => ({
+                  invoice_number: inv.invoice_number,
+                  tenant: `${inv.tenant_first_name} ${inv.tenant_last_name}`,
+                  property: inv.property_name,
+                  unit: inv.unit_name,
+                  amount: inv.amount,
+                  due_date: inv.due_date,
+                  status: inv.status,
+                }));
+                exportToCsv('invoices.csv', rows, [
+                  { key: 'invoice_number', header: 'Invoice ID' },
+                  { key: 'tenant', header: 'Tenant Name' },
+                  { key: 'property', header: 'Property' },
+                  { key: 'unit', header: 'Unit' },
+                  { key: 'amount', header: 'Amount' },
+                  { key: 'due_date', header: 'Due Date' },
+                  { key: 'status', header: 'Status' },
+                ]);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-900">Invoice ID</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Tenant</th>
-                <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Property</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Due Date</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Link</th>
+              <tr className="border-b border-slate-100">
+                <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Invoice ID</th>
+                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
+                <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Property</th>
+                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
+                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Due Date</th>
+                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
+                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Link</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {paginatedInvoices.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="hidden sm:table-cell py-3 px-4 text-sm font-medium text-blue-600">{invoice.invoice_number}</td>
-                  <td className="py-3 px-4 text-sm text-gray-900">
+                <tr key={invoice.id} className="hover:bg-slate-50 transition-colors duration-150">
+                  <td className="hidden sm:table-cell py-3 px-6 text-sm font-mono text-slate-600">{invoice.invoice_number}</td>
+                  <td className="py-3 px-6 text-sm font-medium text-slate-900">
                     {invoice.tenant_first_name} {invoice.tenant_last_name}
                   </td>
-                  <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">
+                  <td className="hidden md:table-cell py-3 px-6 text-sm text-slate-500">
                     {invoice.property_name}{invoice.unit_name ? `, ${invoice.unit_name}` : ''}
                   </td>
-                  <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{formatDate(invoice.due_date)}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-6 text-sm font-medium text-slate-900">{formatCurrency(invoice.amount)}</td>
+                  <td className="py-3 px-6 text-sm text-slate-500">{formatDate(invoice.due_date)}</td>
+                  <td className="py-3 px-6">
                     <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-6">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -283,13 +284,19 @@ export default function Invoices() {
         />
 
         {filteredInvoices.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-gray-500">
-              {invoices.length === 0 ? 'No invoices yet. Create your first invoice.' : 'No invoices found matching your search.'}
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="rounded-xl border border-dashed border-slate-300 p-4 mb-4">
+              <FileText className="h-6 w-6 text-slate-400" />
+            </div>
+            <h3 className="text-sm font-medium text-slate-900">
+              {invoices.length === 0 ? 'No invoices yet' : 'No results found'}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {invoices.length === 0 ? 'Create your first invoice to get started.' : 'Try adjusting your search or filters.'}
             </p>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

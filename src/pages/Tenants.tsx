@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
-import { Search, Plus, Loader2, Trash2 } from "lucide-react";
+import { Search, Plus, Loader2, Trash2, Users } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
@@ -68,7 +68,6 @@ export default function Tenants() {
     if (!selectedTenant) return;
     setSendingReminder(true);
     try {
-      // Find the latest overdue invoice for this tenant
       const { data: overdueInvoice } = await supabase
         .from('invoices')
         .select('id')
@@ -79,7 +78,6 @@ export default function Tenants() {
         .maybeSingle();
 
       if (!overdueInvoice) {
-        // Fall back to latest pending invoice
         const { data: pendingInvoice } = await supabase
           .from('invoices')
           .select('id')
@@ -116,7 +114,6 @@ export default function Tenants() {
 
   const paginatedTenants = paginate(filteredTenants, currentPage, PAGE_SIZE);
 
-  // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab]);
 
   const counts = {
@@ -136,12 +133,11 @@ export default function Tenants() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
       </div>
     );
   }
 
-  // Map selected tenant to the shape TenantDetail expects
   const tenantForDetail = selectedTenant ? {
     id: selectedTenant.id,
     name: `${selectedTenant.first_name} ${selectedTenant.last_name}`,
@@ -158,6 +154,7 @@ export default function Tenants() {
     <>
       <PageHeader
         title="Tenants"
+        description="Manage your tenants and track payments"
         count={tenants.length}
         action={
           <Button onClick={() => setShowAddModal(true)}>
@@ -171,7 +168,7 @@ export default function Tenants() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <FilterTabs<TenantStatus> tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search tenants..."
             value={searchQuery}
@@ -184,41 +181,47 @@ export default function Tenants() {
       {/* Tenant List */}
       {filteredTenants.length === 0 ? (
         <EmptyState
+          icon={Users}
           message={
             searchQuery
               ? `No tenants matching "${searchQuery}"`
               : activeTab !== "all"
               ? `No ${activeTab} tenants`
-              : "No tenants yet. Add your first tenant to start collecting rent."
+              : "No tenants yet"
+          }
+          description={
+            !searchQuery && activeTab === "all"
+              ? "Add your first tenant to start collecting rent."
+              : undefined
           }
           action={
             !searchQuery && activeTab === "all" ? (
               <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 mr-1" />
                 Add Tenant
               </Button>
             ) : undefined
           }
         />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
           {paginatedTenants.map((tenant) => (
             <button
               key={tenant.id}
               onClick={() => setSelectedTenant(tenant)}
-              className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors duration-150 text-left"
             >
               <AvatarInitial name={`${tenant.first_name} ${tenant.last_name}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-slate-900 truncate">
                   {tenant.first_name} {tenant.last_name}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {tenant.unit_name}{tenant.property_name ? ` - ${tenant.property_name}` : ''}
+                <p className="text-xs text-slate-500">
+                  {tenant.unit_name}{tenant.property_name ? ` · ${tenant.property_name}` : ''}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-gray-900">{formatCurrency(tenant.rent_amount)}</p>
+              <div className="text-right flex items-center gap-3">
+                <p className="text-sm font-medium text-slate-900">{formatCurrency(tenant.rent_amount)}</p>
                 <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
               </div>
             </button>

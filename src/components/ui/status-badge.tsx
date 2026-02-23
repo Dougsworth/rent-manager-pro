@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const statusBadgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-colors",
+  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
   {
     variants: {
       variant: {
-        paid: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-        pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-        overdue: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-        default: "bg-gray-50 text-gray-600 ring-1 ring-gray-500/20",
+        paid: "bg-slate-100 text-slate-700",
+        pending: "bg-blue-50 text-blue-700",
+        overdue: "bg-slate-900 text-white",
+        default: "bg-slate-100 text-slate-600",
       },
     },
     defaultVariants: {
@@ -19,6 +19,13 @@ const statusBadgeVariants = cva(
   }
 );
 
+const dotVariants: Record<string, string> = {
+  paid: "bg-slate-500",
+  pending: "bg-blue-500",
+  overdue: "bg-white",
+  default: "bg-slate-400",
+};
+
 export interface StatusBadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof statusBadgeVariants> {}
@@ -26,13 +33,18 @@ export interface StatusBadgeProps
 function StatusBadge({
   className,
   variant,
+  children,
   ...props
 }: StatusBadgeProps) {
+  const dotColor = dotVariants[variant ?? "default"] ?? dotVariants.default;
   return (
     <div
       className={cn(statusBadgeVariants({ variant }), className)}
       {...props}
-    />
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
+      {children}
+    </div>
   );
 }
 

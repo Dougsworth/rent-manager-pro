@@ -5,13 +5,15 @@ import { getTenants } from '@/services/tenants';
 import { getInvoices } from '@/services/invoices';
 import { getProofsForLandlord, approveProof, rejectProof } from '@/services/paymentProofs';
 import type { PaymentWithDetails, TenantWithDetails, InvoiceWithTenant, PaymentProofWithDetails } from '@/types/app.types';
+import { PageHeader } from '@/components/PageHeader';
+import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, DollarSign, Loader2, Plus, X, Download, CheckCircle, XCircle } from 'lucide-react';
+import { Search, DollarSign, Loader2, Plus, Download, CheckCircle, XCircle, TrendingUp, AlertTriangle, Calendar, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportToCsv } from '@/utils/exportCsv';
 import { useToast } from '@/components/ui/toast';
@@ -165,55 +167,54 @@ export default function Payments() {
 
   const paginatedPayments = paginate(filteredPayments, currentPage, PAGE_SIZE);
 
-  // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  // Filter unpaid invoices for the selected tenant
   const unpaidInvoices = invoices.filter(i => i.tenant_id === newPayment.tenant_id && i.status !== 'paid');
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-        <div className="flex gap-3">
+    <>
+      <PageHeader
+        title="Payments"
+        description="Track and manage all rent payments"
+        action={
           <Button onClick={() => setShowRecord(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Record Payment
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Tab Toggle */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-0.5 bg-slate-100 p-1 rounded-lg w-fit mb-6">
         <button
           onClick={() => setActiveTab('payments')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
             activeTab === 'payments'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           All Payments
         </button>
         <button
           onClick={() => setActiveTab('proofs')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-150 flex items-center gap-2 ${
             activeTab === 'proofs'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           Pending Proofs
           {pendingProofs.length > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-slate-900 text-white text-xs font-medium px-2 py-0.5 rounded-full">
               {pendingProofs.length}
             </span>
           )}
@@ -334,134 +335,116 @@ export default function Payments() {
 
       {activeTab === 'payments' && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center">
-                <DollarSign className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Collected</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalCollected)}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center">
-                <DollarSign className="h-8 w-8 text-yellow-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Unpaid Invoices</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPending)}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center">
-                <DollarSign className="h-8 w-8 text-red-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Failed</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalFailed)}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center">
-                <DollarSign className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">This Month</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(thisMonth)}</p>
-                </div>
-              </div>
-            </div>
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              label="Total Collected"
+              value={formatCurrency(totalCollected)}
+              icon={TrendingUp}
+            />
+            <StatCard
+              label="Unpaid Invoices"
+              value={formatCurrency(totalPending)}
+              icon={DollarSign}
+            />
+            <StatCard
+              label="Failed"
+              value={formatCurrency(totalFailed)}
+              icon={AlertTriangle}
+            />
+            <StatCard
+              label="This Month"
+              value={formatCurrency(thisMonth)}
+              icon={Calendar}
+            />
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search payments..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Select
-                    value={statusFilter}
-                    onValueChange={setStatusFilter}
-                    className="w-40"
-                    options={[
-                      { value: 'all', label: 'All Status' },
-                      { value: 'completed', label: 'Completed' },
-                      { value: 'pending', label: 'Pending' },
-                      { value: 'failed', label: 'Failed' },
-                    ]}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const rows = filteredPayments.map((p) => ({
-                        payment_number: p.payment_number,
-                        tenant: `${p.tenant_first_name} ${p.tenant_last_name}`,
-                        property: `${p.property_name}${p.unit_name ? `, ${p.unit_name}` : ''}`,
-                        amount: p.amount,
-                        payment_date: p.payment_date,
-                        method: methodLabels[p.method] ?? p.method,
-                        status: p.status,
-                      }));
-                      exportToCsv('payments.csv', rows, [
-                        { key: 'payment_number', header: 'Payment ID' },
-                        { key: 'tenant', header: 'Tenant' },
-                        { key: 'property', header: 'Property' },
-                        { key: 'amount', header: 'Amount' },
-                        { key: 'payment_date', header: 'Date' },
-                        { key: 'method', header: 'Method' },
-                        { key: 'status', header: 'Status' },
-                      ]);
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
+          {/* Table */}
+          <div className="bg-white rounded-xl border border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 border-b border-slate-200 px-6 py-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search payments..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                  className="w-40"
+                  options={[
+                    { value: 'all', label: 'All Status' },
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'failed', label: 'Failed' },
+                  ]}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const rows = filteredPayments.map((p) => ({
+                      payment_number: p.payment_number,
+                      tenant: `${p.tenant_first_name} ${p.tenant_last_name}`,
+                      property: `${p.property_name}${p.unit_name ? `, ${p.unit_name}` : ''}`,
+                      amount: p.amount,
+                      payment_date: p.payment_date,
+                      method: methodLabels[p.method] ?? p.method,
+                      status: p.status,
+                    }));
+                    exportToCsv('payments.csv', rows, [
+                      { key: 'payment_number', header: 'Payment ID' },
+                      { key: 'tenant', header: 'Tenant' },
+                      { key: 'property', header: 'Property' },
+                      { key: 'amount', header: 'Amount' },
+                      { key: 'payment_date', header: 'Date' },
+                      { key: 'method', header: 'Method' },
+                      { key: 'status', header: 'Status' },
+                    ]);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Payment ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Tenant</th>
-                    <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Property</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                    <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-900">Date</th>
-                    <th className="hidden md:table-cell text-left py-3 px-4 font-medium text-gray-900">Method</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                  <tr className="border-b border-slate-100">
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Payment ID</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Property</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
+                    <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Date</th>
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Method</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100">
                   {paginatedPayments.map((payment) => (
-                    <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="hidden md:table-cell py-3 px-4 text-sm font-medium text-blue-600">{payment.payment_number}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900">
+                    <tr key={payment.id} className="hover:bg-slate-50 transition-colors duration-150">
+                      <td className="hidden md:table-cell py-3 px-6 text-sm font-mono text-slate-600">{payment.payment_number}</td>
+                      <td className="py-3 px-6 text-sm font-medium text-slate-900">
                         {payment.tenant_first_name} {payment.tenant_last_name}
                       </td>
-                      <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">
+                      <td className="hidden md:table-cell py-3 px-6 text-sm text-slate-500">
                         {payment.property_name}{payment.unit_name ? `, ${payment.unit_name}` : ''}
                       </td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(payment.amount)}</td>
-                      <td className="hidden sm:table-cell py-3 px-4 text-sm text-gray-600">{formatDate(payment.payment_date)}</td>
-                      <td className="hidden md:table-cell py-3 px-4 text-sm text-gray-600">{methodLabels[payment.method] ?? payment.method}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-6 text-sm font-medium text-slate-900">{formatCurrency(payment.amount)}</td>
+                      <td className="hidden sm:table-cell py-3 px-6 text-sm text-slate-500">{formatDate(payment.payment_date)}</td>
+                      <td className="hidden md:table-cell py-3 px-6 text-sm text-slate-500">{methodLabels[payment.method] ?? payment.method}</td>
+                      <td className="py-3 px-6">
                         <StatusBadge variant={statusVariantMap[payment.status] ?? 'default'}>
                           {payment.status}
                         </StatusBadge>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-6">
                         <Link to={`/receipt/${payment.id}`}>
                           <Button variant="outline" size="sm">Receipt</Button>
                         </Link>
@@ -480,9 +463,15 @@ export default function Payments() {
             />
 
             {filteredPayments.length === 0 && (
-              <div className="py-8 text-center">
-                <p className="text-gray-500">
-                  {payments.length === 0 ? 'No payments recorded yet.' : 'No payments found matching your search.'}
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="rounded-xl border border-dashed border-slate-300 p-4 mb-4">
+                  <CreditCard className="h-6 w-6 text-slate-400" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-900">
+                  {payments.length === 0 ? 'No payments recorded yet' : 'No results found'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {payments.length === 0 ? 'Record your first payment to get started.' : 'Try adjusting your search or filters.'}
                 </p>
               </div>
             )}
@@ -493,18 +482,20 @@ export default function Payments() {
       {activeTab === 'proofs' && (
         <div className="space-y-4">
           {pendingProofs.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-12 text-center">
-              <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No pending payment proofs to review.</p>
+            <div className="bg-white rounded-xl border border-slate-200 py-16 flex flex-col items-center justify-center">
+              <div className="rounded-xl border border-dashed border-slate-300 p-4 mb-4">
+                <CheckCircle className="h-6 w-6 text-slate-400" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-900">No pending proofs</h3>
+              <p className="mt-1 text-sm text-slate-500">All payment proofs have been reviewed.</p>
             </div>
           ) : (
             pendingProofs.map((proof) => (
-              <div key={proof.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <div key={proof.id} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Image thumbnail */}
                   <button
                     onClick={() => setImageModal(proof.image_url)}
-                    className="flex-shrink-0 w-full sm:w-40 h-40 rounded-lg overflow-hidden border hover:opacity-80 transition-opacity"
+                    className="flex-shrink-0 w-full sm:w-40 h-40 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity duration-150"
                   >
                     <img
                       src={proof.image_url}
@@ -513,21 +504,19 @@ export default function Payments() {
                     />
                   </button>
 
-                  {/* Details */}
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-medium text-slate-900">
                         {proof.tenant_first_name} {proof.tenant_last_name}
                       </h3>
                       <StatusBadge variant="pending">pending</StatusBadge>
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Invoice: <span className="font-medium text-gray-900">{proof.invoice_number}</span></p>
-                      <p>Amount: <span className="font-medium text-gray-900">{formatCurrency(proof.invoice_amount)}</span></p>
+                    <div className="text-sm text-slate-500 space-y-1">
+                      <p>Invoice: <span className="font-medium text-slate-900">{proof.invoice_number}</span></p>
+                      <p>Amount: <span className="font-medium text-slate-900">{formatCurrency(proof.invoice_amount)}</span></p>
                       <p>Uploaded: {formatDate(proof.created_at)}</p>
                     </div>
 
-                    {/* Actions */}
                     {rejectingId === proof.id ? (
                       <div className="space-y-2 pt-2">
                         <Input
@@ -558,7 +547,6 @@ export default function Payments() {
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                           onClick={() => handleApprove(proof)}
                           disabled={actionLoading === proof.id}
                         >
@@ -572,7 +560,6 @@ export default function Payments() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
                           onClick={() => setRejectingId(proof.id)}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
@@ -587,6 +574,6 @@ export default function Payments() {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }

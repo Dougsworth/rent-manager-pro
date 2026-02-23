@@ -69,6 +69,41 @@ const heroAnimStyles = `
   opacity: 1;
   transform: translateY(0);
 }
+@keyframes radar-ping {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+  25% { transform: translateY(-20px) translateX(10px); opacity: 0.7; }
+  50% { transform: translateY(-10px) translateX(-5px); opacity: 0.4; }
+  75% { transform: translateY(-25px) translateX(8px); opacity: 0.6; }
+}
+@keyframes border-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.dashboard-card {
+  position: relative;
+}
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.5rem;
+  padding: 2px;
+  background: conic-gradient(from var(--angle), transparent 40%, rgba(59,130,246,0.5) 50%, transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-rotate 4s linear infinite;
+  pointer-events: none;
+}
 `;
 
 /* ── Reveal on scroll ── */
@@ -606,7 +641,7 @@ export default function Landing() {
                   <div className="w-5 h-5 rounded bg-blue-600/10 flex items-center justify-center">
                     <Check className="w-3 h-3 text-blue-600" strokeWidth={3} />
                   </div>
-                  <span>Free forever, No credit card required</span>
+                  <span>Start free — No credit card required</span>
                 </div>
               </Reveal>
             </div>
@@ -862,7 +897,7 @@ export default function Landing() {
         <section className="relative py-16 md:py-32 bg-white overflow-hidden">
           <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
             <Reveal>
-              <div className="relative bg-neutral-950 rounded-3xl overflow-hidden">
+              <div className="relative bg-neutral-950 rounded-3xl overflow-hidden dashboard-card">
                 {/* Background glow effects */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -871,6 +906,37 @@ export default function Landing() {
                   backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
                   backgroundSize: '48px 48px',
                 }} />
+
+                {/* Radar ping rings */}
+                {[0, 1.3, 2.6].map((delay) => (
+                  <div
+                    key={delay}
+                    className="absolute top-1/3 left-1/2 w-[500px] h-[500px] rounded-full border border-blue-400/20 pointer-events-none"
+                    style={{ animation: `radar-ping 4s ${delay}s ease-out infinite` }}
+                  />
+                ))}
+
+                {/* Floating particles */}
+                {[
+                  { top: '15%', left: '10%', size: 3, dur: '6s', del: '0s' },
+                  { top: '25%', left: '85%', size: 2, dur: '8s', del: '1s' },
+                  { top: '60%', left: '15%', size: 2, dur: '7s', del: '2s' },
+                  { top: '70%', left: '90%', size: 3, dur: '5s', del: '0.5s' },
+                  { top: '40%', left: '5%', size: 2, dur: '9s', del: '3s' },
+                  { top: '80%', left: '50%', size: 2, dur: '6s', del: '1.5s' },
+                  { top: '10%', left: '60%', size: 3, dur: '7s', del: '2.5s' },
+                  { top: '50%', left: '75%', size: 2, dur: '8s', del: '0.8s' },
+                ].map((p, i) => (
+                  <div
+                    key={i}
+                    className="absolute rounded-full bg-blue-400 pointer-events-none"
+                    style={{
+                      top: p.top, left: p.left,
+                      width: p.size, height: p.size,
+                      animation: `particle-float ${p.dur} ${p.del} ease-in-out infinite`,
+                    }}
+                  />
+                ))}
 
                 <div className="relative z-10 px-4 sm:px-6 md:px-12 lg:px-16 pt-10 md:pt-20 pb-0">
                   {/* Header */}
@@ -1014,13 +1080,31 @@ export default function Landing() {
                           </div>
                         </div>
 
-                        {/* Collection progress bar */}
-                        <div className="flex items-center gap-3 bg-neutral-50 rounded-xl px-4 py-3 border border-neutral-100 mt-4">
-                          <p className="text-xs font-semibold text-neutral-500">Collection Rate</p>
-                          <div className="flex-1 bg-neutral-200 rounded-full h-2.5 overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full" style={{ width: '81%' }} />
+                        {/* Collection progress — segmented bar */}
+                        <div className="bg-neutral-50 rounded-xl px-4 py-3 border border-neutral-100 mt-4">
+                          <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Collection Rate</span>
+                            <span className="text-lg font-bold text-emerald-600 tabular-nums">81%</span>
                           </div>
-                          <p className="text-sm font-bold text-blue-600">81%</p>
+                          <div className="flex gap-[3px]">
+                            {Array.from({ length: 20 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`h-2 flex-1 rounded-sm ${
+                                  i < 16
+                                    ? 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_4px_rgba(52,211,153,0.3)]'
+                                    : i < 18
+                                      ? 'bg-amber-300'
+                                      : 'bg-neutral-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="flex items-center gap-1.5 text-[10px] text-neutral-400"><span className="w-2 h-2 rounded-sm bg-emerald-400" />Collected</span>
+                            <span className="flex items-center gap-1.5 text-[10px] text-neutral-400"><span className="w-2 h-2 rounded-sm bg-amber-300" />Pending</span>
+                            <span className="flex items-center gap-1.5 text-[10px] text-neutral-400"><span className="w-2 h-2 rounded-sm bg-neutral-200" />Outstanding</span>
+                          </div>
                         </div>
                       </div>
                     </div>

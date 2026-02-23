@@ -37,16 +37,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen bg-gray-50/80">
+      <div className="min-h-screen bg-slate-50">
         {/* Desktop Navigation */}
-        <nav className="hidden lg:block bg-white/80 backdrop-blur-md border-b border-gray-200/80 sticky top-0 z-30">
+        <nav className="hidden lg:block bg-white border-b border-slate-200 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
+            <div className="flex justify-between h-14">
               <div className="flex items-center">
-                <Link to="/dashboard" className="text-lg font-bold text-gray-900 tracking-tight">
+                <Link to="/dashboard" className="text-sm font-semibold text-slate-900 tracking-tight">
                   EasyCollect
                 </Link>
-                <div className="hidden md:ml-10 md:flex md:space-x-1">
+                <div className="hidden md:ml-8 md:flex md:space-x-1">
                   {navigation.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname.startsWith(item.href);
@@ -55,10 +55,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         key={item.name}
                         to={item.href}
                         className={cn(
-                          "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2",
+                          "px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 flex items-center gap-2",
                           isActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-slate-100 text-slate-900"
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -69,15 +69,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500 font-medium">{displayName}</span>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-xs font-semibold shadow-sm">
+                <span className="text-sm text-slate-500">{displayName}</span>
+                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-medium">
                   {initials}
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={signOut}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-150"
+                      className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors duration-150"
                     >
                       <LogOut className="h-4 w-4" />
                     </button>
@@ -90,23 +90,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Mobile Navigation */}
-        <nav className="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-200/80 sticky top-0 z-30">
+        <nav className="lg:hidden bg-white border-b border-slate-200 sticky top-0 z-30">
           <div className="px-4">
-            <div className="flex justify-between h-16 items-center">
-              <Link to="/dashboard" className="text-lg font-bold text-gray-900 tracking-tight">
+            <div className="flex justify-between h-14 items-center">
+              <Link to="/dashboard" className="text-sm font-semibold text-slate-900 tracking-tight">
                 EasyCollect
               </Link>
               <div className="flex items-center gap-2">
                 <button
                   onClick={signOut}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors duration-150"
                   title="Sign out"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg hover:bg-slate-100 transition-colors duration-150"
                 >
                   {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
@@ -114,7 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           {mobileMenuOpen && (
-            <div className="px-2 pb-3 space-y-1 border-t border-gray-100">
+            <div className="px-2 pb-3 space-y-1 border-t border-slate-100">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname.startsWith(item.href);
@@ -124,10 +124,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     to={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 flex items-center gap-2",
+                      "px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 flex items-center gap-2",
                       isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-slate-100 text-slate-900"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -140,7 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
       </div>

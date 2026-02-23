@@ -1,15 +1,16 @@
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
+import type { LucideIcon } from "lucide-react";
 
 const subtextVariants = cva(
   "text-xs font-medium",
   {
     variants: {
       variant: {
-        default: "text-gray-500",
-        success: "text-emerald-600",
-        warning: "text-amber-600",
-        danger: "text-red-600",
+        default: "text-slate-500",
+        success: "text-slate-900",
+        warning: "text-slate-900",
+        danger: "text-slate-900",
       },
     },
     defaultVariants: {
@@ -23,6 +24,8 @@ interface StatCardProps extends VariantProps<typeof subtextVariants> {
   value: string;
   subtext?: string;
   subtextVariant?: "default" | "success" | "warning" | "danger";
+  icon?: LucideIcon;
+  accentColor?: string;
   className?: string;
 }
 
@@ -31,22 +34,32 @@ export function StatCard({
   value,
   subtext,
   subtextVariant = "default",
+  icon: Icon,
   className,
 }: StatCardProps) {
   return (
     <div className={cn(
-      "rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md",
+      "rounded-xl border border-slate-200 bg-white p-6 transition-colors duration-150",
       className
     )}>
-      <p className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-1">
-        {label}
-      </p>
-      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-      {subtext && (
-        <p className={cn(subtextVariants({ variant: subtextVariant }))}>
-          {subtext}
-        </p>
-      )}
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">
+            {label}
+          </p>
+          <p className="text-2xl font-semibold tracking-tight text-slate-900 mb-1">{value}</p>
+          {subtext && (
+            <p className={cn(subtextVariants({ variant: subtextVariant }))}>
+              {subtext}
+            </p>
+          )}
+        </div>
+        {Icon && (
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-slate-50">
+            <Icon className="h-5 w-5 text-slate-400" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
