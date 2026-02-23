@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -19,12 +19,218 @@ import {
   Receipt,
 } from 'lucide-react';
 
+/* ── Keyframe animations for hero background ── */
+const heroAnimStyles = `
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes drift-right {
+  0%, 100% { transform: translateX(0px) rotate(0deg); }
+  50% { transform: translateX(6px) rotate(3deg); }
+}
+@keyframes drift-left {
+  0%, 100% { transform: translateX(0px) rotate(0deg); }
+  50% { transform: translateX(-6px) rotate(-3deg); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.07; }
+  50% { opacity: 0.12; }
+}
+@keyframes slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes draw-path {
+  to { stroke-dashoffset: 0; }
+}
+.step-card {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.step-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+`;
+
 /* ── Section Divider (HandyPay-style + markers on edges) ── */
 function SectionDivider() {
   return (
     <div className="relative h-px w-full">
       <div className="absolute inset-0 bg-neutral-200" />
     </div>
+  );
+}
+
+/* ── How It Works — SVG path draw section ── */
+function HowItWorks() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const path = pathRef.current;
+    if (!path) return;
+    const length = path.getTotalLength();
+    path.style.strokeDasharray = `${length}`;
+    path.style.strokeDashoffset = `${length}`;
+
+    // Scroll-driven path draw
+    const handleScroll = () => {
+      const section = sectionRef.current;
+      if (!section || !path) return;
+      const rect = section.getBoundingClientRect();
+      const sectionTop = rect.top;
+      const sectionHeight = rect.height;
+      const windowHeight = window.innerHeight;
+      const scrolled = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (sectionHeight + windowHeight * 0.5)));
+      path.style.strokeDashoffset = `${length * (1 - scrolled)}`;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    // IntersectionObserver for card reveals
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    cardsRef.current.forEach((card) => card && observer.observe(card));
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  const steps = [
+    {
+      icon: FileText,
+      step: '01',
+      title: 'Create & send invoice',
+      desc: 'Generate an invoice with one click. Each tenant gets auto-numbered invoices. Share the payment link via WhatsApp, email, or text.',
+    },
+    {
+      icon: Upload,
+      step: '02',
+      title: 'Tenant pays & uploads proof',
+      desc: 'Tenant opens the link on any device — no app, no signup. They see your bank details, pay, and upload a screenshot as proof.',
+    },
+    {
+      icon: CheckCircle,
+      step: '03',
+      title: 'Approve & track',
+      desc: 'Review the proof, approve with one click. Watch your collection rate climb on the dashboard. Every payment documented.',
+    },
+  ];
+
+  return (
+    <section id="how-it-works" ref={sectionRef} className="relative py-24 md:py-32 bg-white overflow-hidden">
+      <div className="container mx-auto px-6 lg:px-8 max-w-5xl">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-neutral-900 mb-6">
+            Get Paid in 3 Simple Steps
+          </h2>
+          <p className="text-lg text-neutral-500 max-w-2xl mx-auto mb-8">
+            Create an invoice, share the link, and approve the proof. Start collecting rent in minutes, not days.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link to="/signup" className="inline-flex items-center justify-center rounded-full font-medium transition-colors cursor-pointer bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 text-sm w-48">
+              Get started
+            </Link>
+            <a href="#pricing" className="inline-flex items-center justify-center px-6 py-3 bg-white text-neutral-900 border border-neutral-300 rounded-full font-medium text-sm hover:bg-neutral-50 transition-colors w-48">
+              View plans
+            </a>
+          </div>
+        </div>
+
+        {/* Path + steps */}
+        <div className="relative">
+          {/* SVG S-curve path — desktop only */}
+          <svg className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full hidden md:block pointer-events-none" viewBox="0 0 800 900" fill="none" preserveAspectRatio="none" aria-hidden="true">
+            <path
+              ref={pathRef}
+              d="M400 0 C400 80, 650 100, 650 180 C650 260, 150 280, 150 360 C150 440, 650 460, 650 540 C650 620, 150 640, 150 720 C150 800, 400 820, 400 900"
+              stroke="rgb(37,99,246)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.15"
+            />
+            {/* Glow version */}
+            <path
+              d="M400 0 C400 80, 650 100, 650 180 C650 260, 150 280, 150 360 C150 440, 650 460, 650 540 C650 620, 150 640, 150 720 C150 800, 400 820, 400 900"
+              stroke="rgb(37,99,246)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.04"
+              filter="url(#glow)"
+            />
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="8" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
+
+          {/* Vertical line — mobile */}
+          <div className="absolute top-0 bottom-0 left-6 w-px bg-blue-600/10 md:hidden" />
+
+          {/* Step cards */}
+          <div className="space-y-16 md:space-y-24 relative z-10">
+            {steps.map((item, i) => (
+              <div
+                key={item.step}
+                ref={(el) => { cardsRef.current[i] = el; }}
+                className={`step-card flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
+              >
+                {/* Number node */}
+                <div className={`flex-shrink-0 flex items-center gap-4 ${i % 2 === 0 ? 'md:ml-auto' : 'md:mr-auto'} md:w-[60px] md:justify-center`}>
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-full bg-white border-2 border-neutral-900 shadow-[3px_3px_0px_0px_rgba(37,99,235,1)] flex items-center justify-center">
+                      <span className="text-lg font-bold text-neutral-900">{item.step}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card */}
+                <div className={`flex-1 max-w-md ${i % 2 === 0 ? 'md:text-right md:ml-auto md:mr-16' : 'md:text-left md:mr-auto md:ml-16'}`}>
+                  <div className="bg-white rounded-2xl border border-neutral-200 p-6 hover:border-neutral-300 hover:shadow-lg hover:shadow-blue-600/5 transition-all duration-300">
+                    <div className={`flex items-center gap-3 mb-4 ${i % 2 === 0 ? 'md:justify-end' : ''}`}>
+                      <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                        <item.icon className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-neutral-900 mb-2">{item.title}</h3>
+                    <p className="text-neutral-500 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -103,6 +309,187 @@ export default function Landing() {
 
         {/* ═══ HERO ═══ */}
         <section className="relative pt-28 md:pt-32 pb-16 w-full overflow-hidden bg-white">
+          {/* ── Animated decorative background ── */}
+          <style dangerouslySetInnerHTML={{ __html: heroAnimStyles }} />
+
+          {/* Left skyline — apartment complexes */}
+          <svg className="absolute bottom-0 left-0 w-[600px] md:w-[850px] lg:w-[1000px] h-auto text-neutral-100 pointer-events-none select-none" viewBox="0 0 1000 800" fill="none" aria-hidden="true" style={{ animation: 'slide-up 1.2s ease-out both' }}>
+            {/* Tower A — tall with antenna + balconies */}
+            <rect x="0" y="60" width="120" height="740" rx="4" fill="currentColor" />
+            <rect x="50" y="20" width="20" height="40" fill="currentColor" />
+            <rect x="56" y="0" width="8" height="20" fill="currentColor" />
+            {/* Balcony ledges */}
+            <rect x="-6" y="140" width="132" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="-6" y="240" width="132" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="-6" y="340" width="132" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="-6" y="440" width="132" height="4" fill="currentColor" opacity="0.7" />
+            {/* Windows — 3 cols x many rows */}
+            {[100, 160, 200, 260, 300, 360, 400, 460, 500, 560].map((y, i) => (
+              <g key={`la${i}`}>
+                <rect x="16" y={y} width="22" height="28" rx="2" fill="white" opacity="0.5" />
+                <rect x="50" y={y} width="22" height="28" rx="2" fill="white" opacity="0.5" />
+                <rect x="82" y={y} width="22" height="28" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building B — wide mid-rise with rooftop structure */}
+            <rect x="135" y="250" width="130" height="550" rx="4" fill="currentColor" />
+            <rect x="170" y="225" width="60" height="25" rx="3" fill="currentColor" />
+            <rect x="190" y="210" width="20" height="15" fill="currentColor" />
+            {[280, 330, 380, 430, 480, 530, 580].map((y, i) => (
+              <g key={`lb${i}`}>
+                <rect x="150" y={y} width="20" height="26" rx="2" fill="white" opacity="0.5" />
+                <rect x="180" y={y} width="20" height="26" rx="2" fill="white" opacity="0.5" />
+                <rect x="210" y={y} width="20" height="26" rx="2" fill="white" opacity="0.5" />
+                <rect x="240" y={y} width="20" height="26" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building C — L-shaped complex */}
+            <rect x="280" y="380" width="160" height="420" rx="4" fill="currentColor" />
+            <rect x="280" y="320" width="80" height="60" rx="4" fill="currentColor" />
+            {[410, 455, 500, 545, 590, 635].map((y, i) => (
+              <g key={`lc${i}`}>
+                <rect x="296" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="324" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="352" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="380" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="408" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building D — short wide block with entrance */}
+            <rect x="455" y="520" width="140" height="280" rx="4" fill="currentColor" />
+            <rect x="505" y="730" width="40" height="50" rx="3" fill="white" opacity="0.4" />
+            {[548, 590, 632, 674].map((y, i) => (
+              <g key={`ld${i}`}>
+                <rect x="470" y={y} width="16" height="22" rx="2" fill="white" opacity="0.5" />
+                <rect x="496" y={y} width="16" height="22" rx="2" fill="white" opacity="0.5" />
+                <rect x="522" y={y} width="16" height="22" rx="2" fill="white" opacity="0.5" />
+                <rect x="548" y={y} width="16" height="22" rx="2" fill="white" opacity="0.5" />
+                <rect x="574" y={y} width="16" height="22" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building E — small low block */}
+            <rect x="610" y="620" width="110" height="180" rx="4" fill="currentColor" />
+            {[645, 685].map((y, i) => (
+              <g key={`le${i}`}>
+                <rect x="624" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="648" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="672" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="696" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+          </svg>
+
+          {/* Right skyline — apartment complexes */}
+          <svg className="absolute bottom-0 right-0 w-[550px] md:w-[780px] lg:w-[920px] h-auto text-neutral-100/80 pointer-events-none select-none" viewBox="0 0 920 750" fill="none" aria-hidden="true" style={{ animation: 'slide-up 1.4s ease-out 0.15s both' }}>
+            {/* Building A — small block */}
+            <rect x="200" y="600" width="110" height="150" rx="4" fill="currentColor" />
+            {[624, 664].map((y, i) => (
+              <g key={`ra${i}`}>
+                <rect x="214" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="238" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="262" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+                <rect x="286" y={y} width="14" height="20" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building B — wide block with balconies */}
+            <rect x="325" y="430" width="150" height="320" rx="4" fill="currentColor" />
+            <rect x="319" y="510" width="162" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="319" y="590" width="162" height="4" fill="currentColor" opacity="0.7" />
+            {[458, 520, 540, 600, 620].map((y, i) => (
+              <g key={`rb${i}`}>
+                <rect x="342" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="372" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="402" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="432" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Tower C — tallest with crown + antenna */}
+            <rect x="490" y="50" width="115" height="700" rx="4" fill="currentColor" />
+            <rect x="520" y="20" width="55" height="30" rx="3" fill="currentColor" />
+            <rect x="543" y="0" width="10" height="20" fill="currentColor" />
+            <rect x="484" y="180" width="127" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="484" y="320" width="127" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="484" y="460" width="127" height="4" fill="currentColor" opacity="0.7" />
+            {[80, 130, 200, 250, 340, 390, 480, 530, 580, 630].map((y, i) => (
+              <g key={`rc${i}`}>
+                <rect x="506" y={y} width="20" height="28" rx="2" fill="white" opacity="0.5" />
+                <rect x="538" y={y} width="20" height="28" rx="2" fill="white" opacity="0.5" />
+                <rect x="570" y={y} width="20" height="28" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building D — mid-rise with rooftop */}
+            <rect x="620" y="200" width="105" height="550" rx="4" fill="currentColor" />
+            <rect x="645" y="175" width="55" height="25" rx="3" fill="currentColor" />
+            {[235, 285, 335, 385, 435, 485, 535, 585].map((y, i) => (
+              <g key={`rd${i}`}>
+                <rect x="636" y={y} width="18" height="26" rx="2" fill="white" opacity="0.5" />
+                <rect x="664" y={y} width="18" height="26" rx="2" fill="white" opacity="0.5" />
+                <rect x="692" y={y} width="18" height="26" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+
+            {/* Building E — wide complex */}
+            <rect x="740" y="320" width="180" height="430" rx="4" fill="currentColor" />
+            <rect x="734" y="420" width="192" height="4" fill="currentColor" opacity="0.7" />
+            <rect x="734" y="530" width="192" height="4" fill="currentColor" opacity="0.7" />
+            {[350, 430, 450, 540, 560, 620, 660].map((y, i) => (
+              <g key={`re${i}`}>
+                <rect x="758" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="786" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="814" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="842" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="870" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+                <rect x="898" y={y} width="18" height="24" rx="2" fill="white" opacity="0.5" />
+              </g>
+            ))}
+          </svg>
+
+          {/* ── Floating property-themed icons ── */}
+          <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
+            {/* Key icon — top left area */}
+            <svg className="absolute top-[15%] left-[8%] w-10 h-10 md:w-14 md:h-14 text-blue-600/[0.07]" style={{ animation: 'float-slow 6s ease-in-out infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="7.5" cy="7.5" r="5.5" /><path d="M11.5 11.5 22 22M18 22l4-4M15 19l4-4" />
+            </svg>
+
+            {/* Dollar sign — top right */}
+            <svg className="absolute top-[12%] right-[10%] w-10 h-10 md:w-14 md:h-14 text-blue-600/[0.07]" style={{ animation: 'float-medium 5s ease-in-out 0.5s infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+
+            {/* Receipt — mid left */}
+            <svg className="absolute top-[40%] left-[4%] w-9 h-9 md:w-12 md:h-12 text-blue-600/[0.07]" style={{ animation: 'drift-right 7s ease-in-out 1s infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><path d="M8 7h8M8 11h6M8 15h4" />
+            </svg>
+
+            {/* House — mid right */}
+            <svg className="absolute top-[38%] right-[5%] w-10 h-10 md:w-14 md:h-14 text-blue-600/[0.07]" style={{ animation: 'drift-left 8s ease-in-out 0.3s infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 10.182V22h18V10.182L12 2z" /><rect x="9" y="14" width="6" height="8" rx="1" />
+            </svg>
+
+            {/* Shield/check — lower left */}
+            <svg className="absolute top-[62%] left-[12%] w-8 h-8 md:w-11 md:h-11 text-blue-600/[0.07]" style={{ animation: 'float-fast 4.5s ease-in-out 2s infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" />
+            </svg>
+
+            {/* Wallet — lower right */}
+            <svg className="absolute top-[58%] right-[9%] w-9 h-9 md:w-12 md:h-12 text-blue-600/[0.07]" style={{ animation: 'float-slow 7s ease-in-out 1.5s infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="6" width="20" height="14" rx="2" /><path d="M2 10h20" /><circle cx="17" cy="14" r="1.5" />
+            </svg>
+          </div>
+
+          {/* Subtle dot grid overlay */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }} />
+
           <div className="container mx-auto max-w-6xl w-full px-4 sm:px-6 relative z-10">
             <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
               {/* Pill badge */}
@@ -116,7 +503,7 @@ export default function Landing() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-neutral-900 leading-[1.1] tracking-tight mb-4">
-                The simplest way to<br />collect <span className="text-blue-600">rent</span>.
+                The easiest way to<br />collect <span className="text-blue-600">rent</span>.
               </h1>
 
               <p className="text-base md:text-lg text-neutral-600 max-w-xl mb-8 leading-relaxed">
@@ -148,70 +535,63 @@ export default function Landing() {
           </div>
 
           {/* Hero showcase — two-panel mockup */}
-          <div className="w-full px-4 sm:px-6 pb-16 pt-8">
-            <div className="relative w-full mx-auto rounded-2xl overflow-hidden flex flex-col md:flex-row" style={{ maxWidth: 1128, height: 500 }}>
+          <div className="w-full px-4 sm:px-6 pb-16 pt-12">
+            <div className="relative w-full mx-auto flex flex-col md:flex-row gap-6 justify-center" style={{ maxWidth: 960 }}>
               {/* Left panel — Invoice mockup */}
-              <div className="relative bg-blue-700 flex items-center justify-center w-full md:w-[450px] rounded-2xl md:rounded-none">
-                <div className="absolute inset-0 opacity-20" style={{
-                  backgroundImage: 'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
-                  backgroundSize: '80px 80px',
-                }} />
-                <div className="relative z-10 p-8 w-full max-w-[340px]">
-                  <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-4">
-                      <p className="text-white/70 text-xs font-medium">INV-ARB-003</p>
-                      <p className="text-white text-lg font-bold mt-1">Monthly Rent</p>
+              <div className="w-full md:w-[380px] flex-shrink-0">
+                <div className="bg-white rounded-2xl border-2 border-neutral-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+                  <div className="bg-neutral-900 px-5 py-4">
+                    <p className="text-neutral-400 text-xs font-medium tracking-wide">INV-ARB-003</p>
+                    <p className="text-white text-lg font-bold mt-1">Monthly Rent</p>
+                  </div>
+                  <div className="p-5 space-y-4 text-sm">
+                    <div className="flex justify-between items-baseline"><span className="text-neutral-400 text-xs uppercase tracking-wide">Amount</span><span className="text-2xl font-bold text-neutral-900">J$85,000</span></div>
+                    <div className="h-px bg-neutral-100" />
+                    <div className="flex justify-between items-center"><span className="text-neutral-400 text-xs uppercase tracking-wide">Due</span><span className="font-semibold text-neutral-900">Feb 28, 2026</span></div>
+                    <div className="h-px bg-neutral-100" />
+                    <div className="flex justify-between items-center"><span className="text-neutral-400 text-xs uppercase tracking-wide">Status</span><span className="text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-200">Unpaid</span></div>
+                    <div className="bg-neutral-50 rounded-xl p-4 space-y-2 text-xs border border-neutral-200">
+                      <p className="font-semibold text-neutral-900 uppercase tracking-wider text-[10px] mb-2">Bank Details</p>
+                      <p className="flex justify-between"><span className="text-neutral-400">Bank</span> <strong className="text-neutral-900">NCB Jamaica</strong></p>
+                      <p className="flex justify-between"><span className="text-neutral-400">Account</span> <strong className="text-neutral-900">Property Mgmt Ltd</strong></p>
                     </div>
-                    <div className="p-5 space-y-3 text-sm">
-                      <div className="flex justify-between"><span className="text-neutral-400">Amount</span><span className="text-xl font-bold text-neutral-900">J$85,000</span></div>
-                      <div className="flex justify-between"><span className="text-neutral-400">Due</span><span className="font-medium text-neutral-900">Feb 28, 2026</span></div>
-                      <div className="flex justify-between items-center"><span className="text-neutral-400">Status</span><span className="text-xs font-medium bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full ring-1 ring-amber-200">unpaid</span></div>
-                      <div className="bg-neutral-50 rounded-lg p-3 space-y-1 text-xs mt-2">
-                        <p className="font-medium text-neutral-600 uppercase tracking-wide mb-1.5">Bank Details</p>
-                        <p><span className="text-neutral-400">Bank:</span> <strong className="text-neutral-700">NCB Jamaica</strong></p>
-                        <p><span className="text-neutral-400">Account:</span> <strong className="text-neutral-700">Property Mgmt Ltd</strong></p>
-                      </div>
-                      <button className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 mt-2">
-                        <Upload className="h-4 w-4" /> Upload Proof
-                      </button>
-                    </div>
+                    <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors">
+                      <Upload className="h-4 w-4" /> Upload Proof
+                    </button>
                   </div>
                 </div>
               </div>
+
               {/* Right panel — Dashboard mockup */}
-              <div className="relative bg-blue-600 flex items-center justify-center hidden md:flex md:flex-1">
-                <div className="absolute inset-0 opacity-20" style={{
-                  backgroundImage: 'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
-                  backgroundSize: '80px 80px',
-                }} />
-                <div className="relative z-10 p-8 w-full max-w-[540px]">
-                  <div className="bg-white rounded-xl shadow-2xl p-6">
-                    <div className="flex items-center justify-between mb-5">
+              <div className="hidden md:block flex-1">
+                <div className="bg-white rounded-2xl border-2 border-neutral-900 shadow-[8px_8px_0px_0px_rgba(37,99,235,1)] overflow-hidden h-full">
+                  <div className="p-6 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className="text-base font-semibold text-neutral-900">Dashboard</h3>
-                        <p className="text-xs text-neutral-400">February 2026</p>
+                        <h3 className="text-lg font-bold text-neutral-900">Dashboard</h3>
+                        <p className="text-xs text-neutral-400 mt-0.5">February 2026</p>
                       </div>
-                      <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">This Month</div>
+                      <div className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg border border-blue-200">This Month</div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-2 gap-3 mb-5">
                       {[
                         { label: 'Expected', value: 'J$840,000', c: 'text-neutral-900' },
                         { label: 'Collected', value: 'J$680,000', c: 'text-emerald-600' },
                         { label: 'Outstanding', value: 'J$160,000', c: 'text-amber-600' },
                         { label: 'Overdue', value: '2', c: 'text-red-600' },
                       ].map((s) => (
-                        <div key={s.label} className="bg-neutral-50 rounded-lg p-3">
-                          <p className="text-[10px] font-medium text-neutral-400 mb-0.5">{s.label}</p>
-                          <p className={`text-base font-bold ${s.c}`}>{s.value}</p>
+                        <div key={s.label} className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                          <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">{s.label}</p>
+                          <p className={`text-lg font-bold ${s.c}`}>{s.value}</p>
                         </div>
                       ))}
                     </div>
-                    <div className="flex items-center gap-3 bg-neutral-50 rounded-lg px-4 py-2.5">
-                      <p className="text-xs font-medium text-neutral-500">Collection</p>
-                      <div className="flex-1 bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                    <div className="flex items-center gap-3 bg-neutral-50 rounded-xl px-4 py-3 border border-neutral-100 mt-auto">
+                      <p className="text-xs font-semibold text-neutral-500">Collection</p>
+                      <div className="flex-1 bg-neutral-200 rounded-full h-2 overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-[81%]" />
                       </div>
-                      <p className="text-xs font-bold text-blue-600">81%</p>
+                      <p className="text-sm font-bold text-blue-600">81%</p>
                     </div>
                   </div>
                 </div>
@@ -222,9 +602,9 @@ export default function Landing() {
 
         <SectionDivider />
 
-        {/* ═══ FEATURES ═══ */}
+        {/* ═══ FEATURES — Bento Grid ═══ */}
         <section id="features" className="relative py-24 md:py-32 bg-white overflow-hidden">
-          <div className="container mx-auto px-6 lg:px-8">
+          <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
                 Everything You Need To Get Paid
@@ -234,115 +614,152 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto">
-              {[
-                {
-                  icon: FileText,
-                  title: 'Automatic invoicing',
-                  desc: 'Generate invoices with per-tenant auto-numbering (INV-ARB-001). Track every dollar owed, per tenant, per month.',
-                },
-                {
-                  icon: LinkIcon,
-                  title: 'Shareable payment links',
-                  desc: 'Each invoice gets a unique link your tenant opens on any device — view amount, bank details, and upload proof. No account needed.',
-                },
-                {
-                  icon: Upload,
-                  title: 'Proof of payment upload',
-                  desc: 'Tenants upload screenshots of their bank transfers. You review, approve, or reject with one click.',
-                },
-                {
-                  icon: Bell,
-                  title: 'Smart email reminders',
-                  desc: 'Send one-click manual reminders or enable automatic daily nudges for overdue invoices. Never chase again.',
-                },
-              ].map((f) => (
-                <div key={f.title} className="relative bg-neutral-50 rounded-2xl overflow-hidden flex flex-col" style={{ minHeight: 280 }}>
-                  <div className="absolute inset-0 opacity-[0.03]" style={{
-                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)',
-                    backgroundSize: '60px 60px',
-                  }} />
-                  <div className="relative z-10 p-6 flex-1 flex flex-col">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center mb-4">
-                      <f.icon className="w-5 h-5 text-blue-600" />
+            {/* Bento Row 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-5">
+              {/* Card 1 — Invoicing (spans 3) */}
+              <div className="md:col-span-3 bg-neutral-50 rounded-2xl border border-neutral-200 overflow-hidden group hover:border-neutral-300 transition-colors">
+                <div className="p-6 pb-0">
+                  <div className="flex gap-4">
+                    {/* Mini invoice card */}
+                    <div className="flex-1 bg-white rounded-xl border border-neutral-200 shadow-sm p-4 max-w-[200px]">
+                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Invoice</p>
+                      <p className="text-sm font-bold text-neutral-900 mb-3">INV-ARB-003</p>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between"><span className="text-neutral-400">Amount</span><span className="font-bold text-neutral-900">J$85,000</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-400">Due</span><span className="font-medium text-neutral-700">Feb 28</span></div>
+                        <div className="flex justify-between items-center"><span className="text-neutral-400">Status</span><span className="text-[10px] font-semibold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Pending</span></div>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">{f.title}</h3>
-                    <p className="text-neutral-500 text-sm leading-relaxed">{f.desc}</p>
+                    {/* Mini invoice card 2 */}
+                    <div className="flex-1 bg-white rounded-xl border border-neutral-200 shadow-sm p-4 max-w-[200px] hidden sm:block">
+                      <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Invoice</p>
+                      <p className="text-sm font-bold text-neutral-900 mb-3">INV-ARB-004</p>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between"><span className="text-neutral-400">Amount</span><span className="font-bold text-neutral-900">J$65,000</span></div>
+                        <div className="flex justify-between"><span className="text-neutral-400">Due</span><span className="font-medium text-neutral-700">Mar 1</span></div>
+                        <div className="flex justify-between items-center"><span className="text-neutral-400">Status</span><span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">Paid</span></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
+                <div className="p-6 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900 mb-1">Automatic invoicing</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed max-w-sm">Generate invoices with auto-numbering per tenant. Track every dollar owed, per tenant, per month.</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
+                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                </div>
+              </div>
 
-        <SectionDivider />
-
-        {/* ═══ HOW IT WORKS ═══ */}
-        <section id="how-it-works" className="relative py-24 md:py-32 bg-white overflow-hidden">
-          <div className="container mx-auto px-6 lg:px-8 max-w-6xl">
-            <div className="text-center mb-8">
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-neutral-900 mb-6">
-                Get Paid in 3 Simple Steps
-              </h2>
-              <p className="text-lg text-neutral-500 max-w-2xl mx-auto mb-8">
-                Create an invoice, share the link, and approve the proof. Start collecting rent in minutes, not days.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link
-                  to="/signup"
-                  className="inline-flex items-center justify-center rounded-full font-medium transition-colors cursor-pointer relative bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 text-sm w-48"
-                >
-                  Get started
-                </Link>
-                <a href="#pricing" className="inline-flex items-center justify-center px-6 py-3 bg-white text-neutral-900 border border-neutral-300 rounded-full font-medium text-sm hover:bg-neutral-50 transition-colors w-48">
-                  View plans
-                </a>
+              {/* Card 2 — Dashboard / Track (spans 2) */}
+              <div className="md:col-span-2 bg-neutral-50 rounded-2xl border border-neutral-200 overflow-hidden group hover:border-neutral-300 transition-colors">
+                <div className="p-6 pb-0">
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-neutral-900">Collections</span>
+                      <span className="text-[10px] text-neutral-400">Feb 2026</span>
+                    </div>
+                    <div className="text-2xl font-bold text-neutral-900 mb-0.5">J$680,000</div>
+                    <div className="flex items-center gap-1.5 mb-4">
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+12.5%</span>
+                      <span className="text-xs text-neutral-400">from last period</span>
+                    </div>
+                    {/* Mini chart */}
+                    <div className="h-16 flex items-end gap-[3px]">
+                      {[35, 45, 30, 55, 40, 65, 50, 70, 60, 80, 75, 85].map((h, i) => (
+                        <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-blue-500 to-blue-400 opacity-80" style={{ height: `${h}%` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900 mb-1">Track revenue & payouts</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed">See expected vs. collected revenue at a glance from your dashboard.</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
+                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-center gap-5 mt-20 px-4 md:px-0">
-              {[
-                {
-                  icon: FileText,
-                  step: '01',
-                  title: 'Create & send invoice',
-                  desc: 'Generate an invoice with one click. Share the payment link via WhatsApp, email, or text message.',
-                },
-                {
-                  icon: Upload,
-                  step: '02',
-                  title: 'Tenant pays & uploads proof',
-                  desc: 'Tenant opens the link, sees your bank details, transfers the money, and uploads a screenshot as proof.',
-                },
-                {
-                  icon: CheckCircle,
-                  step: '03',
-                  title: 'Approve & track',
-                  desc: 'Review the payment proof, mark it as approved, and watch your collection rate climb on the dashboard.',
-                },
-              ].map((item) => (
-                <div key={item.step} className="relative bg-neutral-50 rounded-xl overflow-hidden flex flex-col flex-shrink-0 w-full md:w-[320px]" style={{ minHeight: 280 }}>
-                  <div className="absolute inset-0 opacity-10" style={{
-                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px)',
-                    backgroundSize: '60px 60px',
-                  }} />
-                  <div className="relative z-10 p-6 flex-1 flex flex-col">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center">
-                        <item.icon className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="text-sm font-bold text-blue-600">{item.step}</span>
+            {/* Bento Row 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Card 3 — Payment Proof */}
+              <div className="bg-neutral-50 rounded-2xl border border-neutral-200 overflow-hidden group hover:border-neutral-300 transition-colors">
+                <div className="p-6 pb-0 flex justify-center">
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 w-full max-w-[300px] text-center">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-200">
+                      <CheckCircle className="w-6 h-6 text-emerald-600" />
                     </div>
-                    <h3 className="text-base font-semibold text-neutral-900 mb-2">{item.title}</h3>
-                    <p className="text-neutral-500 text-sm leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-neutral-400 mb-1">Payment verified</p>
+                    <p className="text-2xl font-bold text-neutral-900 mb-4">J$85,000</p>
+                    <div className="space-y-2.5 text-xs text-left border-t border-neutral-100 pt-4">
+                      <div className="flex justify-between"><span className="text-neutral-400">Invoice</span><span className="font-semibold text-neutral-900">#INV-ARB-003</span></div>
+                      <div className="flex justify-between"><span className="text-neutral-400">Payment date</span><span className="font-semibold text-neutral-900">22 Feb 2026</span></div>
+                      <div className="flex justify-between"><span className="text-neutral-400">Method</span><span className="font-semibold text-neutral-900">Bank Transfer</span></div>
+                    </div>
                   </div>
                 </div>
-              ))}
+                <div className="p-6 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900 mb-1">Proof of payment upload</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed">Tenants upload proof of their bank transfers. Review, approve, or reject with one click.</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
+                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4 — Payment Links */}
+              <div className="bg-neutral-50 rounded-2xl border border-neutral-200 overflow-hidden group hover:border-neutral-300 transition-colors">
+                <div className="p-6 pb-0 flex justify-center">
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden w-full max-w-[320px]">
+                    <div className="bg-neutral-900 px-4 py-3 flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+                      </div>
+                      <div className="flex-1 bg-neutral-800 rounded-md px-3 py-1 text-[10px] text-neutral-400 font-mono truncate">
+                        easycollect.com/pay/a3f8-b2c1...
+                      </div>
+                    </div>
+                    <div className="p-4 text-center">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2 border border-blue-200">
+                        <LinkIcon className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <p className="text-sm font-bold text-neutral-900 mb-1">Monthly Rent — Feb 2026</p>
+                      <p className="text-xs text-neutral-400 mb-3">J$85,000 due Feb 28</p>
+                      <div className="flex gap-2 justify-center">
+                        <span className="text-[10px] font-medium bg-blue-50 text-blue-700 px-2 py-1 rounded-full border border-blue-200">View Details</span>
+                        <span className="text-[10px] font-medium bg-neutral-900 text-white px-2 py-1 rounded-full">Upload Proof</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900 mb-1">Shareable payment links</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed">Each invoice gets a unique link — tenants view details and upload proof. No account needed.</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
+                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         <SectionDivider />
+
+        {/* ═══ HOW IT WORKS — SVG Path Draw ═══ */}
+        <HowItWorks />
 
         {/* ═══ DASHBOARD / MANAGEMENT ═══ */}
         <section className="relative py-24 md:py-32 bg-white overflow-hidden">
