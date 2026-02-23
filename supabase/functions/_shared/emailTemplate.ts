@@ -15,7 +15,7 @@ export function buildEmailHtml(title: string, bodyHtml: string, companyName: str
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
           <tr>
             <td style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 24px 32px; border-radius: 12px 12px 0 0; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.25px;">EasyRentCollect</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.25px;">EasyCollect</h1>
             </td>
           </tr>
           <!-- Body Card -->
@@ -28,7 +28,7 @@ export function buildEmailHtml(title: string, bodyHtml: string, companyName: str
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 32px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none; text-align: center;">
-              <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 13px;">Powered by <strong>EasyRentCollect</strong></p>
+              <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 13px;">Powered by <strong>EasyCollect</strong></p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">Sent on behalf of ${companyName}</p>
             </td>
           </tr>

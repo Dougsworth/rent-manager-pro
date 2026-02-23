@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <Link to="/dashboard" className="text-lg font-bold text-gray-900 tracking-tight">
-                  RentCollect
+                  EasyCollect
                 </Link>
                 <div className="hidden md:ml-10 md:flex md:space-x-1">
                   {navigation.map((item) => {
@@ -94,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="px-4">
             <div className="flex justify-between h-16 items-center">
               <Link to="/dashboard" className="text-lg font-bold text-gray-900 tracking-tight">
-                RentCollect
+                EasyCollect
               </Link>
               <div className="flex items-center gap-2">
                 <button

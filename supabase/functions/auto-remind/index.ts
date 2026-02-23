@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://easyrentcollect.com';
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://easycollect.com';
     const today = new Date().toISOString().split('T')[0];
 
     // Find all overdue invoices (due_date < today, not paid)
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'EasyRentCollect <onboarding@resend.dev>',
+            from: 'EasyCollect <onboarding@resend.dev>',
             to: tenant.email,
             subject: `Payment Overdue — ${amountFormatted} due`,
             html: emailHtml,

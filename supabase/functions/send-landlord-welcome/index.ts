@@ -29,10 +29,10 @@ Deno.serve(async (req) => {
     const bodyHtml = `
       <p style="color: #374151; line-height: 1.6; margin: 0 0 16px 0;">Hi ${first_name},</p>
       <p style="color: #374151; line-height: 1.6; margin: 0 0 16px 0;">
-        Welcome to <strong>EasyRentCollect</strong>! We're excited to have you on board.
+        Welcome to <strong>EasyCollect</strong>! We're excited to have you on board.
       </p>
       <p style="color: #374151; line-height: 1.6; margin: 0 0 16px 0;">
-        With EasyRentCollect you can:
+        With EasyCollect you can:
       </p>
       <ul style="color: #374151; line-height: 1.8; margin: 0 0 16px 0; padding-left: 20px;">
         <li>Manage your properties and units in one place</li>
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
         Get started by adding your first property from the dashboard. If you have any questions,
         we're here to help!
       </p>
-      <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">Happy renting,<br/><strong>The EasyRentCollect Team</strong></p>
+      <p style="color: #374151; line-height: 1.6; margin: 16px 0 0 0;">Happy renting,<br/><strong>The EasyCollect Team</strong></p>
     `;
 
     const emailRes = await fetch('https://api.resend.com/emails', {
@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EasyRentCollect <onboarding@resend.dev>',
+        from: 'EasyCollect <onboarding@resend.dev>',
         to: email,
-        subject: 'Welcome to EasyRentCollect!',
-        html: buildEmailHtml('Welcome to EasyRentCollect!', bodyHtml, 'EasyRentCollect'),
+        subject: 'Welcome to EasyCollect!',
+        html: buildEmailHtml('Welcome to EasyCollect!', bodyHtml, 'EasyCollect'),
       }),
     });
 

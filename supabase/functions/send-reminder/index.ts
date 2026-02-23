@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EasyRentCollect <onboarding@resend.dev>',
+        from: 'EasyCollect <onboarding@resend.dev>',
         to: tenant.email,
         subject: `Payment Reminder — ${amountFormatted} due`,
         html: buildEmailHtml('Payment Reminder', `
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
             ${bankDetailsHtml}
             ${invoice.payment_token ? `
             <div style="text-align: center; margin: 24px 0;">
-              <a href="${Deno.env.get('SITE_URL') || 'https://easyrentcollect.com'}/pay/${invoice.payment_token}"
+              <a href="${Deno.env.get('SITE_URL') || 'https://easycollect.com'}/pay/${invoice.payment_token}"
                  style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 8px; font-size: 16px;">
                 Pay Now &amp; Upload Proof
               </a>

@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import Receipt from './pages/Receipt';
 import TenantPayment from './pages/TenantPayment';
 import PublicPayment from './pages/PublicPayment';
+import Landing from './pages/Landing';
 
 function App() {
   // Public payment route — no auth required
@@ -39,8 +40,10 @@ function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="*" element={<Login />} />
+        <Route path="*" element={<Landing />} />
       </Routes>
     );
   }

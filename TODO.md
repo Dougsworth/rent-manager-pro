@@ -1,4 +1,4 @@
-# TODO — Easy Rent Collect
+# TODO — EasyCollect
 
 ## Deploy Edge Functions
 - [ ] `supabase functions deploy auto-remind`
