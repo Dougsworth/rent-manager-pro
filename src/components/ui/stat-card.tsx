@@ -39,12 +39,12 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div className={cn(
-      "rounded-xl border border-slate-200 bg-white p-6 transition-colors duration-150",
+      "rounded-2xl glass border border-white/60 p-6 transition-all duration-200 hover:shadow-md hover:bg-white/70",
       className
     )}>
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-2">
             {label}
           </p>
           <p className="text-2xl font-semibold tracking-tight text-slate-900 mb-1">{value}</p>
@@ -55,7 +55,7 @@ export function StatCard({
           )}
         </div>
         {Icon && (
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-slate-50">
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/60 border border-slate-100/80">
             <Icon className="h-5 w-5 text-slate-400" />
           </div>
         )}

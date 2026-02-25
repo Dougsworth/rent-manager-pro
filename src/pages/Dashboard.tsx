@@ -144,36 +144,36 @@ export default function Dashboard() {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Recent Payments */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl">
-          <div className="px-6 py-4 border-b border-slate-100">
+        <div className="lg:col-span-3 glass rounded-2xl border border-white/60">
+          <div className="px-6 py-4 border-b border-slate-100/60">
             <h2 className="text-sm font-semibold text-slate-900">Recent Payments</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 hidden sm:table-cell">Unit</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 hidden md:table-cell">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 hidden lg:table-cell">Method</th>
+                <tr className="border-b border-slate-100/60">
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400">Tenant</th>
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden sm:table-cell">Unit</th>
+                  <th className="px-6 py-3 text-right text-[11px] font-medium uppercase tracking-widest text-slate-400">Amount</th>
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden md:table-cell">Date</th>
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden lg:table-cell">Method</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100/60">
                 {recentPayments.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="rounded-xl border border-dashed border-slate-300 p-4 inline-block mb-3">
+                      <div className="rounded-xl border border-dashed border-slate-200/80 bg-white/30 p-4 inline-block mb-3">
                         <DollarSign className="h-5 w-5 text-slate-400" />
                       </div>
                       <p className="text-sm text-slate-500">No payments recorded yet</p>
                     </td>
                   </tr>
                 ) : recentPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-slate-50 transition-colors duration-150">
+                  <tr key={payment.id} className="hover:bg-white/40 transition-colors duration-150">
                     <td className="px-6 py-4 text-sm text-slate-900">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-white/80 border border-slate-200/60 text-slate-600 flex items-center justify-center text-xs font-medium flex-shrink-0">
                           {(payment.tenant_first_name?.[0] ?? '').toUpperCase()}{(payment.tenant_last_name?.[0] ?? '').toUpperCase()}
                         </div>
                         <div>
@@ -191,7 +191,7 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <div className="px-6 py-3 border-t border-slate-100">
+          <div className="px-6 py-3 border-t border-slate-100/60">
             <Link to="/payments" className="text-sm font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
               View all payments
               <ArrowRight className="h-3.5 w-3.5" />
@@ -200,14 +200,14 @@ export default function Dashboard() {
         </div>
 
         {/* Overdue Tenants */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl">
-          <div className="px-6 py-4 border-b border-slate-100">
+        <div className="lg:col-span-2 glass rounded-2xl border border-white/60">
+          <div className="px-6 py-4 border-b border-slate-100/60">
             <h2 className="text-sm font-semibold text-slate-900">Overdue Tenants</h2>
           </div>
           <div className="p-6">
             {overdueTenants.length === 0 ? (
               <div className="text-center py-8">
-                <div className="rounded-xl border border-dashed border-slate-300 p-4 inline-block mb-3">
+                <div className="rounded-xl border border-dashed border-slate-200/80 bg-white/30 p-4 inline-block mb-3">
                   <AlertTriangle className="h-5 w-5 text-slate-400" />
                 </div>
                 <p className="text-sm text-slate-500">All tenants are up to date</p>
@@ -215,7 +215,7 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {overdueTenants.map((tenant) => (
-                  <div key={tenant.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors duration-150">
+                  <div key={tenant.id} className="p-4 glass-subtle border border-white/50 rounded-xl hover:bg-white/50 transition-all duration-200">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-slate-900">{tenant.name}</p>
@@ -247,7 +247,7 @@ export default function Dashboard() {
             )}
           </div>
           {overdueTenants.length > 0 && (
-            <div className="px-6 py-3 border-t border-slate-100">
+            <div className="px-6 py-3 border-t border-slate-100/60">
               <Link to="/tenants?status=overdue" className="text-sm font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
                 View all
                 <ArrowRight className="h-3.5 w-3.5" />

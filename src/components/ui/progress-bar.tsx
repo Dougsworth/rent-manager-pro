@@ -20,14 +20,14 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
     const total = segments.reduce((sum, s) => sum + s.value, 0);
 
     return (
-      <div className={cn("rounded-xl border border-slate-200 bg-white p-6", className)}>
+      <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
         {label && (
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm font-medium text-slate-900">{label}</p>
             <p className="text-sm font-semibold text-slate-900">{clampedValue}%</p>
           </div>
         )}
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
+        <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden flex">
           {segments.map((seg, i) => {
             const pct = total > 0 ? (seg.value / total) * 100 : 0;
             if (pct === 0) return null;
@@ -61,14 +61,14 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
   }
 
   return (
-    <div className={cn("rounded-xl border border-slate-200 bg-white p-6", className)}>
+    <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
       {label && (
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm font-medium text-slate-900">{label}</p>
           <p className="text-sm font-semibold text-slate-900">{clampedValue}%</p>
         </div>
       )}
-      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden">
         <div
           className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
           style={{ width: `${clampedValue}%` }}

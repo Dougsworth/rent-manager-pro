@@ -157,7 +157,7 @@ export default function Tenants() {
         description="Manage your tenants and track payments"
         count={tenants.length}
         action={
-          <Button onClick={() => setShowAddModal(true)}>
+          <Button type="button" onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" />
             Add Tenant
           </Button>
@@ -196,7 +196,7 @@ export default function Tenants() {
           }
           action={
             !searchQuery && activeTab === "all" ? (
-              <Button onClick={() => setShowAddModal(true)}>
+              <Button type="button" onClick={() => setShowAddModal(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Tenant
               </Button>
@@ -204,12 +204,12 @@ export default function Tenants() {
           }
         />
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+        <div className="glass rounded-2xl border border-white/60 divide-y divide-slate-100/60">
           {paginatedTenants.map((tenant) => (
             <button
               key={tenant.id}
               onClick={() => setSelectedTenant(tenant)}
-              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors duration-150 text-left"
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-white/50 transition-colors duration-150 text-left"
             >
               <AvatarInitial name={`${tenant.first_name} ${tenant.last_name}`} />
               <div className="flex-1 min-w-0">

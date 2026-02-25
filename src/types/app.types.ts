@@ -72,3 +72,26 @@ export interface PublicInvoiceData {
     created_at: string;
   }[];
 }
+
+// AI Chat types
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  source: 'local' | 'ai';
+}
+
+export interface AiChatUsage {
+  request_count: number;
+  limit: number;
+  remaining: number;
+}
+
+export type LocalIntent =
+  | 'overdue'
+  | 'outstanding'
+  | 'tenant_count'
+  | 'collected'
+  | 'recent_payments'
+  | 'dashboard_stats';
