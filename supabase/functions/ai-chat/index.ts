@@ -38,7 +38,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { message, context } = await req.json();
+    let message: string | undefined;
+    let context: string | undefined;
+    try {
+      const body = await req.json();
+      message = body?.message;
+      context = body?.context;
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!message) {
       return new Response(JSON.stringify({ error: 'message is required' }), {
         status: 400,
@@ -66,18 +78,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Upsert to increment counter
-    await supabase
-      .from('ai_chat_usage')
-      .upsert(
-        { landlord_id: user.id, usage_date: today, request_count: currentCount + 1 },
-        { onConflict: 'landlord_id,usage_date' }
-      );
-
-    // Call Gemini API
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiKey) {
-      return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), {
+    // Call OpenAI GPT API
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -95,37 +99,53 @@ Key rules:
 Context about this landlord's data:
 ${context || 'No additional context provided.'}`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            { role: 'user', parts: [{ text: message }] },
-          ],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    );
+    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
+    });
 
-    if (!geminiRes.ok) {
-      const errorBody = await geminiRes.text();
-      console.error('Gemini API error:', errorBody);
-      return new Response(JSON.stringify({ error: 'AI service error' }), {
+    if (!openaiRes.ok) {
+      const errorBody = await openaiRes.text();
+      console.error('OpenAI API error:', openaiRes.status, errorBody);
+      return new Response(JSON.stringify({
+        error: 'AI service error',
+        status: openaiRes.status,
+        details: errorBody.slice(0, 500),
+      }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const geminiData = await geminiRes.json();
-    const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sorry, I could not generate a response.';
+    const openaiData = await openaiRes.json();
+    const reply =
+      openaiData.choices?.[0]?.message?.content ??
+      'Sorry, I could not generate a response.';
 
+    // Increment usage ONLY after successful AI response
     const newCount = currentCount + 1;
+    const { error: usageWriteErr } = await supabase
+      .from('ai_chat_usage')
+      .upsert(
+        { landlord_id: user.id, usage_date: today, request_count: newCount },
+        { onConflict: 'landlord_id,usage_date' }
+      );
+    if (usageWriteErr) {
+      console.error('usage write error:', usageWriteErr);
+    }
+
     return new Response(JSON.stringify({
       reply,
       usage: { request_count: newCount, limit: DAILY_LIMIT, remaining: DAILY_LIMIT - newCount },
