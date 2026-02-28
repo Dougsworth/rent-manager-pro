@@ -12,7 +12,6 @@ import {
   Link as LinkIcon,
   LogIn,
   Check,
-  X,
   Plus,
   Minus,
   Receipt,

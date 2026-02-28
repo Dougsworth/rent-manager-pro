@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getInvoices, createInvoice } from '@/services/invoices';
+import { createInvoiceSchema } from '@/schemas';
 import { getTenants } from '@/services/tenants';
 import type { InvoiceWithTenant, TenantWithDetails } from '@/types/app.types';
 import { PageHeader } from '@/components/PageHeader';
@@ -54,9 +55,19 @@ export default function Invoices() {
     loadData();
   }, [user]);
 
+  const [createError, setCreateError] = useState('');
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    setCreateError('');
+
+    const result = createInvoiceSchema.safeParse(newInvoice);
+    if (!result.success) {
+      setCreateError(result.error.issues[0].message);
+      return;
+    }
+
     setCreating(true);
     try {
       await createInvoice(user.id, {
@@ -116,6 +127,11 @@ export default function Invoices() {
             <DialogTitle>Create Invoice</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
+            {createError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {createError}
+              </div>
+            )}
             <div>
               <Label htmlFor="inv-tenant">Tenant</Label>
               <Select

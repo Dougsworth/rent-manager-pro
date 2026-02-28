@@ -3,6 +3,7 @@ import { Loader2, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProperties } from "@/services/properties";
 import { addTenant } from "@/services/tenants";
+import { addTenantSchema } from "@/schemas";
 import type { PropertyWithUnits } from "@/types/app.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,8 +135,14 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
     e.preventDefault();
     if (!user) return;
     setError('');
-    setSubmitting(true);
 
+    const result = addTenantSchema.safeParse(formData);
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await addTenant(user.id, {
         first_name: formData.firstName,

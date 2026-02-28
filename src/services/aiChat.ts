@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
 import type { LocalIntent, AiChatUsage } from '@/types/app.types';
 
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 5;
 
 // Pattern matching for local queries
 const intentPatterns: { intent: LocalIntent; patterns: RegExp[] }[] = [

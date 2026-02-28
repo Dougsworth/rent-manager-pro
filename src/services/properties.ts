@@ -9,7 +9,7 @@ export async function getProperties(landlordId: string): Promise<PropertyWithUni
     .order('name');
 
   if (error) throw error;
-  return (properties ?? []) as PropertyWithUnits[];
+  return (properties ?? []) as unknown as PropertyWithUnits[];
 }
 
 export async function createProperty(landlordId: string, name: string, address: string) {

@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
+import {
+  updateProfileSchema,
+  updateCompanyInfoSchema,
+  updateBankDetailsSchema,
+  createPropertySchema,
+  createUnitSchema,
+} from '@/schemas';
 import { getProperties, createProperty, createUnit } from '@/services/properties';
 import type { PropertyWithUnits } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
@@ -19,6 +26,7 @@ export default function Settings() {
   const [activeSection, setActiveSection] = useState('profile');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   // Profile form state
   const [firstName, setFirstName] = useState(profile?.first_name ?? '');
@@ -125,6 +133,19 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!user) return;
+    setSaveError('');
+
+    if (activeSection === 'profile') {
+      const result = updateProfileSchema.safeParse({ firstName, lastName, email, phone });
+      if (!result.success) { setSaveError(result.error.issues[0].message); return; }
+    } else if (activeSection === 'company') {
+      const result = updateCompanyInfoSchema.safeParse({ companyName, companyAddress, companyCity, companyCountry, companyWebsite, companyTaxId });
+      if (!result.success) { setSaveError(result.error.issues[0].message); return; }
+    } else if (activeSection === 'bank') {
+      const result = updateBankDetailsSchema.safeParse({ bankName, bankAccountName, bankAccountNumber, bankBranch });
+      if (!result.success) { setSaveError(result.error.issues[0].message); return; }
+    }
+
     setSaving(true);
     setSaved(false);
     try {
@@ -157,9 +178,16 @@ export default function Settings() {
     }
   };
 
+  const [propertyError, setPropertyError] = useState('');
+
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newPropertyName.trim()) return;
+    if (!user) return;
+    setPropertyError('');
+
+    const result = createPropertySchema.safeParse({ name: newPropertyName, address: newPropertyAddress });
+    if (!result.success) { setPropertyError(result.error.issues[0].message); return; }
+
     setAddingProperty(true);
     try {
       await createProperty(user.id, newPropertyName.trim(), newPropertyAddress.trim());
@@ -174,9 +202,15 @@ export default function Settings() {
     }
   };
 
+  const [unitError, setUnitError] = useState('');
+
   const handleAddUnit = async (e: React.FormEvent, propertyId: string) => {
     e.preventDefault();
-    if (!newUnitName.trim() || !newUnitRent) return;
+    setUnitError('');
+
+    const result = createUnitSchema.safeParse({ name: newUnitName, rentAmount: newUnitRent });
+    if (!result.success) { setUnitError(result.error.issues[0].message); return; }
+
     setAddingUnit(true);
     try {
       await createUnit(propertyId, newUnitName.trim(), parseInt(newUnitRent));
@@ -307,6 +341,7 @@ export default function Settings() {
               />
             </div>
           </div>
+          {propertyError && <p className="text-sm text-red-600">{propertyError}</p>}
           <div className="flex gap-3 pt-1">
             <Button type="submit" className="" disabled={addingProperty}>
               {addingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -384,7 +419,7 @@ export default function Settings() {
                       </div>
                     ))}
 
-                    {/* Always-visible inline add unit row */}
+                    {unitError && showAddUnitFor === property.id && <p className="text-sm text-red-600 px-2">{unitError}</p>}
                     <form
                       onSubmit={(e) => handleAddUnit(e, property.id)}
                       className="bg-white p-2.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors"
@@ -657,6 +692,8 @@ export default function Settings() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
+          <div className="flex items-center gap-3">
+            {saveError && <p className="text-sm text-red-600">{saveError}</p>}
           <Button className="" onClick={handleSave} disabled={saving}>
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -667,6 +704,7 @@ export default function Settings() {
             )}
             {saved ? 'Saved!' : 'Save Changes'}
           </Button>
+          </div>
         )}
       </div>
 

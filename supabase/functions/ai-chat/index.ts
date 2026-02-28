@@ -1,7 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'npm:zod';
 import { corsHeaders } from '../_shared/cors.ts';
 
-const DAILY_LIMIT = 20;
+const chatRequestSchema = z.object({
+  message: z.string().min(1, 'message is required'),
+  context: z.string().optional(),
+});
+
+const DAILY_LIMIT = 5;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,21 +44,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    let message: string | undefined;
+    let message: string;
     let context: string | undefined;
     try {
       const body = await req.json();
-      message = body?.message;
-      context = body?.context;
+      const parsed = chatRequestSchema.safeParse(body);
+      if (!parsed.success) {
+        return new Response(JSON.stringify({ error: parsed.error.issues[0].message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      message = parsed.data.message;
+      context = parsed.data.context;
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!message) {
-      return new Response(JSON.stringify({ error: 'message is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -130,6 +136,8 @@ ${context || 'No additional context provided.'}`;
     }
 
     const openaiData = await openaiRes.json();
+    const tokenUsage = openaiData.usage;
+    console.log('OpenAI token usage:', JSON.stringify(tokenUsage));
     const reply =
       openaiData.choices?.[0]?.message?.content ??
       'Sorry, I could not generate a response.';

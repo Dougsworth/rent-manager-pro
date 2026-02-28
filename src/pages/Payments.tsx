@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPayments, createPayment } from '@/services/payments';
+import { createPaymentSchema } from '@/schemas';
 import { getTenants } from '@/services/tenants';
 import { getInvoices } from '@/services/invoices';
 import { getProofsForLandlord, approveProof, rejectProof } from '@/services/paymentProofs';
@@ -82,9 +83,19 @@ export default function Payments() {
     loadData();
   }, [user]);
 
+  const [recordError, setRecordError] = useState('');
+
   const handleRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    setRecordError('');
+
+    const result = createPaymentSchema.safeParse(newPayment);
+    if (!result.success) {
+      setRecordError(result.error.issues[0].message);
+      return;
+    }
+
     setRecording(true);
     try {
       await createPayment(user.id, {
@@ -228,6 +239,11 @@ export default function Payments() {
             <DialogTitle>Record Payment</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleRecord} className="space-y-4">
+            {recordError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {recordError}
+              </div>
+            )}
             <div>
               <Label htmlFor="pay-tenant">Tenant</Label>
               <Select

@@ -1,6 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'npm:zod';
 import { corsHeaders } from '../_shared/cors.ts';
 import { buildEmailHtml } from '../_shared/emailTemplate.ts';
+
+const reminderRequestSchema = z.object({
+  tenant_id: z.string().min(1, 'tenant_id is required'),
+  invoice_id: z.string().min(1, 'invoice_id is required'),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -37,13 +43,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { tenant_id, invoice_id } = await req.json();
-    if (!tenant_id || !invoice_id) {
-      return new Response(JSON.stringify({ error: 'tenant_id and invoice_id are required' }), {
+    const body = await req.json();
+    const parsed = reminderRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.issues[0].message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const { tenant_id, invoice_id } = parsed.data;
 
     // Fetch tenant details
     const { data: tenant, error: tenantError } = await supabase

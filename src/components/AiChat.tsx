@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect, Fragment } from "react";
-import { Search, Sparkles, Loader2, ArrowRight, X, Zap, CornerDownLeft, RotateCcw } from "lucide-react";
+import { Search, Sparkles, Loader2, X, Zap, CornerDownLeft, RotateCcw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { processMessage } from "@/services/aiChat";
 import type { AiChatUsage } from "@/types/app.types";
-import { cn } from "@/lib/utils";
 
-const AI_LIMIT = 20;
 const STORAGE_KEY = 'easycollect_ai_usage';
 
 // Persist AI count in localStorage per day so it survives page refreshes
@@ -32,10 +30,10 @@ function storeAiCount(userId: string, count: number) {
 }
 
 const SUGGESTIONS = [
-  { label: "Who's overdue?", icon: "!", local: true },
-  { label: "How much collected?", icon: "$", local: true },
-  { label: "Monthly summary", icon: "#", local: true },
-  { label: "Draft a reminder", icon: "~", local: false },
+  { label: "Who's overdue?", icon: "!" },
+  { label: "How much collected?", icon: "$" },
+  { label: "Monthly summary", icon: "#" },
+  { label: "Draft a reminder", icon: "~" },
 ];
 
 // Render basic markdown: **bold**, newlines, - list items
@@ -110,8 +108,6 @@ export function AiChat() {
 
   if (!user) return null;
 
-  const remaining = AI_LIMIT - aiCount;
-
   const incrementAiCount = () => {
     const newCount = aiCount + 1;
     setAiCount(newCount);
@@ -153,7 +149,7 @@ export function AiChat() {
         id: crypto.randomUUID(),
         query: msg,
         answer: err.usage
-          ? "Daily AI limit reached. Data questions still work locally."
+          ? "You've reached your daily limit. Try again tomorrow!"
           : (err.message || "Something went wrong."),
         source: 'local',
         timestamp: new Date(),
@@ -252,13 +248,6 @@ export function AiChat() {
                           {s.icon}
                         </span>
                         <span className="text-sm text-slate-600 group-hover/item:text-slate-900 transition-colors flex-1">{s.label}</span>
-                        {s.local ? (
-                          <span className="text-[9px] uppercase tracking-wider text-slate-300 font-medium">instant</span>
-                        ) : (
-                          <span className="text-[9px] uppercase tracking-wider text-blue-300 font-medium flex items-center gap-0.5">
-                            <Sparkles className="h-2 w-2" /> ai
-                          </span>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -274,20 +263,9 @@ export function AiChat() {
                       <div className="flex items-center gap-2 mb-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
                         <span className="text-xs text-slate-400 truncate flex-1">{r.query}</span>
-                        <span className={cn(
-                          "text-[9px] uppercase tracking-wider font-medium shrink-0",
-                          r.source === 'ai' ? "text-blue-400" : "text-slate-300"
-                        )}>
-                          {r.source === 'ai' ? 'ai' : 'local'}
-                        </span>
                       </div>
                       {/* Answer card */}
-                      <div className={cn(
-                        "ml-3 px-3 py-2.5 rounded-xl text-[13px] leading-relaxed border",
-                        r.source === 'ai'
-                          ? "bg-blue-50/50 border-blue-100/80 text-slate-700"
-                          : "bg-slate-50 border-slate-100 text-slate-700"
-                      )}>
+                      <div className="ml-3 px-3 py-2.5 rounded-xl text-[13px] leading-relaxed border bg-slate-50 border-slate-100 text-slate-700">
                         {renderMarkdown(r.answer)}
                       </div>
                     </div>
@@ -329,18 +307,12 @@ export function AiChat() {
                   send
                 </span>
               </div>
-              {aiCount > 0 ? (
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="h-2.5 w-2.5 text-blue-400" />
-                  <span className="text-[10px] text-slate-400">
-                    {aiCount}/{AI_LIMIT} AI used today
-                  </span>
-                </div>
-              ) : (
-                <span className="text-[10px] text-slate-300">
-                  data queries are free
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-2.5 w-2.5 text-blue-400" />
+                <span className="text-[10px] text-slate-400">
+                  J$ Assistant
                 </span>
-              )}
+              </div>
             </div>
           </div>
         </div>

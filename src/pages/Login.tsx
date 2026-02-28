@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { loginSchema } from '@/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,8 +19,14 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+      return;
+    }
+
+    setLoading(true);
     const { error } = await signIn(email, password);
     if (error) {
       setError(error);
