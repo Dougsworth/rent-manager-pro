@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getInvoices, createInvoice } from '@/services/invoices';
+import { getInvoices, createInvoice, bulkCreateInvoices } from '@/services/invoices';
 import { createInvoiceSchema } from '@/schemas';
 import { getTenants } from '@/services/tenants';
 import type { InvoiceWithTenant, TenantWithDetails } from '@/types/app.types';
@@ -12,7 +12,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search, Download, Loader2, Link, FileText } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
+import { Plus, Search, Download, Loader2, Link, FileText, Users } from 'lucide-react';
+import { DialogDescription } from '@/components/ui/dialog';
 import { exportToCsv } from '@/utils/exportCsv';
 import { formatDate } from '@/utils/formatDate';
 import { Pagination, paginate } from '@/components/Pagination';
@@ -31,6 +33,10 @@ export default function Invoices() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newInvoice, setNewInvoice] = useState({ tenant_id: '', amount: '', due_date: '', description: '' });
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkDueDate, setBulkDueDate] = useState('');
+  const [bulkDescription, setBulkDescription] = useState('');
+  const [bulking, setBulking] = useState(false);
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -86,6 +92,44 @@ export default function Invoices() {
     }
   };
 
+  // Tenants with assigned units (have a rent amount to invoice)
+  const invoiceableTenants = tenants.filter(t => t.rent_amount > 0);
+
+  const handleBulkInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !bulkDueDate) return;
+
+    setBulking(true);
+    try {
+      const invoiceData = invoiceableTenants.map(t => ({
+        tenant_id: t.id,
+        amount: t.rent_amount,
+        due_date: bulkDueDate,
+        description: bulkDescription || `Monthly Rent`,
+      }));
+
+      const { created, skipped } = await bulkCreateInvoices(user.id, invoiceData);
+
+      setShowBulk(false);
+      setBulkDueDate('');
+      setBulkDescription('');
+      await loadData();
+
+      if (created > 0 && skipped > 0) {
+        toast(`${created} invoices created, ${skipped} skipped (already invoiced).`);
+      } else if (created > 0) {
+        toast(`${created} invoices created successfully!`, 'success');
+      } else {
+        toast('All tenants already have invoices for this period.', 'warning');
+      }
+    } catch (err) {
+      console.error('Bulk invoice failed:', err);
+      toast('Failed to create invoices. Please try again.', 'error');
+    } finally {
+      setBulking(false);
+    }
+  };
+
   const filteredInvoices = invoices.filter(invoice => {
     const tenantName = `${invoice.tenant_first_name} ${invoice.tenant_last_name}`.toLowerCase();
     const matchesSearch = tenantName.includes(searchTerm.toLowerCase()) ||
@@ -107,18 +151,66 @@ export default function Invoices() {
     );
   }
 
+  const invoiceCounts = {
+    total: invoices.length,
+    paid: invoices.filter(i => i.status === 'paid').length,
+    pending: invoices.filter(i => i.status === 'pending').length,
+    overdue: invoices.filter(i => i.status === 'overdue').length,
+  };
+  const totalAmount = invoices.reduce((sum, i) => sum + i.amount, 0);
+  const paidAmount = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
+
   return (
     <>
       <PageHeader
         title="Invoices"
         description="Create and manage rent invoices"
         action={
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Invoice
-          </Button>
+          <div className="flex gap-2">
+            {invoiceableTenants.length > 0 && (
+              <Button variant="outline" onClick={() => setShowBulk(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                Invoice All
+              </Button>
+            )}
+            <Button onClick={() => setShowCreate(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Invoice
+            </Button>
+          </div>
         }
       />
+
+      {/* Stat Cards */}
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Invoiced"
+          value={formatCurrency(totalAmount)}
+          subtext={`${invoiceCounts.total} invoices`}
+        />
+        <StatCard
+          label="Collected"
+          value={formatCurrency(paidAmount)}
+          valueColor="text-emerald-600"
+          subtext={invoiceCounts.paid > 0 ? `${invoiceCounts.paid} paid` : "No payments yet"}
+          subtextColor="text-emerald-500"
+        />
+        <StatCard
+          label="Pending"
+          value={String(invoiceCounts.pending)}
+          valueColor="text-amber-600"
+          subtext={invoiceCounts.pending > 0 ? "Awaiting payment" : "None pending"}
+        />
+        <StatCard
+          label="Overdue"
+          value={String(invoiceCounts.overdue)}
+          valueColor={invoiceCounts.overdue > 0 ? "text-red-500" : "text-slate-900"}
+          subtext={invoiceCounts.overdue > 0 ? "Needs attention" : "All on time"}
+          subtextColor={invoiceCounts.overdue > 0 ? "text-red-400" : "text-slate-500"}
+        />
+        </div>
+      </div>
 
       {/* Create Invoice Modal */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -188,7 +280,57 @@ export default function Invoices() {
         </DialogContent>
       </Dialog>
 
-      <div className="glass rounded-2xl border border-white/60">
+      {/* Bulk Invoice Modal */}
+      <Dialog open={showBulk} onOpenChange={setShowBulk}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invoice All Tenants</DialogTitle>
+            <DialogDescription>
+              Create invoices for all {invoiceableTenants.length} tenants with assigned units.
+              Each tenant will be invoiced their unit's rent amount. Tenants who already have
+              a pending or overdue invoice for the same month will be skipped.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleBulkInvoice} className="space-y-4">
+            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
+              {invoiceableTenants.map(t => (
+                <div key={t.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                  <span className="text-slate-700">{t.first_name} {t.last_name} <span className="text-slate-400">— {t.unit_name}</span></span>
+                  <span className="font-medium text-slate-900">{formatCurrency(t.rent_amount)}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <Label htmlFor="bulk-due">Due Date</Label>
+              <Input
+                id="bulk-due"
+                type="date"
+                required
+                value={bulkDueDate}
+                onChange={(e) => setBulkDueDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="bulk-desc">Description</Label>
+              <Input
+                id="bulk-desc"
+                value={bulkDescription}
+                onChange={(e) => setBulkDescription(e.target.value)}
+                placeholder="e.g. Monthly Rent — March 2026"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowBulk(false)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={bulking}>
+                {bulking && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create {invoiceableTenants.length} Invoices
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="bg-white rounded-2xl border border-slate-200/60">
         {/* Search / Filter bar */}
         <div className="flex flex-col sm:flex-row gap-3 border-b border-slate-100/60 px-6 py-3">
           <div className="flex-1 relative">

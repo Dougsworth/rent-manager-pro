@@ -1,34 +1,34 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { loginSchema } from '@/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Mail, Lock, Eye, EyeOff, Loader2, Quote } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Quote } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Login() {
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
-      setError(result.error.issues[0].message);
+      toast.error(result.error.issues[0].message);
       return;
     }
 
     setLoading(true);
     const { error } = await signIn(email, password);
     if (error) {
-      setError(error);
+      toast.error(error);
     }
     setLoading(false);
   };
@@ -42,10 +42,7 @@ export default function Login() {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-float-slow-reverse" />
 
         <div className="relative z-10 animate-slide-in-left">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-10 w-10" />
-            <span className="text-2xl font-bold">EasyCollect</span>
-          </div>
+          <BrandLogo className="text-3xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.8)" />
         </div>
 
         <div className="space-y-6 relative z-10">
@@ -75,9 +72,8 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100/80 p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-4 animate-fade-in-up">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-slate-900">EasyCollect</span>
+          <div className="lg:hidden flex items-center justify-center mb-4 animate-fade-in-up">
+            <BrandLogo className="text-3xl font-extrabold tracking-tight text-slate-900" />
           </div>
 
           <div className="animate-fade-in-up">
@@ -99,12 +95,6 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in-up-delay-2">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
             <div>
               <Label htmlFor="email" className="text-slate-700">Email address</Label>
               <div className="mt-1.5 relative">
@@ -152,6 +142,12 @@ export default function Login() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
+                Forgot password?
+              </Link>
+            </div>
+
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -173,9 +169,9 @@ export default function Login() {
 
           <p className="text-center text-xs text-slate-400 animate-fade-in-up-delay-4">
             By signing in, you agree to our{' '}
-            <a href="#" className="underline hover:text-slate-600">Terms of Service</a>
+            <Link to="/terms" className="underline hover:text-slate-600">Terms of Service</Link>
             {' '}and{' '}
-            <a href="#" className="underline hover:text-slate-600">Privacy Policy</a>
+            <Link to="/privacy" className="underline hover:text-slate-600">Privacy Policy</Link>
           </p>
         </div>
       </div>

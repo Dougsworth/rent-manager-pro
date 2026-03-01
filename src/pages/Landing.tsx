@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import BrandLogo from '@/components/BrandLogo';
 import {
   Building2,
   FileText,
@@ -370,11 +371,8 @@ export default function Landing() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-lg border-b border-neutral-200/50 shadow-sm' : 'bg-transparent'}`}>
         <div className="transition-all duration-500 max-w-7xl mx-auto py-3 sm:py-5 px-4 sm:px-6">
           <div className="relative flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 flex-shrink-0 relative z-10">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <Building2 className="h-3.5 w-3.5 text-white" />
-              </div>
-              <span className="text-lg font-semibold text-neutral-900">EasyCollect</span>
+            <Link to="/" className="flex items-center flex-shrink-0 relative z-10">
+              <BrandLogo className="text-xl font-extrabold tracking-tight text-neutral-900" />
             </Link>
 
             <nav className="hidden lg:flex items-center justify-center absolute left-1/2 -translate-x-1/2">
@@ -1444,11 +1442,8 @@ export default function Landing() {
           <div className="container mx-auto px-6 pt-12 md:pt-16 pb-8">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-8 mb-10 md:mb-16">
               <div className="col-span-2 md:col-span-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
-                    <Building2 className="h-3 w-3 text-white" />
-                  </div>
-                  <span className="font-semibold text-lg">EasyCollect</span>
+                <div className="mb-4">
+                  <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.8)" />
                 </div>
                 <p className="text-sm text-white/60 mb-6">
                   Collect rent simply.<br />Get paid on time.
@@ -1476,8 +1471,8 @@ export default function Landing() {
               <div>
                 <h3 className="font-medium text-sm text-white/80 mb-4 uppercase tracking-wider">Legal</h3>
                 <ul className="space-y-3">
-                  <li><a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Terms</a></li>
-                  <li><a href="#" className="text-white/60 hover:text-white transition-colors text-sm">Privacy</a></li>
+                  <li><Link to="/terms" className="text-white/60 hover:text-white transition-colors text-sm">Terms</Link></li>
+                  <li><Link to="/privacy" className="text-white/60 hover:text-white transition-colors text-sm">Privacy</Link></li>
                 </ul>
               </div>
 

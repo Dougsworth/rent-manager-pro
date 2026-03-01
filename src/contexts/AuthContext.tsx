@@ -64,7 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    if (!error) return { error: null };
+
+    // Friendly error messages
+    if (error.message.toLowerCase().includes('email not confirmed')) {
+      return { error: 'Please check your inbox and verify your email before signing in.' };
+    }
+    if (error.message.toLowerCase().includes('invalid login credentials')) {
+      return { error: 'Incorrect email or password. Please try again.' };
+    }
+    return { error: error.message };
   };
 
   const signUp = async (
@@ -91,7 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }).catch((err) => console.error('Landlord welcome email failed:', err));
     }
 
-    return { error: error?.message ?? null };
+    if (!error) return { error: null };
+
+    if (error.message.toLowerCase().includes('already registered')) {
+      return { error: 'An account with this email already exists. Try signing in instead.' };
+    }
+    if (error.message.toLowerCase().includes('sending confirmation')) {
+      return { error: 'Something went wrong sending your verification email. Please try again.' };
+    }
+    return { error: error.message };
   };
 
   const signOut = async () => {

@@ -5,13 +5,12 @@ import { sendReminder } from '@/services/reminders';
 import type { DashboardStats, PaymentWithDetails } from '@/types/app.types';
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/ui/stat-card";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, DollarSign, TrendingUp, Clock, AlertTriangle } from "lucide-react";
+import { ArrowRight, Loader2, DollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { formatDate } from '@/utils/formatDate';
+import { SetupBanner } from "@/components/SetupBanner";
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -24,12 +23,17 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
-  card: 'Card',
-  cash: 'Cash',
-  other: 'Other',
-};
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
 
 export default function Dashboard() {
   const { user, profile } = useAuth();
@@ -95,112 +99,106 @@ export default function Dashboard() {
 
   return (
     <>
+      <SetupBanner />
       <PageHeader
         title={`${getGreeting()}, ${firstName}`}
         description={today}
+        action={
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Collected</span>
+            <div className="flex gap-0.5">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1.5 h-2.5 rounded-sm transition-all duration-500 ${
+                    i < Math.round(collectionPercentage / 5) ? 'bg-blue-500' : 'bg-slate-200'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-bold text-blue-600">{collectionPercentage}%</span>
+          </div>
+        }
       />
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Expected"
           value={formatCurrency(stats.expected)}
           subtext={`${stats.tenantCount} tenants this month`}
-          icon={DollarSign}
         />
         <StatCard
           label="Collected"
           value={formatCurrency(stats.collected)}
-          subtext={`${collectionPercentage}% collected`}
-          icon={TrendingUp}
+          valueColor="text-emerald-600"
+          subtext={collectionPercentage > 0 ? `+${collectionPercentage}% collected` : "No payments yet"}
+          subtextColor="text-emerald-500"
         />
         <StatCard
           label="Outstanding"
           value={formatCurrency(stats.outstanding)}
+          valueColor="text-amber-600"
           subtext={stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
-          icon={Clock}
         />
         <StatCard
           label="Overdue"
-          value={stats.overdue.toString()}
+          value={stats.overdue > 0 ? `${stats.overdue} tenant${stats.overdue !== 1 ? 's' : ''}` : "0"}
+          valueColor={stats.overdue > 0 ? "text-red-500" : "text-slate-900"}
           subtext={stats.overdue > 0 ? "Needs attention" : "No overdue"}
-          icon={AlertTriangle}
+          subtextColor={stats.overdue > 0 ? "text-red-400" : "text-slate-500"}
         />
+        </div>
       </div>
 
-      {/* Collection Progress */}
-      <div className="mb-8">
-        <ProgressBar
-          value={collectionPercentage}
-          label="Collection Progress"
-          segments={[
-            { label: "Collected", value: stats.collected, color: "bg-slate-900" },
-            { label: "Pending", value: stats.outstanding, color: "bg-blue-500" },
-            { label: "Overdue", value: stats.overdue > 0 ? stats.expected - stats.collected - stats.outstanding : 0, color: "bg-slate-300" },
-          ]}
-        />
-      </div>
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Recent Payments */}
-        <div className="lg:col-span-3 glass rounded-2xl border border-white/60">
+      {/* Two Column: Recent Activity + Overdue */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Recent Activity Feed */}
+        <div className="bg-white rounded-2xl border border-slate-200/60">
           <div className="px-6 py-4 border-b border-slate-100/60">
-            <h2 className="text-sm font-semibold text-slate-900">Recent Payments</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Recent Activity</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100/60">
-                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400">Tenant</th>
-                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden sm:table-cell">Unit</th>
-                  <th className="px-6 py-3 text-right text-[11px] font-medium uppercase tracking-widest text-slate-400">Amount</th>
-                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden md:table-cell">Date</th>
-                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-slate-400 hidden lg:table-cell">Method</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100/60">
-                {recentPayments.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="rounded-xl border border-dashed border-slate-200/80 bg-white/30 p-4 inline-block mb-3">
-                        <DollarSign className="h-5 w-5 text-slate-400" />
-                      </div>
-                      <p className="text-sm text-slate-500">No payments recorded yet</p>
-                    </td>
-                  </tr>
-                ) : recentPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-white/40 transition-colors duration-150">
-                    <td className="px-6 py-4 text-sm text-slate-900">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white/80 border border-slate-200/60 text-slate-600 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                          {(payment.tenant_first_name?.[0] ?? '').toUpperCase()}{(payment.tenant_last_name?.[0] ?? '').toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium">{payment.tenant_first_name} {payment.tenant_last_name}</p>
-                          <p className="sm:hidden text-xs text-slate-500">{payment.unit_name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500 hidden sm:table-cell">{payment.unit_name}</td>
-                    <td className="px-6 py-4 text-sm text-right font-medium text-slate-900">{formatCurrency(payment.amount)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500 hidden md:table-cell">{formatDate(payment.payment_date)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500 hidden lg:table-cell">{methodLabels[payment.method] ?? payment.method}</td>
-                  </tr>
+          <div className="p-6">
+            {recentPayments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="rounded-xl border border-dashed border-slate-200/80 bg-white/30 p-4 inline-block mb-3">
+                  <DollarSign className="h-5 w-5 text-slate-400" />
+                </div>
+                <p className="text-sm text-slate-500">No activity yet</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {recentPayments.slice(0, 5).map((payment) => (
+                  <div key={payment.id} className="flex items-start gap-3">
+                    <div className="mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 bg-emerald-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-900">
+                        <span className="font-medium">{payment.tenant_first_name} {payment.tenant_last_name?.[0]}.</span>
+                        {' — '}
+                        <span className="text-slate-500">paid</span>
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {formatCurrency(payment.amount)} · {timeAgo(payment.payment_date)}
+                      </p>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-          <div className="px-6 py-3 border-t border-slate-100/60">
-            <Link to="/payments" className="text-sm font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
-              View all payments
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          {recentPayments.length > 0 && (
+            <div className="px-6 py-3 border-t border-slate-100/60">
+              <Link to="/payments" className="text-sm font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
+                View all payments
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Overdue Tenants */}
-        <div className="lg:col-span-2 glass rounded-2xl border border-white/60">
+        <div className="bg-white rounded-2xl border border-slate-200/60">
           <div className="px-6 py-4 border-b border-slate-100/60">
             <h2 className="text-sm font-semibold text-slate-900">Overdue Tenants</h2>
           </div>
@@ -217,14 +215,16 @@ export default function Dashboard() {
                 {overdueTenants.map((tenant) => (
                   <div key={tenant.id} className="p-4 glass-subtle border border-white/50 rounded-xl hover:bg-white/50 transition-all duration-200">
                     <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{tenant.name}</p>
-                        <p className="text-xs text-slate-500">{tenant.unit}</p>
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 bg-red-400" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{tenant.name}</p>
+                          <p className="text-xs text-slate-400">{tenant.unit} · {formatCurrency(tenant.amount)}</p>
+                        </div>
                       </div>
                       <StatusBadge variant="overdue">{tenant.daysOverdue}d late</StatusBadge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">{formatCurrency(tenant.amount)}</p>
+                    <div className="flex justify-end">
                       <Button
                         variant="outline"
                         size="sm"
@@ -237,7 +237,7 @@ export default function Dashboard() {
                         {sendingReminder === tenant.invoice_id ? (
                           <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Sending...</>
                         ) : (
-                          'Remind'
+                          'Send Reminder'
                         )}
                       </Button>
                     </div>
@@ -256,6 +256,7 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
     </>
   );
 }

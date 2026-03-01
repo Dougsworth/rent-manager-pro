@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EasyCollect <onboarding@resend.dev>',
+        from: 'EasyCollect <noreply@easycollectja.com>',
         to: tenant.email,
         subject: `Payment Receipt — ${amountFormatted}`,
         html: buildEmailHtml('Payment Receipt', `

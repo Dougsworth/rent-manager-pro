@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { useAuth } from './contexts/AuthContext';
 
 import AppLayout from './components/AppLayout';
@@ -13,14 +14,22 @@ import Receipt from './pages/Receipt';
 import TenantPayment from './pages/TenantPayment';
 import PublicPayment from './pages/PublicPayment';
 import Landing from './pages/Landing';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import EmailVerified from './pages/EmailVerified';
 
 function App() {
   // Public payment route — no auth required
   if (window.location.pathname.startsWith('/pay/')) {
     return (
-      <Routes>
-        <Route path="/pay/:token" element={<PublicPayment />} />
-      </Routes>
+      <>
+        <Toaster position="top-center" richColors closeButton />
+        <Routes>
+          <Route path="/pay/:token" element={<PublicPayment />} />
+        </Routes>
+      </>
     );
   }
 
@@ -39,27 +48,39 @@ function App() {
 
   if (!user) {
     return (
-      <Routes>
+      <>
+        <Toaster position="top-center" richColors closeButton />
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/email-verified" element={<EmailVerified />} />
         <Route path="*" element={<Landing />} />
       </Routes>
+      </>
     );
   }
 
   if (isTenant) {
     return (
-      <Routes>
-        <Route path="/tenant/payment" element={<TenantPayment />} />
-        <Route path="/tenant/receipt" element={<Receipt />} />
-        <Route path="*" element={<Navigate to="/tenant/payment" replace />} />
-      </Routes>
+      <>
+        <Toaster position="top-center" richColors closeButton />
+        <Routes>
+          <Route path="/tenant/payment" element={<TenantPayment />} />
+          <Route path="/tenant/receipt" element={<Receipt />} />
+          <Route path="*" element={<Navigate to="/tenant/payment" replace />} />
+        </Routes>
+      </>
     );
   }
 
   return (
     <AppLayout>
+      <Toaster position="top-center" richColors closeButton />
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />

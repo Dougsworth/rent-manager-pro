@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, DollarSign, Loader2, Plus, Download, CheckCircle, XCircle, TrendingUp, AlertTriangle, Calendar, CreditCard } from 'lucide-react';
+import { Search, Loader2, Plus, Download, CheckCircle, XCircle, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportToCsv } from '@/utils/exportCsv';
 import { useToast } from '@/components/ui/toast';
@@ -352,31 +352,32 @@ export default function Payments() {
       {activeTab === 'payments' && (
         <>
           {/* Stat Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               label="Total Collected"
               value={formatCurrency(totalCollected)}
-              icon={TrendingUp}
+              valueColor="text-emerald-600"
             />
             <StatCard
               label="Unpaid Invoices"
               value={formatCurrency(totalPending)}
-              icon={DollarSign}
+              valueColor="text-amber-600"
             />
             <StatCard
               label="Failed"
               value={formatCurrency(totalFailed)}
-              icon={AlertTriangle}
+              valueColor={totalFailed > 0 ? "text-red-500" : "text-slate-900"}
             />
             <StatCard
               label="This Month"
               value={formatCurrency(thisMonth)}
-              icon={Calendar}
             />
+            </div>
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-xl border border-slate-200">
+          <div className="bg-white rounded-2xl border border-slate-200/60">
             <div className="flex flex-col sm:flex-row gap-3 border-b border-slate-200 px-6 py-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -498,7 +499,7 @@ export default function Payments() {
       {activeTab === 'proofs' && (
         <div className="space-y-4">
           {pendingProofs.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 py-16 flex flex-col items-center justify-center">
+            <div className="bg-white rounded-2xl border border-slate-200/60 py-16 flex flex-col items-center justify-center">
               <div className="rounded-xl border border-dashed border-slate-300 p-4 mb-4">
                 <CheckCircle className="h-6 w-6 text-slate-400" />
               </div>
@@ -507,7 +508,7 @@ export default function Payments() {
             </div>
           ) : (
             pendingProofs.map((proof) => (
-              <div key={proof.id} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <div key={proof.id} className="bg-white rounded-2xl border border-slate-200/60 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button
                     onClick={() => setImageModal(proof.image_url)}

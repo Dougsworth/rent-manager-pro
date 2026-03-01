@@ -37,17 +37,22 @@ describe('loginSchema', () => {
 
 describe('signupSchema', () => {
   it('accepts valid input', () => {
-    const result = signupSchema.safeParse({ firstName: 'John', lastName: 'Doe', email: 'john@test.com', password: 'secret123' });
+    const result = signupSchema.safeParse({ firstName: 'John', lastName: 'Doe', email: 'john@test.com', password: 'secret123', confirmPassword: 'secret123' });
     expect(result.success).toBe(true);
   });
 
   it('rejects short password', () => {
-    const result = signupSchema.safeParse({ firstName: 'John', lastName: 'Doe', email: 'john@test.com', password: '123' });
+    const result = signupSchema.safeParse({ firstName: 'John', lastName: 'Doe', email: 'john@test.com', password: '123', confirmPassword: '123' });
     expect(result.success).toBe(false);
   });
 
   it('rejects missing first name', () => {
-    const result = signupSchema.safeParse({ firstName: '', lastName: 'Doe', email: 'john@test.com', password: 'secret123' });
+    const result = signupSchema.safeParse({ firstName: '', lastName: 'Doe', email: 'john@test.com', password: 'secret123', confirmPassword: 'secret123' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects mismatched passwords', () => {
+    const result = signupSchema.safeParse({ firstName: 'John', lastName: 'Doe', email: 'john@test.com', password: 'secret123', confirmPassword: 'different' });
     expect(result.success).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
@@ -23,7 +24,13 @@ import {
 
 export default function Settings() {
   const { user, profile, refreshProfile } = useAuth();
-  const [activeSection, setActiveSection] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    const section = searchParams.get('section');
+    return section && ['profile', 'company', 'bank', 'properties', 'notifications', 'billing', 'security'].includes(section)
+      ? section
+      : 'profile';
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -710,7 +717,7 @@ export default function Settings() {
 
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-64">
-          <nav className="space-y-2">
+          <nav className="bg-white rounded-2xl border border-slate-200/60 p-3 space-y-1">
             {sections.map((section) => {
               const Icon = section.icon;
               return (

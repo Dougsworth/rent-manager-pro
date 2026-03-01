@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
+import { StatCard } from "@/components/ui/stat-card";
 import { Search, Plus, Loader2, Trash2, Users } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
@@ -164,6 +165,37 @@ export default function Tenants() {
         }
       />
 
+      {/* Stat Cards */}
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Tenants"
+          value={String(counts.all)}
+          subtext="Active tenants"
+        />
+        <StatCard
+          label="Paid"
+          value={String(counts.paid)}
+          valueColor="text-emerald-600"
+          subtext={counts.all > 0 ? `${Math.round((counts.paid / counts.all) * 100)}% of tenants` : "No tenants"}
+          subtextColor="text-emerald-500"
+        />
+        <StatCard
+          label="Pending"
+          value={String(counts.pending)}
+          valueColor="text-amber-600"
+          subtext={counts.pending > 0 ? "Awaiting payment" : "None pending"}
+        />
+        <StatCard
+          label="Overdue"
+          value={String(counts.overdue)}
+          valueColor={counts.overdue > 0 ? "text-red-500" : "text-slate-900"}
+          subtext={counts.overdue > 0 ? "Needs attention" : "All on time"}
+          subtextColor={counts.overdue > 0 ? "text-red-400" : "text-slate-500"}
+        />
+        </div>
+      </div>
+
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <FilterTabs<TenantStatus> tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -204,7 +236,7 @@ export default function Tenants() {
           }
         />
       ) : (
-        <div className="glass rounded-2xl border border-white/60 divide-y divide-slate-100/60">
+        <div className="bg-white rounded-2xl border border-slate-200/60 divide-y divide-slate-100">
           {paginatedTenants.map((tenant) => (
             <button
               key={tenant.id}
