@@ -9,3 +9,4 @@ export {
   updateNotificationPreferencesSchema,
 } from './profile';
 export { createPropertySchema, createUnitSchema } from './property';
+export { lateFeeSettingsSchema } from './lateFees';

@@ -285,6 +285,7 @@ export default function Tenants() {
           <TenantDetail
             tenant={tenantForDetail}
             tenantId={selectedTenant?.id}
+            landlordId={user?.id}
             onSendReminder={handleSendReminder}
             sendingReminder={sendingReminder}
           />

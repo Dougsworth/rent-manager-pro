@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2, DollarSign, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { SetupBanner } from "@/components/SetupBanner";
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -99,7 +98,6 @@ export default function Dashboard() {
 
   return (
     <>
-      <SetupBanner />
       <PageHeader
         title={`${getGreeting()}, ${firstName}`}
         description={today}

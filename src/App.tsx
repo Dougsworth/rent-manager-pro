@@ -9,7 +9,9 @@ import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
+import Properties from './pages/Properties';
 import Settings from './pages/Settings';
+import Reports from './pages/Reports';
 import Receipt from './pages/Receipt';
 import TenantPayment from './pages/TenantPayment';
 import PublicPayment from './pages/PublicPayment';
@@ -84,9 +86,11 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/properties" element={<Properties />} />
         <Route path="/tenants" element={<Tenants />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/payments" element={<Payments />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/receipt/:id" element={<Receipt />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

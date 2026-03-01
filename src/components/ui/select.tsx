@@ -51,15 +51,15 @@ export function Select({
         <SelectPrimitive.Trigger
           id={required ? undefined : id}
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition-all duration-150",
-            "hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-            "data-[placeholder]:text-gray-500",
+            "flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all duration-150",
+            "hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400/40 focus:border-slate-400",
+            "data-[placeholder]:text-slate-500",
             "disabled:cursor-not-allowed disabled:opacity-50"
           )}
         >
           <SelectPrimitive.Value placeholder={placeholder} />
           <SelectPrimitive.Icon asChild>
-            <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
           </SelectPrimitive.Icon>
         </SelectPrimitive.Trigger>
 
@@ -68,7 +68,7 @@ export function Select({
             position="popper"
             sideOffset={4}
             className={cn(
-              "relative z-50 max-h-60 min-w-[8rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg",
+              "relative z-50 max-h-60 min-w-[8rem] overflow-hidden rounded-lg border border-slate-200/60 bg-white shadow-lg",
               "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
               "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
               "data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
@@ -81,13 +81,13 @@ export function Select({
                   value={option.value}
                   className={cn(
                     "relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-9 pr-3 text-sm outline-none transition-colors",
-                    "focus:bg-blue-50 focus:text-blue-700",
+                    "focus:bg-slate-50 focus:text-slate-900",
                     "data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                   )}
                 >
                   <span className="absolute left-2.5 flex h-4 w-4 items-center justify-center">
                     <SelectPrimitive.ItemIndicator>
-                      <Check className="h-4 w-4 text-blue-600" />
+                      <Check className="h-4 w-4 text-slate-900" />
                     </SelectPrimitive.ItemIndicator>
                   </span>
                   <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>

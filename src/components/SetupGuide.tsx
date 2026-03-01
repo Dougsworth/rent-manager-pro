@@ -1,121 +1,209 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Check, ChevronRight, X } from 'lucide-react';
+import { Check, ChevronUp, X, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
-import { AddPropertyModal } from '@/components/AddPropertyModal';
 
-const DISMISS_KEY = 'easycollect_setup_dismissed';
+function ProgressRing({ percentage, size = 28 }: { percentage: number; size?: number }) {
+  const strokeWidth = 2.5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+  const color = percentage === 100 ? '#10b981' : percentage >= 50 ? '#3b82f6' : '#94a3b8';
+
+  return (
+    <svg width={size} height={size} className="-rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="#e2e8f0"
+        strokeWidth={strokeWidth}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-all duration-700 ease-out"
+      />
+    </svg>
+  );
+}
 
 export function SetupGuide() {
   const navigate = useNavigate();
-  const { hasProperties, hasUnits, hasTenants, completedSteps, totalSteps, isComplete, loading, refetch } = useSetupStatus();
+  const {
+    hasProperties, hasUnits, hasTenants,
+    completedSteps, totalSteps, percentage,
+    isComplete, isDismissed, loading, dismiss,
+  } = useSetupStatus();
   const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === 'true');
-  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (isComplete && !dismissed) {
-      localStorage.setItem(DISMISS_KEY, 'true');
-      setDismissed(true);
-    }
-  }, [isComplete, dismissed]);
-
-  if (loading || dismissed) return null;
+  if (loading || isDismissed) return null;
 
   const steps = [
     {
       label: 'Add a Property',
+      description: 'Create your first rental property',
       done: hasProperties,
-      action: () => { setOpen(false); setModalOpen(true); },
+      href: '/properties',
     },
     {
       label: 'Add Units',
+      description: 'Add units to your property',
       done: hasUnits,
-      action: () => { setOpen(false); navigate('/settings?section=properties'); },
+      href: '/properties',
     },
     {
-      label: 'Add first Tenant',
+      label: 'Add a Tenant',
+      description: 'Assign a tenant to a unit',
       done: hasTenants,
-      action: () => { setOpen(false); navigate('/tenants'); },
+      href: '/tenants',
     },
   ];
 
+  const nextStep = steps.find(s => !s.done);
+
+  const handleDismiss = async () => {
+    setOpen(false);
+    await dismiss();
+  };
+
+  const handleStepClick = (href: string) => {
+    setOpen(false);
+    navigate(href);
+  };
+
   return (
     <>
-      {/* Floating trigger button — positioned above AiChat */}
-      <button
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "fixed bottom-20 right-4 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-200",
-          "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105"
-        )}
-      >
-        <ClipboardList className="h-5 w-5" />
-        {completedSteps < totalSteps && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
-            {completedSteps}/{totalSteps}
-          </span>
-        )}
-      </button>
+      {/* Pill trigger */}
+      {!open && (
+        <div className="fixed bottom-16 right-5 z-30">
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <ProgressRing percentage={percentage} />
+            <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
+              Setup Guide
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
+              {percentage}%
+            </span>
+            <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+          </button>
+        </div>
+      )}
 
-      {/* Popover panel */}
+      {/* Panel */}
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="fixed bottom-34 right-4 left-4 sm:left-auto z-40 sm:w-72 bg-white rounded-xl border border-slate-200/60 shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100/60">
-              <h3 className="text-sm font-semibold text-slate-900">Setup Guide</h3>
+          <div className="fixed bottom-16 right-5 z-40 w-80 bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-1">
+              <h3 className="text-base font-semibold text-slate-900">Setup Guide</h3>
               <button
-                onClick={() => { setDismissed(true); localStorage.setItem(DISMISS_KEY, 'true'); setOpen(false); }}
-                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-colors"
+                onClick={() => setOpen(false)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="p-2">
+
+            {/* Progress */}
+            <div className="px-5 pb-4 pt-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-slate-500">
+                  {isComplete
+                    ? 'All set! You\'re ready to go.'
+                    : `${completedSteps} of ${totalSteps} complete`}
+                </p>
+                <span className={cn(
+                  "text-xs font-semibold tabular-nums",
+                  percentage === 100 ? "text-emerald-600" : "text-blue-600"
+                )}>
+                  {percentage}%
+                </span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700 ease-out",
+                    percentage === 100 ? "bg-emerald-500" : "bg-blue-500"
+                  )}
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div className="px-3 pb-3 space-y-0.5">
               {steps.map((step, i) => (
                 <button
                   key={i}
-                  onClick={step.done ? undefined : step.action}
+                  onClick={step.done ? undefined : () => handleStepClick(step.href)}
                   disabled={step.done}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200",
                     step.done
-                      ? "opacity-60"
-                      : "hover:bg-white/60 cursor-pointer"
+                      ? "opacity-50 cursor-default"
+                      : "hover:bg-slate-50 cursor-pointer group"
                   )}
                 >
                   {step.done ? (
-                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                      <Check className="h-3 w-3 text-white" />
+                    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                      <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0" />
+                    <div className="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0 group-hover:border-blue-400 transition-colors" />
                   )}
-                  <span className={cn(
-                    "text-sm flex-1",
-                    step.done ? "text-slate-400 line-through" : "text-slate-700 font-medium"
-                  )}>
-                    {step.label}
-                  </span>
-                  {!step.done && (
-                    <span className="text-xs text-blue-600 font-medium flex items-center gap-0.5">
-                      Start <ChevronRight className="h-3 w-3" />
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      "text-sm block",
+                      step.done ? "text-slate-400 line-through" : "text-slate-800 font-medium"
+                    )}>
+                      {step.label}
                     </span>
+                    {!step.done && (
+                      <span className="text-[11px] text-slate-400">{step.description}</span>
+                    )}
+                  </div>
+                  {!step.done && (
+                    <ArrowRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-blue-500 transition-colors" />
                   )}
                 </button>
               ))}
             </div>
+
+            {/* Footer */}
+            <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
+              <button
+                onClick={handleDismiss}
+                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Dismiss guide
+              </button>
+              {nextStep && (
+                <button
+                  onClick={() => handleStepClick(nextStep.href)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                >
+                  Next step
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
-
-      <AddPropertyModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={refetch}
-      />
     </>
   );
 }

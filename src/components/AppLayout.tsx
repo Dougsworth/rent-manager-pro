@@ -4,9 +4,11 @@ import BrandLogo, { CoinSvg } from "@/components/BrandLogo";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  Home,
   Users,
   FileText,
   CreditCard,
+  BarChart3,
   Settings,
   Menu,
   X,
@@ -22,9 +24,11 @@ const SIDEBAR_EXPANDED = 220;   // px
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Properties", href: "/properties", icon: Home },
   { name: "Tenants", href: "/tenants", icon: Users },
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

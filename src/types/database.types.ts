@@ -20,6 +20,7 @@ export interface Database {
           bank_account_number: string;
           bank_branch: string;
           notification_preferences: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind: boolean };
+          setup_progress: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean } | null;
           created_at: string;
           updated_at: string;
         };
@@ -41,6 +42,7 @@ export interface Database {
           bank_account_number?: string;
           bank_branch?: string;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
+          setup_progress?: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean };
         };
         Update: {
           role?: 'landlord' | 'tenant';
@@ -59,6 +61,7 @@ export interface Database {
           bank_account_number?: string;
           bank_branch?: string;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
+          setup_progress?: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean };
         };
         Relationships: [];
       };
@@ -158,6 +161,8 @@ export interface Database {
           status: 'paid' | 'pending' | 'overdue';
           description: string;
           payment_token: string;
+          late_fee_amount: number | null;
+          late_fee_applied_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -172,6 +177,8 @@ export interface Database {
           status?: 'paid' | 'pending' | 'overdue';
           description?: string;
           payment_token?: string;
+          late_fee_amount?: number | null;
+          late_fee_applied_at?: string | null;
         };
         Update: {
           amount?: number;
@@ -179,6 +186,8 @@ export interface Database {
           issue_date?: string;
           status?: 'paid' | 'pending' | 'overdue';
           description?: string;
+          late_fee_amount?: number | null;
+          late_fee_applied_at?: string | null;
         };
         Relationships: [];
       };
@@ -246,6 +255,63 @@ export interface Database {
         Update: {
           status?: 'pending' | 'approved' | 'rejected';
           reviewer_note?: string;
+        };
+        Relationships: [];
+      };
+      late_fee_settings: {
+        Row: {
+          id: string;
+          landlord_id: string;
+          fee_type: 'flat' | 'percentage';
+          fee_value: number;
+          grace_period_days: number;
+          auto_apply: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          landlord_id: string;
+          fee_type?: 'flat' | 'percentage';
+          fee_value?: number;
+          grace_period_days?: number;
+          auto_apply?: boolean;
+        };
+        Update: {
+          fee_type?: 'flat' | 'percentage';
+          fee_value?: number;
+          grace_period_days?: number;
+          auto_apply?: boolean;
+        };
+        Relationships: [];
+      };
+      lease_documents: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          landlord_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          file_url: string;
+          storage_path: string;
+          document_type: 'lease' | 'addendum' | 'other';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          landlord_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          file_url: string;
+          storage_path: string;
+          document_type?: 'lease' | 'addendum' | 'other';
+        };
+        Update: {
+          file_name?: string;
+          document_type?: 'lease' | 'addendum' | 'other';
         };
         Relationships: [];
       };

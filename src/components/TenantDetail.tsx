@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
-import { Phone, Mail, Loader2 } from "lucide-react";
+import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
+import { Phone, Mail, Loader2, Upload, FileText, Trash2, Download, Clock } from "lucide-react";
 import { getPaymentsForTenant } from "@/services/payments";
+import { getInvoicesForTenant } from "@/services/invoices";
+import { uploadLeaseDocument, getDocumentsForTenant, deleteLeaseDocument } from "@/services/leaseDocuments";
 import { formatDate } from "@/utils/formatDate";
+import type { LeaseDocument } from "@/types/app.types";
 
 interface Tenant {
   id: number | string;
@@ -20,6 +25,7 @@ interface Tenant {
 interface TenantDetailProps {
   tenant: Tenant;
   tenantId?: string;
+  landlordId?: string;
   onSendReminder?: () => Promise<void>;
   sendingReminder?: boolean;
 }
@@ -31,17 +37,63 @@ const methodLabels: Record<string, string> = {
   other: 'Other',
 };
 
-export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder }: TenantDetailProps) {
+const docTypeLabels: Record<string, string> = {
+  lease: 'Lease',
+  addendum: 'Addendum',
+  other: 'Other',
+};
+
+export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sendingReminder }: TenantDetailProps) {
+  const id = tenantId ?? String(tenant.id);
+  const { toast } = useToast();
+
   const [showHistory, setShowHistory] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
+
+  // Late fee invoices
+  const [invoicesWithFees, setInvoicesWithFees] = useState<any[]>([]);
+
+  // Documents
+  const [documents, setDocuments] = useState<LeaseDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [docType, setDocType] = useState<'lease' | 'addendum' | 'other'>('lease');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load documents and invoices with late fees on mount
+  useEffect(() => {
+    loadDocuments();
+    loadInvoicesWithLateFees();
+  }, [id]);
+
+  const loadDocuments = async () => {
+    setLoadingDocs(true);
+    try {
+      const docs = await getDocumentsForTenant(id);
+      setDocuments(docs);
+    } catch (err) {
+      console.error('Failed to load documents:', err);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const loadInvoicesWithLateFees = async () => {
+    try {
+      const invs = await getInvoicesForTenant(id);
+      setInvoicesWithFees(invs.filter((i: any) => i.late_fee_amount != null && i.late_fee_amount > 0));
+    } catch (err) {
+      console.error('Failed to load invoices:', err);
+    }
+  };
 
   const handleViewHistory = async () => {
     if (showHistory) {
       setShowHistory(false);
       return;
     }
-    const id = tenantId ?? String(tenant.id);
     setLoadingPayments(true);
     try {
       const data = await getPaymentsForTenant(id);
@@ -52,6 +104,43 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
     } finally {
       setLoadingPayments(false);
     }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !landlordId) return;
+
+    setUploading(true);
+    try {
+      await uploadLeaseDocument(file, id, landlordId, docType);
+      toast('Document uploaded successfully!', 'success');
+      await loadDocuments();
+    } catch (err: any) {
+      toast(err.message || 'Failed to upload document.', 'error');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async (doc: LeaseDocument) => {
+    if (!confirm(`Delete "${doc.file_name}"? This cannot be undone.`)) return;
+    setDeletingId(doc.id);
+    try {
+      await deleteLeaseDocument(doc.id, doc.storage_path);
+      toast('Document deleted.', 'success');
+      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+    } catch (err) {
+      toast('Failed to delete document.', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -96,6 +185,122 @@ export function TenantDetail({ tenant, tenantId, onSendReminder, sendingReminder
             <StatusBadge variant={tenant.status}>{tenant.status}</StatusBadge>
           </div>
         </div>
+      </div>
+
+      {/* Late Fees */}
+      {invoicesWithFees.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-red-500" />
+            Late Fees Applied
+          </h3>
+          <div className="space-y-2">
+            {invoicesWithFees.map((inv: any) => (
+              <div key={inv.id} className="flex items-center justify-between p-3 border border-red-200 bg-red-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {inv.invoice_number || 'Invoice'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Due {formatDate(inv.due_date)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-red-600">
+                    +J${Number(inv.late_fee_amount).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-400">late fee</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Documents */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Documents</h3>
+
+        {/* Upload area */}
+        {landlordId && (
+          <div className="flex items-center gap-2 mb-3">
+            <Select
+              value={docType}
+              onValueChange={(val) => setDocType(val as 'lease' | 'addendum' | 'other')}
+              className="w-32"
+              options={[
+                { value: 'lease', label: 'Lease' },
+                { value: 'addendum', label: 'Addendum' },
+                { value: 'other', label: 'Other' },
+              ]}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              className="hidden"
+              onChange={handleUpload}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </div>
+        )}
+
+        {loadingDocs ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        ) : documents.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-4">No documents uploaded</p>
+        ) : (
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
+                    <p className="text-xs text-gray-500">
+                      {docTypeLabels[doc.document_type] ?? doc.document_type} &middot; {formatFileSize(doc.file_size)} &middot; {formatDate(doc.created_at)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                  <button
+                    onClick={() => handleDelete(doc)}
+                    disabled={deletingId === doc.id}
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    {deletingId === doc.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Actions */}

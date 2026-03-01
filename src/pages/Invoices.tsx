@@ -15,9 +15,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { StatCard } from '@/components/ui/stat-card';
 import { Plus, Search, Download, Loader2, Link, FileText, Users } from 'lucide-react';
 import { DialogDescription } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/lib/supabase';
 import { exportToCsv } from '@/utils/exportCsv';
 import { formatDate } from '@/utils/formatDate';
 import { Pagination, paginate } from '@/components/Pagination';
+
+interface BulkTenantRow {
+  tenant_id: string;
+  name: string;
+  unit_name: string;
+  amount: number;
+  selected: boolean;
+}
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -37,6 +48,8 @@ export default function Invoices() {
   const [bulkDueDate, setBulkDueDate] = useState('');
   const [bulkDescription, setBulkDescription] = useState('');
   const [bulking, setBulking] = useState(false);
+  const [bulkTenants, setBulkTenants] = useState<BulkTenantRow[]>([]);
+  const [bulkSendEmail, setBulkSendEmail] = useState(false);
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -99,20 +112,34 @@ export default function Invoices() {
     e.preventDefault();
     if (!user || !bulkDueDate) return;
 
+    const selectedTenants = bulkTenants.filter(t => t.selected && t.amount > 0);
+    if (selectedTenants.length === 0) {
+      toast('Please select at least one tenant.', 'warning');
+      return;
+    }
+
     setBulking(true);
     try {
-      const invoiceData = invoiceableTenants.map(t => ({
-        tenant_id: t.id,
-        amount: t.rent_amount,
+      const invoiceData = selectedTenants.map(t => ({
+        tenant_id: t.tenant_id,
+        amount: t.amount,
         due_date: bulkDueDate,
-        description: bulkDescription || `Monthly Rent`,
+        description: bulkDescription || 'Monthly Rent',
       }));
 
       const { created, skipped } = await bulkCreateInvoices(user.id, invoiceData);
 
+      // Fire-and-forget email if toggle enabled
+      if (bulkSendEmail && created > 0) {
+        supabase.functions.invoke('send-invoice-emails', {
+          body: { landlord_id: user.id, due_date: bulkDueDate },
+        }).catch(err => console.error('Email send failed:', err));
+      }
+
       setShowBulk(false);
       setBulkDueDate('');
       setBulkDescription('');
+      setBulkTenants([]);
       await loadData();
 
       if (created > 0 && skipped > 0) {
@@ -168,7 +195,28 @@ export default function Invoices() {
         action={
           <div className="flex gap-2">
             {invoiceableTenants.length > 0 && (
-              <Button variant="outline" onClick={() => setShowBulk(true)}>
+              <Button variant="outline" onClick={() => {
+                // Pre-fill due date to 1st of next month
+                const now = new Date();
+                const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                const yyyy = nextMonth.getFullYear();
+                const mm = String(nextMonth.getMonth() + 1).padStart(2, '0');
+                setBulkDueDate(`${yyyy}-${mm}-01`);
+
+                const monthLabel = nextMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+                setBulkDescription(`Monthly Rent — ${monthLabel}`);
+
+                // Initialize tenant rows
+                setBulkTenants(invoiceableTenants.map(t => ({
+                  tenant_id: t.id,
+                  name: `${t.first_name} ${t.last_name}`,
+                  unit_name: t.unit_name,
+                  amount: t.rent_amount,
+                  selected: true,
+                })));
+                setBulkSendEmail(false);
+                setShowBulk(true);
+              }}>
                 <Users className="h-4 w-4 mr-2" />
                 Invoice All
               </Button>
@@ -282,24 +330,61 @@ export default function Invoices() {
 
       {/* Bulk Invoice Modal */}
       <Dialog open={showBulk} onOpenChange={setShowBulk}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Invoice All Tenants</DialogTitle>
             <DialogDescription>
-              Create invoices for all {invoiceableTenants.length} tenants with assigned units.
-              Each tenant will be invoiced their unit's rent amount. Tenants who already have
+              Select tenants and customize amounts. Tenants who already have
               a pending or overdue invoice for the same month will be skipped.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleBulkInvoice} className="space-y-4">
-            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
-              {invoiceableTenants.map(t => (
-                <div key={t.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                  <span className="text-slate-700">{t.first_name} {t.last_name} <span className="text-slate-400">— {t.unit_name}</span></span>
-                  <span className="font-medium text-slate-900">{formatCurrency(t.rent_amount)}</span>
+            {/* Select All */}
+            <div className="flex items-center justify-between px-1">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <Checkbox
+                  checked={bulkTenants.length > 0 && bulkTenants.every(t => t.selected)}
+                  onCheckedChange={(checked) => {
+                    setBulkTenants(bulkTenants.map(t => ({ ...t, selected: !!checked })));
+                  }}
+                />
+                Select All
+              </label>
+              <span className="text-xs text-slate-500">
+                {bulkTenants.filter(t => t.selected).length} of {bulkTenants.length} selected
+              </span>
+            </div>
+
+            {/* Tenant Rows */}
+            <div className="max-h-52 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
+              {bulkTenants.map((t, idx) => (
+                <div key={t.tenant_id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <Checkbox
+                    checked={t.selected}
+                    onCheckedChange={(checked) => {
+                      const updated = [...bulkTenants];
+                      updated[idx] = { ...updated[idx], selected: !!checked };
+                      setBulkTenants(updated);
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-slate-700">{t.name}</span>
+                    <span className="text-slate-400 ml-1">— {t.unit_name}</span>
+                  </div>
+                  <Input
+                    type="number"
+                    value={t.amount}
+                    onChange={(e) => {
+                      const updated = [...bulkTenants];
+                      updated[idx] = { ...updated[idx], amount: parseInt(e.target.value) || 0 };
+                      setBulkTenants(updated);
+                    }}
+                    className="w-28 h-8 text-sm text-right"
+                  />
                 </div>
               ))}
             </div>
+
             <div>
               <Label htmlFor="bulk-due">Due Date</Label>
               <Input
@@ -319,11 +404,21 @@ export default function Invoices() {
                 placeholder="e.g. Monthly Rent — March 2026"
               />
             </div>
+
+            {/* Email Toggle */}
+            <div className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-slate-700">Send email notifications</p>
+                <p className="text-xs text-slate-500">Notify tenants about their new invoices</p>
+              </div>
+              <Switch checked={bulkSendEmail} onCheckedChange={setBulkSendEmail} />
+            </div>
+
             <div className="flex gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowBulk(false)} className="flex-1">Cancel</Button>
-              <Button type="submit" className="flex-1" disabled={bulking}>
+              <Button type="submit" className="flex-1" disabled={bulking || bulkTenants.filter(t => t.selected).length === 0}>
                 {bulking && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create {invoiceableTenants.length} Invoices
+                Create {bulkTenants.filter(t => t.selected).length} Invoices
               </Button>
             </div>
           </form>
@@ -408,7 +503,14 @@ export default function Invoices() {
                   <td className="hidden md:table-cell py-3 px-6 text-sm text-slate-500">
                     {invoice.property_name}{invoice.unit_name ? `, ${invoice.unit_name}` : ''}
                   </td>
-                  <td className="py-3 px-6 text-sm font-medium text-slate-900">{formatCurrency(invoice.amount)}</td>
+                  <td className="py-3 px-6 text-sm font-medium text-slate-900">
+                    {formatCurrency(invoice.amount)}
+                    {invoice.late_fee_amount != null && invoice.late_fee_amount > 0 && (
+                      <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                        +{formatCurrency(invoice.late_fee_amount)} late fee
+                      </span>
+                    )}
+                  </td>
                   <td className="py-3 px-6 text-sm text-slate-500">{formatDate(invoice.due_date)}</td>
                   <td className="py-3 px-6">
                     <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>

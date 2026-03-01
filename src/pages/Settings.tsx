@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
@@ -7,11 +7,9 @@ import {
   updateProfileSchema,
   updateCompanyInfoSchema,
   updateBankDetailsSchema,
-  createPropertySchema,
-  createUnitSchema,
+  lateFeeSettingsSchema,
 } from '@/schemas';
-import { getProperties, createProperty, createUnit } from '@/services/properties';
-import type { PropertyWithUnits } from '@/types/app.types';
+import { getLateFeeSettings, upsertLateFeeSettings } from '@/services/lateFees';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,15 +17,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, Plus, ChevronDown, ChevronRight, CheckCircle2, Mail, Eye, EyeOff, Landmark
+  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock
 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { Select } from '@/components/ui/select';
 
 export default function Settings() {
   const { user, profile, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
     const section = searchParams.get('section');
-    return section && ['profile', 'company', 'bank', 'properties', 'notifications', 'billing', 'security'].includes(section)
+    return section && ['profile', 'company', 'bank', 'properties', 'notifications', 'late-fees', 'billing', 'security'].includes(section)
       ? section
       : 'profile';
   });
@@ -55,20 +55,6 @@ export default function Settings() {
   const [bankAccountNumber, setBankAccountNumber] = useState(profile?.bank_account_number ?? '');
   const [bankBranch, setBankBranch] = useState(profile?.bank_branch ?? '');
 
-  // Properties state
-  const [properties, setProperties] = useState<PropertyWithUnits[]>([]);
-  const [propertiesLoading, setPropertiesLoading] = useState(false);
-  const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
-  const [newPropertyName, setNewPropertyName] = useState('');
-  const [newPropertyAddress, setNewPropertyAddress] = useState('');
-  const [addingProperty, setAddingProperty] = useState(false);
-  const [showAddProperty, setShowAddProperty] = useState(false);
-  // Per-property unit form
-  const [newUnitName, setNewUnitName] = useState('');
-  const [newUnitRent, setNewUnitRent] = useState('');
-  const [addingUnit, setAddingUnit] = useState(false);
-  const [showAddUnitFor, setShowAddUnitFor] = useState<string | null>(null);
-
   // Notification preferences state
   const defaultPrefs = { payments: true, overdue: true, invoices: true, auto_remind: false };
   const [notifPrefs, setNotifPrefs] = useState(defaultPrefs);
@@ -84,9 +70,21 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Late fee settings state
+  const [lfFeeType, setLfFeeType] = useState<'flat' | 'percentage'>('flat');
+  const [lfFeeValue, setLfFeeValue] = useState('');
+  const [lfGraceDays, setLfGraceDays] = useState('0');
+  const [lfAutoApply, setLfAutoApply] = useState(false);
+  const [savingLateFees, setSavingLateFees] = useState(false);
+  const [savedLateFees, setSavedLateFees] = useState(false);
+  const [lateFeesLoading, setLateFeesLoading] = useState(false);
+  const [lateFeeError, setLateFeeError] = useState('');
+
   // Billing "Get Notified" state
   const [proEmail, setProEmail] = useState('');
   const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
+
+  const { toast } = useToast();
 
   // Sync form fields when profile loads asynchronously
   useEffect(() => {
@@ -115,26 +113,32 @@ export default function Settings() {
     { id: 'bank', label: 'Bank Details', icon: Landmark },
     { id: 'properties', label: 'Properties', icon: Home },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'late-fees', label: 'Late Fees', icon: Clock },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
   ];
 
-  const loadProperties = async () => {
+  const loadLateFeeSettings = async () => {
     if (!user) return;
-    setPropertiesLoading(true);
+    setLateFeesLoading(true);
     try {
-      const data = await getProperties(user.id);
-      setProperties(data);
+      const settings = await getLateFeeSettings(user.id);
+      if (settings) {
+        setLfFeeType(settings.fee_type);
+        setLfFeeValue(String(settings.fee_value));
+        setLfGraceDays(String(settings.grace_period_days));
+        setLfAutoApply(settings.auto_apply);
+      }
     } catch (err) {
-      console.error('Failed to load properties:', err);
+      console.error('Failed to load late fee settings:', err);
     } finally {
-      setPropertiesLoading(false);
+      setLateFeesLoading(false);
     }
   };
 
   useEffect(() => {
-    if (activeSection === 'properties') {
-      loadProperties();
+    if (activeSection === 'late-fees') {
+      loadLateFeeSettings();
     }
   }, [activeSection, user]);
 
@@ -182,53 +186,6 @@ export default function Settings() {
       console.error('Failed to save:', err);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const [propertyError, setPropertyError] = useState('');
-
-  const handleAddProperty = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setPropertyError('');
-
-    const result = createPropertySchema.safeParse({ name: newPropertyName, address: newPropertyAddress });
-    if (!result.success) { setPropertyError(result.error.issues[0].message); return; }
-
-    setAddingProperty(true);
-    try {
-      await createProperty(user.id, newPropertyName.trim(), newPropertyAddress.trim());
-      setNewPropertyName('');
-      setNewPropertyAddress('');
-      setShowAddProperty(false);
-      await loadProperties();
-    } catch (err) {
-      console.error('Failed to add property:', err);
-    } finally {
-      setAddingProperty(false);
-    }
-  };
-
-  const [unitError, setUnitError] = useState('');
-
-  const handleAddUnit = async (e: React.FormEvent, propertyId: string) => {
-    e.preventDefault();
-    setUnitError('');
-
-    const result = createUnitSchema.safeParse({ name: newUnitName, rentAmount: newUnitRent });
-    if (!result.success) { setUnitError(result.error.issues[0].message); return; }
-
-    setAddingUnit(true);
-    try {
-      await createUnit(propertyId, newUnitName.trim(), parseInt(newUnitRent));
-      setNewUnitName('');
-      setNewUnitRent('');
-      setShowAddUnitFor(null);
-      await loadProperties();
-    } catch (err) {
-      console.error('Failed to add unit:', err);
-    } finally {
-      setAddingUnit(false);
     }
   };
 
@@ -320,157 +277,16 @@ export default function Settings() {
   );
 
   const renderPropertiesSection = () => (
-    <div className="space-y-6">
-      {/* Add Property Form */}
-      {showAddProperty ? (
-        <form onSubmit={handleAddProperty} className="p-5 border-2 border-blue-300 bg-white rounded-xl shadow-sm space-y-4">
-          <h4 className="text-base font-semibold text-gray-900">Add New Property</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="propName" className="text-sm font-medium text-gray-700">Property Name *</Label>
-              <Input
-                id="propName"
-                required
-                placeholder="e.g. Sunset Apartments"
-                value={newPropertyName}
-                onChange={(e) => setNewPropertyName(e.target.value)}
-                className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <Label htmlFor="propAddr" className="text-sm font-medium text-gray-700">Address</Label>
-              <Input
-                id="propAddr"
-                placeholder="e.g. 12 Harbour St, Kingston"
-                value={newPropertyAddress}
-                onChange={(e) => setNewPropertyAddress(e.target.value)}
-                className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          {propertyError && <p className="text-sm text-red-600">{propertyError}</p>}
-          <div className="flex gap-3 pt-1">
-            <Button type="submit" className="" disabled={addingProperty}>
-              {addingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Property
-            </Button>
-            <Button type="button" variant="outline" onClick={() => { setShowAddProperty(false); setNewPropertyName(''); setNewPropertyAddress(''); }}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <Button className="w-full py-6 text-base" onClick={() => setShowAddProperty(true)}>
-          <Plus className="h-5 w-5 mr-2" />
-          Add Property
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">
+        Properties are now managed on a dedicated page with full CRUD, occupancy tracking, and more.
+      </p>
+      <Link to="/properties">
+        <Button className="w-full py-6 text-base">
+          <Home className="h-5 w-5 mr-2" />
+          Go to Properties
         </Button>
-      )}
-
-      {/* Properties List */}
-      {propertiesLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-        </div>
-      ) : properties.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
-          <Home className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 font-medium">No properties yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add your first property above to get started.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {properties.map((property) => {
-            const isExpanded = expandedProperty === property.id;
-            const units = property.units ?? [];
-            return (
-              <div key={property.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                {/* Property Header */}
-                <button
-                  onClick={() => setExpandedProperty(isExpanded ? null : property.id)}
-                  className={`w-full flex items-center justify-between p-4 transition-colors text-left ${
-                    isExpanded ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <Home className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{property.name}</p>
-                      {property.address && (
-                        <p className="text-sm text-gray-500">{property.address}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                      {units.length} unit{units.length !== 1 ? 's' : ''}
-                    </span>
-                    {isExpanded ? (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Expanded: Units */}
-                {isExpanded && (
-                  <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-2">
-                    {units.map((unit) => (
-                      <div key={unit.id} className="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">{unit.name}</p>
-                        <p className="text-sm font-bold text-blue-600">
-                          J${unit.rent_amount.toLocaleString()}/mo
-                        </p>
-                      </div>
-                    ))}
-
-                    {unitError && showAddUnitFor === property.id && <p className="text-sm text-red-600 px-2">{unitError}</p>}
-                    <form
-                      onSubmit={(e) => handleAddUnit(e, property.id)}
-                      className="bg-white p-2.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors"
-                    >
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Plus className="h-4 w-4 text-gray-400 shrink-0 hidden sm:block" />
-                          <Input
-                            required
-                            placeholder="Unit name"
-                            value={showAddUnitFor === property.id ? newUnitName : ''}
-                            onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
-                            onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitName(e.target.value); }}
-                            className="h-9 border-gray-300 text-sm"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            required
-                            placeholder="Rent (J$)"
-                            value={showAddUnitFor === property.id ? newUnitRent : ''}
-                            onFocus={() => { if (showAddUnitFor !== property.id) { setShowAddUnitFor(property.id); setNewUnitName(''); setNewUnitRent(''); } }}
-                            onChange={(e) => { setShowAddUnitFor(property.id); setNewUnitRent(e.target.value); }}
-                            className="h-9 border-gray-300 text-sm flex-1"
-                          />
-                          <Button
-                            type="submit"
-                            size="sm"
-                            className="shrink-0 h-9 px-4"
-                            disabled={addingUnit}
-                          >
-                            {addingUnit ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
-                          </Button>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      </Link>
     </div>
   );
 
@@ -528,6 +344,129 @@ export default function Settings() {
       </div>
     </div>
   );
+
+  const handleSaveLateFees = async () => {
+    if (!user) return;
+    setLateFeeError('');
+
+    const result = lateFeeSettingsSchema.safeParse({
+      feeType: lfFeeType,
+      feeValue: lfFeeValue,
+      gracePeriodDays: lfGraceDays,
+      autoApply: lfAutoApply,
+    });
+    if (!result.success) {
+      setLateFeeError(result.error.issues[0].message);
+      return;
+    }
+
+    setSavingLateFees(true);
+    setSavedLateFees(false);
+    try {
+      await upsertLateFeeSettings(user.id, {
+        fee_type: lfFeeType,
+        fee_value: Number(lfFeeValue),
+        grace_period_days: Number(lfGraceDays),
+        auto_apply: lfAutoApply,
+      });
+      setSavedLateFees(true);
+      toast('Late fee settings saved!', 'success');
+      setTimeout(() => setSavedLateFees(false), 2000);
+    } catch (err) {
+      console.error('Failed to save late fee settings:', err);
+      toast('Failed to save late fee settings.', 'error');
+    } finally {
+      setSavingLateFees(false);
+    }
+  };
+
+  const renderLateFeesSection = () => {
+    if (lateFeesLoading) {
+      return (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Late Fee Configuration</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Configure automatic late fees for overdue invoices. Fees are applied once per invoice after the grace period.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="lf-type">Fee Type</Label>
+              <Select
+                id="lf-type"
+                value={lfFeeType}
+                onValueChange={(val) => setLfFeeType(val as 'flat' | 'percentage')}
+                className="mt-1"
+                options={[
+                  { value: 'flat', label: 'Flat Amount (J$)' },
+                  { value: 'percentage', label: 'Percentage (%)' },
+                ]}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lf-value">
+                {lfFeeType === 'flat' ? 'Fee Amount (J$)' : 'Fee Percentage (%)'}
+              </Label>
+              <Input
+                id="lf-value"
+                type="number"
+                min="0"
+                step={lfFeeType === 'percentage' ? '0.1' : '1'}
+                value={lfFeeValue}
+                onChange={(e) => setLfFeeValue(e.target.value)}
+                placeholder={lfFeeType === 'flat' ? 'e.g. 2000' : 'e.g. 5'}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lf-grace">Grace Period (days)</Label>
+              <Input
+                id="lf-grace"
+                type="number"
+                min="0"
+                value={lfGraceDays}
+                onChange={(e) => setLfGraceDays(e.target.value)}
+                placeholder="e.g. 3"
+              />
+              <p className="text-xs text-gray-400 mt-1">Days after due date before late fee applies</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
+            <div>
+              <p className="font-medium text-gray-900">Auto-Apply Late Fees</p>
+              <p className="text-sm text-gray-500">Automatically apply late fees to overdue invoices daily</p>
+            </div>
+            <Switch
+              checked={lfAutoApply}
+              onCheckedChange={setLfAutoApply}
+            />
+          </div>
+
+          {lateFeeError && <p className="text-sm text-red-600 mt-2">{lateFeeError}</p>}
+
+          <div className="pt-4">
+            <Button onClick={handleSaveLateFees} disabled={savingLateFees}>
+              {savingLateFees ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : savedLateFees ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {savedLateFees ? 'Saved!' : 'Save Late Fee Settings'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderBillingSection = () => (
     <div className="space-y-6">
@@ -688,6 +627,7 @@ export default function Settings() {
       case 'bank': return renderBankSection();
       case 'properties': return renderPropertiesSection();
       case 'notifications': return renderNotificationsSection();
+      case 'late-fees': return renderLateFeesSection();
       case 'billing': return renderBillingSection();
       case 'security': return renderSecuritySection();
       default: return renderProfileSection();

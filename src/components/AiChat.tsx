@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, Fragment } from "react";
-import { Search, Sparkles, Loader2, X, Zap, CornerDownLeft, RotateCcw } from "lucide-react";
+import { Search, Loader2, X, CornerDownLeft, RotateCcw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { processMessage } from "@/services/aiChat";
 import type { AiChatUsage } from "@/types/app.types";
 
 const STORAGE_KEY = 'easycollect_ai_usage';
 
-// Persist AI count in localStorage per day so it survives page refreshes
 function getStoredAiCount(userId: string): number {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -16,7 +15,6 @@ function getStoredAiCount(userId: string): number {
     if (data.userId === userId && data.date === today) {
       return data.count ?? 0;
     }
-    // Different day or user — reset
     localStorage.removeItem(STORAGE_KEY);
     return 0;
   } catch {
@@ -72,7 +70,6 @@ export function AiChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsEndRef = useRef<HTMLDivElement>(null);
 
-  // Load persisted count on mount
   useEffect(() => {
     if (user) {
       setAiCount(getStoredAiCount(user.id));
@@ -94,14 +91,12 @@ export function AiChat() {
     return () => window.removeEventListener('keydown', handler);
   }, [open]);
 
-  // Focus input when opened
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
-  // Scroll to latest result
   useEffect(() => {
     resultsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [results]);
@@ -114,7 +109,6 @@ export function AiChat() {
     storeAiCount(user.id, newCount);
   };
 
-  // Also sync from server response if available
   const syncFromServer = (usage: AiChatUsage) => {
     setAiCount(usage.request_count);
     storeAiCount(user.id, usage.request_count);
@@ -135,7 +129,6 @@ export function AiChat() {
         source: result.source,
         timestamp: new Date(),
       }]);
-      // Track AI usage
       if (result.source === 'ai') {
         if (result.usage) {
           syncFromServer(result.usage);
@@ -175,8 +168,8 @@ export function AiChat() {
         onClick={() => setOpen(true)}
         className="fixed bottom-5 right-5 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
       >
-        <Zap className="h-3.5 w-3.5 text-blue-500" />
-        <span className="text-xs text-slate-400 group-hover:text-slate-600 transition-colors hidden sm:inline">Ask AI</span>
+        <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+        <span className="text-xs text-slate-400 group-hover:text-slate-600 transition-colors hidden sm:inline">Search & Ask</span>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-slate-100 text-[10px] font-medium text-slate-400 border border-slate-200/60">
           <span className="text-[11px]">&#8984;</span>K
         </kbd>
@@ -307,12 +300,9 @@ export function AiChat() {
                   send
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-2.5 w-2.5 text-blue-400" />
-                <span className="text-[10px] text-slate-400">
-                  J$ Assistant
-                </span>
-              </div>
+              <span className="text-[10px] text-slate-400">
+                Assistant
+              </span>
             </div>
           </div>
         </div>

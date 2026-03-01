@@ -8,6 +8,8 @@ export type DbTenant = Database['public']['Tables']['tenants']['Row'];
 export type Invoice = Database['public']['Tables']['invoices']['Row'];
 export type Payment = Database['public']['Tables']['payments']['Row'];
 export type PaymentProof = Database['public']['Tables']['payment_proofs']['Row'];
+export type LateFeeSettings = Database['public']['Tables']['late_fee_settings']['Row'];
+export type LeaseDocument = Database['public']['Tables']['lease_documents']['Row'];
 
 export interface PaymentProofWithDetails extends PaymentProof {
   tenant_first_name: string;
@@ -86,6 +88,32 @@ export interface AiChatUsage {
   request_count: number;
   limit: number;
   remaining: number;
+}
+
+// Report types
+export interface MonthlyCollectionData {
+  month: string;
+  monthLabel: string;
+  expected: number;
+  collected: number;
+  outstanding: number;
+}
+
+export interface PropertyCollectionData {
+  property_id: string;
+  property_name: string;
+  expected: number;
+  collected: number;
+  unit_count: number;
+}
+
+export interface PnLData {
+  totalExpected: number;
+  totalCollected: number;
+  totalOutstanding: number;
+  collectionRate: number;
+  byMonth: MonthlyCollectionData[];
+  byProperty: PropertyCollectionData[];
 }
 
 export type LocalIntent =
