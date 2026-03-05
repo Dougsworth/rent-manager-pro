@@ -17,12 +17,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
 import {
   Home, Plus, Loader2, ChevronDown, ChevronRight,
   Edit2, Trash2, Users, MapPin,
 } from 'lucide-react';
+import { PropertiesSkeleton } from '@/components/skeletons/PropertiesSkeleton';
 
 type OccupancyMap = Map<string, { tenant_name: string; tenant_id: string }>;
 
@@ -202,13 +203,7 @@ export default function Properties() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <PropertiesSkeleton />;
 
   const totalUnits = properties.reduce((sum, p) => sum + (p.units?.length ?? 0), 0);
   const occupiedUnits = properties.reduce((sum, p) => {
@@ -256,48 +251,38 @@ export default function Properties() {
 
       {/* Add Property Dialog */}
       <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                <Home className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <DialogTitle>New Property</DialogTitle>
-                <DialogDescription>Add a property you manage to start tracking units and tenants.</DialogDescription>
-              </div>
+        <DialogContent className="max-w-md">
+          <DialogTitle>New Property</DialogTitle>
+          <DialogDescription>Add a property to start tracking units and tenants.</DialogDescription>
+
+          <form onSubmit={handleAddProperty} className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="propName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property Name</Label>
+              <Input
+                id="propName"
+                required
+                placeholder="e.g. Sunset Apartments"
+                value={newPropertyName}
+                onChange={(e) => setNewPropertyName(e.target.value)}
+                className="h-11"
+              />
             </div>
-          </DialogHeader>
-          <form onSubmit={handleAddProperty} className="space-y-5">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="propName" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Property Name</Label>
-                <Input
-                  id="propName"
-                  required
-                  placeholder="e.g. Sunset Apartments"
-                  value={newPropertyName}
-                  onChange={(e) => setNewPropertyName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="propAddr" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Address <span className="text-slate-300 normal-case">(optional)</span></Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="propAddr"
-                    placeholder="e.g. 12 Harbour St, Kingston"
-                    value={newPropertyAddress}
-                    onChange={(e) => setNewPropertyAddress(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="propAddr" className="text-sm font-medium text-slate-700 mb-1.5 block">
+                Address <span className="text-slate-400 font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="propAddr"
+                placeholder="e.g. 12 Harbour St, Kingston"
+                value={newPropertyAddress}
+                onChange={(e) => setNewPropertyAddress(e.target.value)}
+                className="h-11"
+              />
             </div>
             {propertyError && <p className="text-sm text-red-600">{propertyError}</p>}
-            <div className="flex gap-3 pt-1 border-t border-slate-100">
-              <Button type="button" variant="outline" onClick={() => setShowAddProperty(false)} className="flex-1 mt-4">Cancel</Button>
-              <Button type="submit" className="flex-1 mt-4" disabled={addingProperty}>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowAddProperty(false)} className="flex-1 h-11">Cancel</Button>
+              <Button type="submit" className="flex-1 h-11" disabled={addingProperty}>
                 {addingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Add Property
               </Button>
@@ -308,44 +293,32 @@ export default function Properties() {
 
       {/* Edit Property Dialog */}
       <Dialog open={!!editProperty} onOpenChange={(open) => { if (!open) setEditProperty(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                <Edit2 className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <DialogTitle>Edit Property</DialogTitle>
-                <DialogDescription>Update the details for this property.</DialogDescription>
-              </div>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Edit Property</DialogTitle>
+          <DialogDescription>Update your property details.</DialogDescription>
+
+          <div className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="editPropName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property Name</Label>
+              <Input
+                id="editPropName"
+                value={editPropName}
+                onChange={(e) => setEditPropName(e.target.value)}
+                className="h-11"
+              />
             </div>
-          </DialogHeader>
-          <div className="space-y-5">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="editPropName" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Property Name</Label>
-                <Input
-                  id="editPropName"
-                  value={editPropName}
-                  onChange={(e) => setEditPropName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="editPropAddr" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="editPropAddr"
-                    value={editPropAddress}
-                    onChange={(e) => setEditPropAddress(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="editPropAddr" className="text-sm font-medium text-slate-700 mb-1.5 block">Address</Label>
+              <Input
+                id="editPropAddr"
+                value={editPropAddress}
+                onChange={(e) => setEditPropAddress(e.target.value)}
+                className="h-11"
+              />
             </div>
-            <div className="flex gap-3 pt-1 border-t border-slate-100">
-              <Button variant="outline" onClick={() => setEditProperty(null)} className="flex-1 mt-4">Cancel</Button>
-              <Button onClick={handleEditProperty} className="flex-1 mt-4" disabled={savingProperty}>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => setEditProperty(null)} className="flex-1 h-11">Cancel</Button>
+              <Button onClick={handleEditProperty} className="flex-1 h-11" disabled={savingProperty}>
                 {savingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save Changes
               </Button>
@@ -356,45 +329,36 @@ export default function Properties() {
 
       {/* Edit Unit Dialog */}
       <Dialog open={!!editUnit} onOpenChange={(open) => { if (!open) setEditUnit(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                <Edit2 className="h-5 w-5 text-slate-600" />
-              </div>
-              <div>
-                <DialogTitle>Edit Unit</DialogTitle>
-                <DialogDescription>Update the name or rent amount for this unit.</DialogDescription>
-              </div>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Edit Unit</DialogTitle>
+          <DialogDescription>Update unit name or rent amount.</DialogDescription>
+
+          <div className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="editUnitName" className="text-sm font-medium text-slate-700 mb-1.5 block">Unit Name</Label>
+              <Input
+                id="editUnitName"
+                value={editUnitName}
+                onChange={(e) => setEditUnitName(e.target.value)}
+                className="h-11"
+              />
             </div>
-          </DialogHeader>
-          <div className="space-y-5">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="editUnitName" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Unit Name</Label>
+            <div>
+              <Label htmlFor="editUnitRent" className="text-sm font-medium text-slate-700 mb-1.5 block">Monthly Rent</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">J$</span>
                 <Input
-                  id="editUnitName"
-                  value={editUnitName}
-                  onChange={(e) => setEditUnitName(e.target.value)}
+                  id="editUnitRent"
+                  type="number"
+                  value={editUnitRent}
+                  onChange={(e) => setEditUnitRent(e.target.value)}
+                  className="pl-10 h-11"
                 />
               </div>
-              <div>
-                <Label htmlFor="editUnitRent" className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">Monthly Rent</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">J$</span>
-                  <Input
-                    id="editUnitRent"
-                    type="number"
-                    value={editUnitRent}
-                    onChange={(e) => setEditUnitRent(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
             </div>
-            <div className="flex gap-3 pt-1 border-t border-slate-100">
-              <Button variant="outline" onClick={() => setEditUnit(null)} className="flex-1 mt-4">Cancel</Button>
-              <Button onClick={handleEditUnit} className="flex-1 mt-4" disabled={savingUnit}>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => setEditUnit(null)} className="flex-1 h-11">Cancel</Button>
+              <Button onClick={handleEditUnit} className="flex-1 h-11" disabled={savingUnit}>
                 {savingUnit && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save Changes
               </Button>
@@ -405,25 +369,15 @@ export default function Properties() {
 
       {/* Delete Property Dialog */}
       <Dialog open={!!deletePropertyId} onOpenChange={(open) => { if (!open) setDeletePropertyId(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                <Trash2 className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <DialogTitle>Delete Property</DialogTitle>
-                <DialogDescription>
-                  This will permanently delete the property and all its units. This action cannot be undone.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="flex gap-3 pt-1 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setDeletePropertyId(null)} className="flex-1 mt-4">Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteProperty} className="flex-1 mt-4" disabled={deletingProperty}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle>Delete Property</DialogTitle>
+          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <p className="text-sm text-slate-600 leading-relaxed mt-2">This will permanently delete the property and all its units. Any tenant assignments will be removed.</p>
+          <div className="flex gap-3 mt-5">
+            <Button variant="outline" onClick={() => setDeletePropertyId(null)} className="flex-1 h-11">Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteProperty} className="flex-1 h-11" disabled={deletingProperty}>
               {deletingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete Property
+              Delete
             </Button>
           </div>
         </DialogContent>
@@ -431,25 +385,15 @@ export default function Properties() {
 
       {/* Delete Unit Dialog */}
       <Dialog open={!!deleteUnitId} onOpenChange={(open) => { if (!open) setDeleteUnitId(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                <Trash2 className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <DialogTitle>Delete Unit</DialogTitle>
-                <DialogDescription>
-                  This will permanently delete this unit. This action cannot be undone.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="flex gap-3 pt-1 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setDeleteUnitId(null)} className="flex-1 mt-4">Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteUnit} className="flex-1 mt-4" disabled={deletingUnit}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle>Delete Unit</DialogTitle>
+          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <p className="text-sm text-slate-600 leading-relaxed mt-2">This will permanently remove this unit from the property.</p>
+          <div className="flex gap-3 mt-5">
+            <Button variant="outline" onClick={() => setDeleteUnitId(null)} className="flex-1 h-11">Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteUnit} className="flex-1 h-11" disabled={deletingUnit}>
               {deletingUnit && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete Unit
+              Delete
             </Button>
           </div>
         </DialogContent>

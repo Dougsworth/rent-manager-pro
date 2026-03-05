@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { createPayment } from '@/services/payments';
+import { createNotification } from '@/services/notifications';
+import { logActivity } from '@/services/activityLog';
 import type { PaymentProofWithDetails } from '@/types/app.types';
 
 export async function uploadProofImage(file: File): Promise<string> {
@@ -32,6 +34,23 @@ export async function submitPaymentProof(
     .single();
 
   if (error) throw error;
+
+  // Fire-and-forget notification to landlord
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('first_name, last_name')
+    .eq('id', tenantId)
+    .single();
+  const tenantName = tenant ? `${tenant.first_name} ${tenant.last_name}` : 'A tenant';
+  createNotification(
+    landlordId,
+    'proof_submitted',
+    'Payment Proof Submitted',
+    `${tenantName} submitted a payment proof for review`,
+    (data as any).id,
+  );
+  logActivity(landlordId, 'proof_submitted', 'proof', `${tenantName} submitted a payment proof`, (data as any).id);
+
   return data;
 }
 
@@ -96,6 +115,8 @@ export async function approveProof(
     notes: 'Approved from payment proof',
   });
 
+  logActivity(landlordId, 'proof_approved', 'proof', `Approved payment proof and created payment of J$${amount.toLocaleString()}`, proofId, { amount, invoice_id: invoiceId });
+
   // Fire-and-forget receipt email
   const paymentId = (payment as any).id;
   supabase.functions.invoke('send-receipt', {
@@ -105,11 +126,13 @@ export async function approveProof(
   return payment;
 }
 
-export async function rejectProof(proofId: string, note?: string) {
+export async function rejectProof(proofId: string, landlordId: string, note?: string) {
   const { error } = await supabase
     .from('payment_proofs')
     .update({ status: 'rejected', reviewer_note: note ?? '' })
     .eq('id', proofId);
 
   if (error) throw error;
+
+  logActivity(landlordId, 'proof_rejected', 'proof', `Rejected payment proof${note ? `: ${note}` : ''}`, proofId);
 }

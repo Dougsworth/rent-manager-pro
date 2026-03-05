@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, Loader2, Plus, Download, CheckCircle, XCircle, CreditCard } from 'lucide-react';
+import { PaymentsSkeleton } from '@/components/skeletons/PaymentsSkeleton';
 import { Link } from 'react-router-dom';
 import { exportToCsv } from '@/utils/exportCsv';
 import { useToast } from '@/components/ui/toast';
@@ -134,7 +135,7 @@ export default function Payments() {
   const handleReject = async (proofId: string) => {
     setActionLoading(proofId);
     try {
-      await rejectProof(proofId, rejectNote);
+      await rejectProof(proofId, user!.id, rejectNote);
       toast('Payment proof rejected.');
       setRejectingId(null);
       setRejectNote('');
@@ -182,13 +183,7 @@ export default function Payments() {
 
   const unpaidInvoices = invoices.filter(i => i.tenant_id === newPayment.tenant_id && i.status !== 'paid');
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <PaymentsSkeleton />;
 
   return (
     <>
@@ -253,7 +248,7 @@ export default function Payments() {
                 onValueChange={(val) => setNewPayment({ ...newPayment, tenant_id: val, invoice_id: '' })}
                 placeholder="Select a tenant"
                 className="mt-1"
-                options={tenants.map(t => ({
+                options={tenants.filter(t => t.unit_name).map(t => ({
                   value: t.id,
                   label: `${t.first_name} ${t.last_name}`,
                 }))}

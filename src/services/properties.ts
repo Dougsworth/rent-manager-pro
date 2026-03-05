@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logActivity } from '@/services/activityLog';
 import type { PropertyWithUnits } from '@/types/app.types';
 
 export async function getProperties(landlordId: string): Promise<PropertyWithUnits[]> {
@@ -20,6 +21,9 @@ export async function createProperty(landlordId: string, name: string, address: 
     .single();
 
   if (error) throw error;
+
+  logActivity(landlordId, 'property_created', 'property', `Created property "${name}"`, (data as any).id);
+
   return data;
 }
 
@@ -42,6 +46,13 @@ export async function createUnit(propertyId: string, name: string, rentAmount: n
     .single();
 
   if (error) throw error;
+
+  // Get landlord_id from the property for logging
+  const { data: prop } = await supabase.from('properties').select('landlord_id').eq('id', propertyId).single();
+  if (prop) {
+    logActivity(prop.landlord_id, 'unit_created', 'unit', `Created unit "${name}" (J$${rentAmount.toLocaleString()})`, (data as any).id, { rent_amount: rentAmount });
+  }
+
   return data;
 }
 
@@ -54,11 +65,21 @@ export async function updateProperty(propertyId: string, updates: { name?: strin
     .single();
 
   if (error) throw error;
+
+  logActivity((data as any).landlord_id, 'property_updated', 'property', `Updated property "${(data as any).name}"`, propertyId, updates);
+
   return data;
 }
 
 export async function deleteProperty(propertyId: string) {
-  // Check for tenants assigned to any unit in this property
+  // Get property info before deleting for the log
+  const { data: propInfo } = await supabase
+    .from('properties')
+    .select('landlord_id, name')
+    .eq('id', propertyId)
+    .single();
+
+  // Unassign any tenants from units in this property (set unit_id to null)
   const { data: units } = await supabase
     .from('units')
     .select('id')
@@ -66,31 +87,23 @@ export async function deleteProperty(propertyId: string) {
 
   if (units && units.length > 0) {
     const unitIds = units.map(u => u.id);
-    const { data: tenants } = await supabase
+    await supabase
       .from('tenants')
-      .select('id')
-      .in('unit_id', unitIds)
-      .limit(1);
-
-    if (tenants && tenants.length > 0) {
-      throw new Error('Cannot delete property with assigned tenants. Remove tenants first.');
-    }
-
-    // Delete all units
-    const { error: unitError } = await supabase
-      .from('units')
-      .delete()
-      .eq('property_id', propertyId);
-
-    if (unitError) throw unitError;
+      .update({ unit_id: null })
+      .in('unit_id', unitIds);
   }
 
+  // Delete property — units cascade via DB FK
   const { error } = await supabase
     .from('properties')
     .delete()
     .eq('id', propertyId);
 
   if (error) throw error;
+
+  if (propInfo) {
+    logActivity(propInfo.landlord_id, 'property_deleted', 'property', `Deleted property "${propInfo.name}"`, propertyId);
+  }
 }
 
 export async function updateUnit(unitId: string, updates: { name?: string; rent_amount?: number }) {
@@ -98,24 +111,32 @@ export async function updateUnit(unitId: string, updates: { name?: string; rent_
     .from('units')
     .update(updates)
     .eq('id', unitId)
-    .select()
+    .select('*, property:properties(landlord_id)')
     .single();
 
   if (error) throw error;
+
+  const landlordId = (data as any).property?.landlord_id;
+  if (landlordId) {
+    logActivity(landlordId, 'unit_updated', 'unit', `Updated unit "${(data as any).name}"`, unitId, updates);
+  }
+
   return data;
 }
 
 export async function deleteUnit(unitId: string) {
-  // Check for tenants assigned to this unit
-  const { data: tenants } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('unit_id', unitId)
-    .limit(1);
+  // Get unit info before deleting for the log
+  const { data: unitInfo } = await supabase
+    .from('units')
+    .select('name, property:properties(landlord_id)')
+    .eq('id', unitId)
+    .single();
 
-  if (tenants && tenants.length > 0) {
-    throw new Error('Cannot delete unit with assigned tenants. Remove tenants first.');
-  }
+  // Unassign any tenants from this unit first
+  await supabase
+    .from('tenants')
+    .update({ unit_id: null })
+    .eq('unit_id', unitId);
 
   const { error } = await supabase
     .from('units')
@@ -123,6 +144,11 @@ export async function deleteUnit(unitId: string) {
     .eq('id', unitId);
 
   if (error) throw error;
+
+  const landlordId = (unitInfo as any)?.property?.landlord_id;
+  if (landlordId) {
+    logActivity(landlordId, 'unit_deleted', 'unit', `Deleted unit "${(unitInfo as any).name}"`, unitId);
+  }
 }
 
 export async function getPropertyOccupancy(landlordId: string): Promise<Map<string, { tenant_name: string; tenant_id: string }>> {

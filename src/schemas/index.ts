@@ -6,7 +6,9 @@ export {
   updateProfileSchema,
   updateCompanyInfoSchema,
   updateBankDetailsSchema,
+  updatePaymentGatewaySchema,
   updateNotificationPreferencesSchema,
 } from './profile';
 export { createPropertySchema, createUnitSchema } from './property';
 export { lateFeeSettingsSchema } from './lateFees';
+export { recurringInvoiceSettingsSchema } from './recurringInvoices';

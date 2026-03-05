@@ -27,6 +27,82 @@
   --color-destructive-muted: #fef2f2;
 }
 
+/* Auth page animations */
+@keyframes mockup-float-up {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes mockup-slide-in {
+  from { opacity: 0; transform: translateX(40px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes row-fade-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes row-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes stat-pop {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes mockup-scale-up {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.login-mockup  { animation: mockup-float-up 0.8s ease-out both; }
+.signup-mockup { animation: mockup-slide-in 0.8s ease-out both; }
+.forgot-mockup { animation: mockup-scale-up 0.8s ease-out both; }
+
+@keyframes mockup-rotate-in {
+  from { opacity: 0; transform: perspective(800px) rotateY(-8deg) translateX(20px); }
+  to   { opacity: 1; transform: perspective(800px) rotateY(0) translateX(0); }
+}
+@keyframes security-row-in {
+  from { opacity: 0; transform: translateX(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.reset-mockup { animation: mockup-rotate-in 1s ease-out both; }
+.security-row-0 { animation: security-row-in 0.5s ease-out 0.4s both; }
+.security-row-1 { animation: security-row-in 0.5s ease-out 0.6s both; }
+.security-row-2 { animation: security-row-in 0.5s ease-out 0.8s both; }
+.security-row-3 { animation: security-row-in 0.5s ease-out 1.0s both; }
+
+.stat-pop-1 { animation: stat-pop 0.5s ease-out 0.3s both; }
+.stat-pop-2 { animation: stat-pop 0.5s ease-out 0.45s both; }
+.stat-pop-3 { animation: stat-pop 0.5s ease-out 0.6s both; }
+
+.row-fade-0 { animation: row-fade-in 0.4s ease-out 0.6s both; }
+.row-fade-1 { animation: row-fade-in 0.4s ease-out 0.75s both; }
+.row-fade-2 { animation: row-fade-in 0.4s ease-out 0.9s both; }
+.row-fade-3 { animation: row-fade-in 0.4s ease-out 1.05s both; }
+
+.row-up-0 { animation: row-slide-up 0.4s ease-out 0.6s both; }
+.row-up-1 { animation: row-slide-up 0.4s ease-out 0.75s both; }
+.row-up-2 { animation: row-slide-up 0.4s ease-out 0.9s both; }
+.row-up-3 { animation: row-slide-up 0.4s ease-out 1.05s both; }
+
+.glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+
+.status-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

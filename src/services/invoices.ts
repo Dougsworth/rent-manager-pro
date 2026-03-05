@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { createNotification } from '@/services/notifications';
+import { logActivity } from '@/services/activityLog';
 import type { InvoiceWithTenant } from '@/types/app.types';
 
 export async function getInvoices(landlordId: string): Promise<InvoiceWithTenant[]> {
@@ -43,6 +45,23 @@ export async function createInvoice(landlordId: string, invoice: {
     .single();
 
   if (error) throw error;
+
+  // Fire-and-forget notification
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('first_name, last_name')
+    .eq('id', invoice.tenant_id)
+    .single();
+  const tenantName = tenant ? `${tenant.first_name} ${tenant.last_name}` : 'A tenant';
+  createNotification(
+    landlordId,
+    'invoice_created',
+    'Invoice Created',
+    `Invoice for ${tenantName} — J$${invoice.amount.toLocaleString()} due ${invoice.due_date}`,
+    (data as any).id,
+  );
+  logActivity(landlordId, 'invoice_created', 'invoice', `Created invoice for ${tenantName} — J$${invoice.amount.toLocaleString()}`, (data as any).id, { amount: invoice.amount, due_date: invoice.due_date });
+
   return data;
 }
 
@@ -68,15 +87,18 @@ export async function bulkCreateInvoices(landlordId: string, invoices: {
 
   for (const invoice of invoices) {
     // Check if tenant already has a pending/overdue invoice for the same month
-    const monthStart = invoice.due_date.slice(0, 7); // YYYY-MM
+    const [year, month] = invoice.due_date.split('-').map(Number);
+    const monthStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    const nextMonth = month === 12 ? new Date(year + 1, 0, 1) : new Date(year, month, 1);
+    const nextMonthStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
     const { data: existing } = await supabase
       .from('invoices')
       .select('id')
       .eq('landlord_id', landlordId)
       .eq('tenant_id', invoice.tenant_id)
       .in('status', ['pending', 'overdue'])
-      .gte('due_date', `${monthStart}-01`)
-      .lt('due_date', `${monthStart}-32`)
+      .gte('due_date', monthStartStr)
+      .lt('due_date', nextMonthStr)
       .limit(1);
 
     if (existing && existing.length > 0) {
@@ -100,6 +122,10 @@ export async function bulkCreateInvoices(landlordId: string, invoices: {
     }
   }
 
+  if (created > 0) {
+    logActivity(landlordId, 'invoice_bulk_created', 'invoice', `Bulk created ${created} invoice(s), ${skipped} skipped`, undefined, { created, skipped });
+  }
+
   return { created, skipped };
 }
 
@@ -117,5 +143,8 @@ export async function updateInvoice(invoiceId: string, updates: {
     .single();
 
   if (error) throw error;
+
+  logActivity((data as any).landlord_id, 'invoice_updated', 'invoice', `Updated invoice ${(data as any).invoice_number}`, invoiceId, updates);
+
   return data;
 }

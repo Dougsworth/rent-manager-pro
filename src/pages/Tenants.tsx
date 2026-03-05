@@ -14,6 +14,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
 import { StatCard } from "@/components/ui/stat-card";
 import { Search, Plus, Loader2, Trash2, Users } from "lucide-react";
+import { TenantsSkeleton } from "@/components/skeletons/TenantsSkeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
@@ -36,6 +38,7 @@ export default function Tenants() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const PAGE_SIZE = 10;
 
   const loadTenants = async () => {
@@ -117,6 +120,9 @@ export default function Tenants() {
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab]);
 
+  const assignedTenants = tenants.filter(t => t.unit_name);
+  const unassignedCount = tenants.length - assignedTenants.length;
+
   const counts = {
     all: tenants.length,
     paid: tenants.filter((t) => t.payment_status === "paid").length,
@@ -131,13 +137,7 @@ export default function Tenants() {
     { value: "overdue" as const, label: "Overdue", count: counts.overdue },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <TenantsSkeleton />;
 
   const tenantForDetail = selectedTenant ? {
     id: selectedTenant.id,
@@ -171,7 +171,8 @@ export default function Tenants() {
         <StatCard
           label="Total Tenants"
           value={String(counts.all)}
-          subtext="Active tenants"
+          subtext={unassignedCount > 0 ? `${unassignedCount} archived` : "Active tenants"}
+          subtextColor={unassignedCount > 0 ? "text-slate-400" : undefined}
         />
         <StatCard
           label="Paid"
@@ -249,12 +250,21 @@ export default function Tenants() {
                   {tenant.first_name} {tenant.last_name}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {tenant.unit_name}{tenant.property_name ? ` · ${tenant.property_name}` : ''}
+                  {tenant.unit_name
+                    ? `${tenant.unit_name}${tenant.property_name ? ` · ${tenant.property_name}` : ''}`
+                    : <span className="text-slate-400">Archived</span>
+                  }
                 </p>
               </div>
               <div className="text-right flex items-center gap-3">
-                <p className="text-sm font-medium text-slate-900">{formatCurrency(tenant.rent_amount)}</p>
-                <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
+                {tenant.unit_name ? (
+                  <>
+                    <p className="text-sm font-medium text-slate-900">{formatCurrency(tenant.rent_amount)}</p>
+                    <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
+                  </>
+                ) : (
+                  <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">Archived</span>
+                )}
               </div>
             </button>
           ))}

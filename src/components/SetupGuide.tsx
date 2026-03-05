@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronUp, X, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,16 @@ export function SetupGuide() {
     isComplete, isDismissed, loading, dismiss,
   } = useSetupStatus();
   const [open, setOpen] = useState(false);
+
+  // Auto-dismiss after 3 seconds once all steps are complete
+  useEffect(() => {
+    if (isComplete && !isDismissed) {
+      const timer = setTimeout(() => {
+        dismiss();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, isDismissed, dismiss]);
 
   if (loading || isDismissed) return null;
 

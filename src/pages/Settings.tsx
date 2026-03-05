@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
+import { updateProfile, updateCompanyInfo, updateBankDetails, updatePaymentGateway, updateNotificationPreferences } from '@/services/profile';
 import {
   updateProfileSchema,
   updateCompanyInfoSchema,
   updateBankDetailsSchema,
+  updatePaymentGatewaySchema,
   lateFeeSettingsSchema,
+  recurringInvoiceSettingsSchema,
 } from '@/schemas';
 import { getLateFeeSettings, upsertLateFeeSettings } from '@/services/lateFees';
+import { getRecurringInvoiceSettings, upsertRecurringInvoiceSettings } from '@/services/recurringInvoices';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock
+  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
@@ -27,7 +30,7 @@ export default function Settings() {
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
     const section = searchParams.get('section');
-    return section && ['profile', 'company', 'bank', 'properties', 'notifications', 'late-fees', 'billing', 'security'].includes(section)
+    return section && ['profile', 'company', 'bank', 'payment', 'properties', 'notifications', 'late-fees', 'recurring', 'billing', 'security'].includes(section)
       ? section
       : 'profile';
   });
@@ -55,6 +58,9 @@ export default function Settings() {
   const [bankAccountNumber, setBankAccountNumber] = useState(profile?.bank_account_number ?? '');
   const [bankBranch, setBankBranch] = useState(profile?.bank_branch ?? '');
 
+  // Payment gateway state
+  const [paymentLink, setPaymentLink] = useState(profile?.payment_link ?? '');
+
   // Notification preferences state
   const defaultPrefs = { payments: true, overdue: true, invoices: true, auto_remind: false };
   const [notifPrefs, setNotifPrefs] = useState(defaultPrefs);
@@ -80,6 +86,16 @@ export default function Settings() {
   const [lateFeesLoading, setLateFeesLoading] = useState(false);
   const [lateFeeError, setLateFeeError] = useState('');
 
+  // Recurring invoice settings state
+  const [riEnabled, setRiEnabled] = useState(false);
+  const [riDayOfMonth, setRiDayOfMonth] = useState('1');
+  const [riSendEmails, setRiSendEmails] = useState(true);
+  const [riDescTemplate, setRiDescTemplate] = useState('Monthly Rent — {month} {year}');
+  const [savingRecurring, setSavingRecurring] = useState(false);
+  const [savedRecurring, setSavedRecurring] = useState(false);
+  const [recurringLoading, setRecurringLoading] = useState(false);
+  const [recurringError, setRecurringError] = useState('');
+
   // Billing "Get Notified" state
   const [proEmail, setProEmail] = useState('');
   const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
@@ -103,6 +119,7 @@ export default function Settings() {
     setBankAccountName(profile.bank_account_name ?? '');
     setBankAccountNumber(profile.bank_account_number ?? '');
     setBankBranch(profile.bank_branch ?? '');
+    setPaymentLink(profile.payment_link ?? '');
     const prefs = (profile as any)?.notification_preferences;
     if (prefs) setNotifPrefs(prefs);
   }, [profile]);
@@ -111,9 +128,11 @@ export default function Settings() {
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'company', label: 'Company', icon: Building },
     { id: 'bank', label: 'Bank Details', icon: Landmark },
+    { id: 'payment', label: 'Payment Gateway', icon: Wallet },
     { id: 'properties', label: 'Properties', icon: Home },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'late-fees', label: 'Late Fees', icon: Clock },
+    { id: 'recurring', label: 'Recurring Invoices', icon: RefreshCw },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
   ];
@@ -136,9 +155,29 @@ export default function Settings() {
     }
   };
 
+  const loadRecurringSettings = async () => {
+    if (!user) return;
+    setRecurringLoading(true);
+    try {
+      const settings = await getRecurringInvoiceSettings(user.id);
+      if (settings) {
+        setRiEnabled(settings.enabled);
+        setRiDayOfMonth(String(settings.day_of_month));
+        setRiSendEmails(settings.send_emails);
+        setRiDescTemplate(settings.description_template);
+      }
+    } catch (err) {
+      console.error('Failed to load recurring invoice settings:', err);
+    } finally {
+      setRecurringLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeSection === 'late-fees') {
       loadLateFeeSettings();
+    } else if (activeSection === 'recurring') {
+      loadRecurringSettings();
     }
   }, [activeSection, user]);
 
@@ -154,6 +193,9 @@ export default function Settings() {
       if (!result.success) { setSaveError(result.error.issues[0].message); return; }
     } else if (activeSection === 'bank') {
       const result = updateBankDetailsSchema.safeParse({ bankName, bankAccountName, bankAccountNumber, bankBranch });
+      if (!result.success) { setSaveError(result.error.issues[0].message); return; }
+    } else if (activeSection === 'payment') {
+      const result = updatePaymentGatewaySchema.safeParse({ paymentLink });
       if (!result.success) { setSaveError(result.error.issues[0].message); return; }
     }
 
@@ -177,6 +219,10 @@ export default function Settings() {
           bank_account_name: bankAccountName,
           bank_account_number: bankAccountNumber,
           bank_branch: bankBranch,
+        });
+      } else if (activeSection === 'payment') {
+        await updatePaymentGateway(user.id, {
+          payment_link: paymentLink || undefined,
         });
       }
       await refreshProfile();
@@ -271,6 +317,38 @@ export default function Settings() {
             <Label htmlFor="bankBranch">Branch / Routing Number</Label>
             <Input id="bankBranch" placeholder="e.g. Half Way Tree" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)} />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPaymentGatewaySection = () => (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">Payment Gateway</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Paste your HandyPay payment link. Tenants will see a "Pay Online" button on their invoice page.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="paymentLink">HandyPay Payment Link</Label>
+            <Input
+              id="paymentLink"
+              type="url"
+              placeholder="https://handypay.com/pay/your-link"
+              value={paymentLink}
+              onChange={(e) => setPaymentLink(e.target.value)}
+            />
+          </div>
+          {paymentLink && (
+            <Button
+              variant="outline"
+              onClick={() => window.open(paymentLink, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Test Link
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -468,6 +546,127 @@ export default function Settings() {
     );
   };
 
+  const handleSaveRecurring = async () => {
+    if (!user) return;
+    setRecurringError('');
+
+    const result = recurringInvoiceSettingsSchema.safeParse({
+      enabled: riEnabled,
+      dayOfMonth: riDayOfMonth,
+      sendEmails: riSendEmails,
+      descriptionTemplate: riDescTemplate,
+    });
+    if (!result.success) {
+      setRecurringError(result.error.issues[0].message);
+      return;
+    }
+
+    setSavingRecurring(true);
+    setSavedRecurring(false);
+    try {
+      await upsertRecurringInvoiceSettings(user.id, {
+        enabled: riEnabled,
+        day_of_month: Number(riDayOfMonth),
+        send_emails: riSendEmails,
+        description_template: riDescTemplate,
+      });
+      setSavedRecurring(true);
+      toast('Recurring invoice settings saved!', 'success');
+      setTimeout(() => setSavedRecurring(false), 2000);
+    } catch (err) {
+      console.error('Failed to save recurring invoice settings:', err);
+      toast('Failed to save recurring invoice settings.', 'error');
+    } finally {
+      setSavingRecurring(false);
+    }
+  };
+
+  const renderRecurringSection = () => {
+    if (recurringLoading) {
+      return (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Recurring Invoice Automation</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Automatically generate invoices for all active tenants on a specific day each month, using each tenant's unit rent amount.
+          </p>
+
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50 mb-4">
+            <div>
+              <p className="font-medium text-gray-900">Enable Auto-Generation</p>
+              <p className="text-sm text-gray-500">Invoices will be created automatically each month</p>
+            </div>
+            <Switch
+              checked={riEnabled}
+              onCheckedChange={setRiEnabled}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="ri-day">Day of Month</Label>
+              <Input
+                id="ri-day"
+                type="number"
+                min="1"
+                max="28"
+                value={riDayOfMonth}
+                onChange={(e) => setRiDayOfMonth(e.target.value)}
+              />
+              <p className="text-xs text-gray-400 mt-1">Invoices are generated on this day (1–28)</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
+            <div>
+              <p className="font-medium text-gray-900">Send Invoice Emails</p>
+              <p className="text-sm text-gray-500">Email tenants when invoices are auto-generated</p>
+            </div>
+            <Switch
+              checked={riSendEmails}
+              onCheckedChange={setRiSendEmails}
+            />
+          </div>
+
+          <div className="mt-4">
+            <Label htmlFor="ri-desc">Description Template</Label>
+            <Input
+              id="ri-desc"
+              value={riDescTemplate}
+              onChange={(e) => setRiDescTemplate(e.target.value)}
+              placeholder="Monthly Rent — {month} {year}"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Use <code className="bg-gray-100 px-1 rounded">{'{month}'}</code> and <code className="bg-gray-100 px-1 rounded">{'{year}'}</code> as placeholders
+            </p>
+          </div>
+
+          {recurringError && <p className="text-sm text-red-600 mt-2">{recurringError}</p>}
+
+          <div className="pt-4">
+            <Button onClick={handleSaveRecurring} disabled={savingRecurring}>
+              {savingRecurring ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : savedRecurring ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {savedRecurring ? 'Saved!' : 'Save Recurring Settings'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderBillingSection = () => (
     <div className="space-y-6">
       <div>
@@ -625,9 +824,11 @@ export default function Settings() {
       case 'profile': return renderProfileSection();
       case 'company': return renderCompanySection();
       case 'bank': return renderBankSection();
+      case 'payment': return renderPaymentGatewaySection();
       case 'properties': return renderPropertiesSection();
       case 'notifications': return renderNotificationsSection();
       case 'late-fees': return renderLateFeesSection();
+      case 'recurring': return renderRecurringSection();
       case 'billing': return renderBillingSection();
       case 'security': return renderSecuritySection();
       default: return renderProfileSection();
@@ -638,7 +839,7 @@ export default function Settings() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
+        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank' || activeSection === 'payment') && (
           <div className="flex items-center gap-3">
             {saveError && <p className="text-sm text-red-600">{saveError}</p>}
           <Button className="" onClick={handleSave} disabled={saving}>

@@ -10,6 +10,8 @@ import {
   CreditCard,
   BarChart3,
   Settings,
+  ClipboardList,
+  CalendarDays,
   Menu,
   X,
   LogOut
@@ -18,6 +20,7 @@ import { useState } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { AiChat } from "@/components/AiChat";
 import { SetupGuide } from "@/components/SetupGuide";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const SIDEBAR_COLLAPSED = 64;   // px
 const SIDEBAR_EXPANDED = 220;   // px
@@ -29,6 +32,8 @@ const navigation = [
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Calendar", href: "/calendar", icon: CalendarDays },
+  { name: "Activity Log", href: "/activity-log", icon: ClipboardList },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -62,8 +67,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             "transition-[width] duration-300 ease-in-out"
           )}
         >
-          {/* Logo */}
-          <div className="h-14 flex items-center px-4 border-b border-slate-100/60 overflow-hidden">
+          {/* Logo + Notification Bell */}
+          <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-hidden">
             <Link to="/dashboard" className="flex items-center gap-2 tracking-tight min-w-0">
               {sidebarHovered ? (
                 <BrandLogo className="text-base font-bold text-slate-900 whitespace-nowrap" />
@@ -73,6 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </span>
               )}
             </Link>
+            {sidebarHovered && <NotificationBell />}
           </div>
 
           {/* Nav Items */}
@@ -160,7 +166,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link to="/dashboard" className="tracking-tight">
                 <BrandLogo className="text-base font-bold text-slate-900" />
               </Link>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <NotificationBell />
                 <button
                   onClick={signOut}
                   className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-white/60 transition-colors duration-150"

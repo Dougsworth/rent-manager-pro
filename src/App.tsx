@@ -21,6 +21,9 @@ import ResetPassword from './pages/ResetPassword';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import EmailVerified from './pages/EmailVerified';
+import Notifications from './pages/Notifications';
+import ActivityLog from './pages/ActivityLog';
+import Calendar from './pages/Calendar';
 
 function App() {
   // Public payment route — no auth required
@@ -92,6 +95,9 @@ function App() {
         <Route path="/payments" element={<Payments />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/activity-log" element={<ActivityLog />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/receipt/:id" element={<Receipt />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

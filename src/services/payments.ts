@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { createNotification } from '@/services/notifications';
+import { logActivity } from '@/services/activityLog';
 import type { PaymentWithDetails } from '@/types/app.types';
 
 export async function getPayments(landlordId: string): Promise<PaymentWithDetails[]> {
@@ -55,6 +57,22 @@ export async function createPayment(landlordId: string, payment: {
       .update({ status: 'paid' })
       .eq('id', payment.invoice_id);
   }
+
+  // Fire-and-forget notification
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('first_name, last_name')
+    .eq('id', payment.tenant_id)
+    .single();
+  const tenantName = tenant ? `${tenant.first_name} ${tenant.last_name}` : 'A tenant';
+  createNotification(
+    landlordId,
+    'payment_received',
+    'Payment Received',
+    `${tenantName} paid J$${payment.amount.toLocaleString()}`,
+    (data as any).id,
+  );
+  logActivity(landlordId, 'payment_created', 'payment', `Recorded payment from ${tenantName} — J$${payment.amount.toLocaleString()}`, (data as any).id, { amount: payment.amount, method: payment.method });
 
   return data;
 }

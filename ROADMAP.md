@@ -1,6 +1,6 @@
 # EasyCollect — Product Roadmap & Gap Analysis
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ---
 
@@ -116,11 +116,12 @@ Last updated: 2026-02-28
 | `invoices` | Rent invoices (amount, due_date, status, payment_token) |
 | `payments` | Payment records (amount, method, date, status) |
 | `payment_proofs` | Proof image uploads (image_url, status, notes) |
+| `late_fee_settings` | Late fee configuration per landlord |
+| `lease_documents` | Uploaded lease/document files per tenant |
+| `notifications` | In-app notifications per landlord |
 | `ai_chat_usage` | Daily AI chat usage tracking per user |
 
-9 migration files covering: schema, RLS, bank details, notification prefs, payment proofs, public links, invoice numbering, auto-remind cron, AI usage tracking.
-
-Edge functions: send-reminder, send-welcome, send-landlord-welcome, send-receipt
+16 migration files. Edge functions: send-reminder, send-welcome, send-landlord-welcome, send-receipt, apply-late-fees
 
 ---
 
@@ -128,57 +129,51 @@ Edge functions: send-reminder, send-welcome, send-landlord-welcome, send-receipt
 
 ### Tier 1 — Must Have Before Launch
 
-- [ ] **Payment gateway integration (Stripe/PayPal)**
-  - Tenants can't actually pay online — only upload proof screenshots
-  - Need: checkout session, webhook handling, payment confirmation
-  - Stripe Connect for marketplace model (landlord receives funds directly)
+- [x] **Payment gateway integration (HandyPay)** _(done — Option C)_
+  - Landlord pastes HandyPay payment link in Settings
+  - Tenants see "Pay Online" button on `/pay/:token`
+  - Bank transfer + proof upload remains as fallback
 
-- [ ] **Recurring invoice automation**
-  - Landlord must manually create invoices every month for every tenant
-  - Need: invoice templates, auto-generation on 1st of month, configurable frequency
+- [x] **Recurring invoice automation** _(done)_
+  - Toggle in Settings → Recurring Invoices, configurable day of month (1-28)
+  - Auto-generates invoices for active tenants with units, deduplication, optional email
+  - Edge function + daily cron job (migration 017)
 
-- [ ] **Forgot password flow**
-  - No UI page for password reset
-  - `supabase.auth.resetPasswordForEmail()` exists but no page to handle the reset link
-  - Need: "Forgot password?" link on login, reset page at `/reset-password`
+- [x] **Forgot password flow** _(done)_
+  - Forgot password link on login, `/forgot-password` and `/reset-password` pages
 
-- [ ] **Email verification**
-  - Signup shows "check your email" but no actual verification handling page
-  - Need: verification callback page, resend verification email button
+- [x] **Email verification** _(done)_
+  - `/email-verified` callback page
 
-- [ ] **Privacy policy & Terms of Service**
-  - Legal requirement for any SaaS collecting user data
-  - Need: `/privacy` and `/terms` pages, footer links, signup checkbox
+- [x] **Privacy policy & Terms of Service** _(done)_
+  - `/privacy` and `/terms` pages
 
 ### Tier 2 — Expected by Users
 
-- [ ] **Late fee automation**
-  - No automatic late fee calculation or application
-  - Need: configurable late fee (flat or percentage), auto-apply after grace period
+- [x] **Late fee automation** _(done)_
+  - Configurable flat/percentage fees, grace period, auto-apply toggle in Settings
+  - Edge function + daily cron job (migration 016)
 
-- [ ] **Lease document storage**
-  - No way to upload or view lease agreements
-  - Need: file upload per tenant/unit, document viewer, download
+- [x] **Lease document storage** _(done)_
+  - Upload/download/delete per tenant (PDF, JPG, PNG, DOC, DOCX, 10MB max)
+  - Document types: Lease, Addendum, Other
 
 - [ ] **Tenant payment history (tenant-side)**
   - Tenants can only upload proofs, can't see their own payment history
   - Need: tenant dashboard with payment list, receipt downloads
 
-- [ ] **Reporting & analytics page**
-  - No P&L, collection trends, or exportable reports
-  - Need: charts (collection over time, by property), date range filters, PDF export
+- [x] **Reporting & analytics page** _(done)_
+  - `/reports` page with collection trends, P&L, by-property breakdown
 
-- [ ] **Bulk invoice generation**
-  - Can't invoice all tenants at once for monthly rent
-  - Need: "Invoice all tenants" button, preview before send, batch creation
+- [x] **Bulk invoice generation** _(done)_
+  - "Invoice All Tenants" button, duplicate detection per month
 
 - [ ] **Customizable email templates**
   - Reminder emails aren't customizable by the landlord
   - Need: template editor in Settings, variables (tenant name, amount, etc.)
 
-- [ ] **Dedicated Properties page**
-  - Properties only manageable in Settings sidebar
-  - Need: full page with property cards, occupancy stats, unit management
+- [x] **Dedicated Properties page** _(done)_
+  - `/properties` page with property cards, unit management, occupancy stats
 
 ### Tier 3 — Competitive Features
 
@@ -194,17 +189,17 @@ Edge functions: send-reminder, send-welcome, send-landlord-welcome, send-receipt
   - All bookkeeping is manual
   - Need: OAuth connection, transaction sync, chart of accounts mapping
 
-- [ ] **Audit trail / activity log**
-  - Can't prove who did what and when
-  - Need: log all actions (payment approved, tenant added, etc.) with timestamps
+- [x] **Audit trail / activity log** _(done)_
+  - `activity_logs` table with immutable RLS, all service functions log actions
+  - `/activity-log` page with entity/action filters and pagination
 
 - [ ] **SMS / WhatsApp reminders**
   - Email-only communication
   - Need: Twilio or WhatsApp Business API integration
 
-- [ ] **Calendar view**
-  - No visual calendar for lease dates, payment due dates
-  - Need: month view with events, upcoming deadlines
+- [x] **Calendar view** _(done)_
+  - Custom month grid with invoice due dates, payments, lease start/end events
+  - `/calendar` page with stat cards, month navigation, day detail panel
 
 - [ ] **Dark mode**
   - Single light theme only

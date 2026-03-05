@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { Plus, Search, Download, Loader2, Link, FileText, Users } from 'lucide-react';
+import { InvoicesSkeleton } from '@/components/skeletons/InvoicesSkeleton';
 import { DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -170,13 +171,7 @@ export default function Invoices() {
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <InvoicesSkeleton />;
 
   const invoiceCounts = {
     total: invoices.length,
@@ -281,7 +276,7 @@ export default function Invoices() {
                 onValueChange={(val) => setNewInvoice({ ...newInvoice, tenant_id: val })}
                 placeholder="Select a tenant"
                 className="mt-1"
-                options={tenants.map(t => ({
+                options={invoiceableTenants.map(t => ({
                   value: t.id,
                   label: `${t.first_name} ${t.last_name} — ${t.unit_name}`,
                 }))}

@@ -5,7 +5,7 @@ import type { PublicInvoiceData } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Upload, Loader2, CheckCircle, XCircle, Clock, X, AlertCircle } from 'lucide-react';
+import { Upload, Loader2, CheckCircle, XCircle, Clock, X, AlertCircle, CreditCard } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
@@ -150,11 +150,31 @@ export default function PublicPayment() {
           </CardContent>
         </Card>
 
+        {/* Pay Online */}
+        {invoice.payment_link && invoice.status !== 'paid' && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="h-5 w-5 text-gray-900" />
+                <h2 className="font-semibold text-gray-900">Pay Online</h2>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">Pay securely via HandyPay</p>
+              <Button
+                className="w-full"
+                onClick={() => window.open(invoice.payment_link!, '_blank')}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Pay Online
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Bank Transfer Details */}
         {hasBankDetails && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">Bank Transfer Details</h2>
+              <h2 className="font-semibold text-gray-900 mb-3">{invoice.payment_link && invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank Transfer Details'}</h2>
               <p className="text-sm text-gray-600 mb-4">
                 Transfer your rent to the account below, then upload a screenshot of your confirmation.
               </p>

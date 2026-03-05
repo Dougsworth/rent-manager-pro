@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exportToCsv } from '@/utils/exportCsv';
 import { Loader2, Download, Printer } from 'lucide-react';
+import { ReportsSkeleton } from '@/components/skeletons/ReportsSkeleton';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
@@ -104,13 +105,7 @@ export default function Reports() {
     ]);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <ReportsSkeleton />;
 
   return (
     <div className="print-report">

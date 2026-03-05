@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2, DollarSign, AlertTriangle } from "lucide-react";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useToast } from "@/components/ui/toast";
 
 function formatCurrency(amount: number): string {
@@ -85,13 +86,7 @@ export default function Dashboard() {
     ? Math.round((stats.collected / stats.expected) * 100)
     : 0;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   const firstName = profile?.first_name || 'there';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });

@@ -25,10 +25,15 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = "DialogOverlay";
 
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  /** Use "dark" when the dialog has a dark header band */
+  closeVariant?: "light" | "dark";
+}
+
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, closeVariant = "light", ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -46,7 +51,15 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close asChild>
-        <button type="button" className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300">
+        <button
+          type="button"
+          className={cn(
+            "absolute right-4 top-4 z-10 rounded-lg p-1.5 transition-colors focus:outline-none focus:ring-2",
+            closeVariant === "dark"
+              ? "text-white/70 hover:text-white hover:bg-white/10 focus:ring-white/30"
+              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 focus:ring-slate-300"
+          )}
+        >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </button>

@@ -10,6 +10,18 @@ export type Payment = Database['public']['Tables']['payments']['Row'];
 export type PaymentProof = Database['public']['Tables']['payment_proofs']['Row'];
 export type LateFeeSettings = Database['public']['Tables']['late_fee_settings']['Row'];
 export type LeaseDocument = Database['public']['Tables']['lease_documents']['Row'];
+export type Notification = Database['public']['Tables']['notifications']['Row'];
+export type RecurringInvoiceSettings = Database['public']['Tables']['recurring_invoice_settings']['Row'];
+
+export type NotificationType = Notification['type'];
+export type ActivityLog = Database['public']['Tables']['activity_logs']['Row'];
+export type ActivityLogAction =
+  | 'invoice_created' | 'invoice_bulk_created' | 'invoice_updated'
+  | 'payment_created'
+  | 'tenant_added' | 'tenant_updated' | 'tenant_deleted'
+  | 'proof_submitted' | 'proof_approved' | 'proof_rejected'
+  | 'property_created' | 'property_updated' | 'property_deleted'
+  | 'unit_created' | 'unit_updated' | 'unit_deleted';
 
 export interface PaymentProofWithDetails extends PaymentProof {
   tenant_first_name: string;
@@ -66,6 +78,7 @@ export interface PublicInvoiceData {
   bank_account_name: string;
   bank_account_number: string;
   bank_branch: string;
+  payment_link: string | null;
   proofs: {
     id: string;
     image_url: string;

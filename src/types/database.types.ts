@@ -19,6 +19,7 @@ export interface Database {
           bank_account_name: string;
           bank_account_number: string;
           bank_branch: string;
+          payment_link: string | null;
           notification_preferences: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind: boolean };
           setup_progress: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean } | null;
           created_at: string;
@@ -41,6 +42,7 @@ export interface Database {
           bank_account_name?: string;
           bank_account_number?: string;
           bank_branch?: string;
+          payment_link?: string | null;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
           setup_progress?: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean };
         };
@@ -60,6 +62,7 @@ export interface Database {
           bank_account_name?: string;
           bank_account_number?: string;
           bank_branch?: string;
+          payment_link?: string | null;
           notification_preferences?: { payments: boolean; overdue: boolean; invoices: boolean; auto_remind?: boolean };
           setup_progress?: { has_property: boolean; has_units: boolean; has_tenant: boolean; completed_at: string | null; dismissed: boolean };
         };
@@ -282,6 +285,80 @@ export interface Database {
           fee_value?: number;
           grace_period_days?: number;
           auto_apply?: boolean;
+        };
+        Relationships: [];
+      };
+      recurring_invoice_settings: {
+        Row: {
+          id: string;
+          landlord_id: string;
+          enabled: boolean;
+          day_of_month: number;
+          send_emails: boolean;
+          description_template: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          landlord_id: string;
+          enabled?: boolean;
+          day_of_month?: number;
+          send_emails?: boolean;
+          description_template?: string;
+        };
+        Update: {
+          enabled?: boolean;
+          day_of_month?: number;
+          send_emails?: boolean;
+          description_template?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          landlord_id: string;
+          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system';
+          title: string;
+          message: string;
+          related_entity_id: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          landlord_id: string;
+          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system';
+          title: string;
+          message: string;
+          related_entity_id?: string | null;
+          is_read?: boolean;
+        };
+        Update: {
+          is_read?: boolean;
+        };
+        Relationships: [];
+      };
+      activity_logs: {
+        Row: {
+          id: string;
+          landlord_id: string;
+          action: string;
+          entity_type: string;
+          entity_id: string | null;
+          description: string;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          landlord_id: string;
+          action: string;
+          entity_type: string;
+          entity_id?: string | null;
+          description: string;
+          metadata?: Record<string, unknown> | null;
         };
         Relationships: [];
       };

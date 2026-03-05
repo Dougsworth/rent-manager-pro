@@ -67,7 +67,7 @@ describe('getProofsForLandlord', () => {
 describe('rejectProof', () => {
   it('updates proof status to rejected', async () => {
     mockResolve(null, null);
-    await expect(rejectProof('pp1', 'Bad image')).resolves.toBeUndefined();
+    await expect(rejectProof('pp1', 'landlord1', 'Bad image')).resolves.toBeUndefined();
     expect(mockChain.update).toHaveBeenCalled();
   });
 });

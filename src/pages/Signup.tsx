@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mail, Lock, Eye, EyeOff, User, Loader2, Quote } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowRight, Mail } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 export default function Signup() {
@@ -44,12 +44,12 @@ export default function Signup() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/80 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
+      <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-8 w-8 text-green-600" />
+              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-7 w-7 text-emerald-600" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 mb-2">Check your email</h2>
               <p className="text-slate-500 mb-6">
@@ -69,117 +69,61 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel - Brand */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-400/80 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Animated white radial glows */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-float-slow-reverse" />
-
-        <div className="relative z-10 animate-slide-in-left">
-          <BrandLogo className="text-3xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.8)" />
-        </div>
-
-        <div className="space-y-6 relative z-10">
-          <p className="text-blue-100/70 text-sm font-semibold tracking-widest uppercase animate-slide-in-left">
-            Built for landlords
-          </p>
-          <h1 className="text-5xl font-bold leading-tight animate-slide-in-left-delay-1">
-            Rent Collection,
-            <br />
-            Simplified
-          </h1>
-          <p className="text-blue-100/80 text-lg max-w-md animate-slide-in-left-delay-2">
-            Join hundreds of landlords who ditched the spreadsheets. Set up in minutes, get paid on time every month.
-          </p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10 relative z-10 animate-fade-in-up-delay-4">
-          <Quote className="h-8 w-8 text-blue-200/60 mb-3" />
-          <p className="text-blue-50/90 italic">
-            "I signed up on a Monday and had all 6 of my units collecting rent by Wednesday. Wish I'd found this years ago."
-          </p>
-          <p className="text-blue-200/70 text-sm mt-3">— James R., Independent Landlord</p>
-        </div>
-      </div>
-
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100/80 p-8">
-        <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center mb-4 animate-fade-in-up">
-            <BrandLogo className="text-3xl font-extrabold tracking-tight text-slate-900" />
+      {/* Left — Form */}
+      <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-white">
+        <div className="w-full max-w-sm mx-auto">
+          <div className="mb-12">
+            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
           </div>
 
-          <div className="animate-fade-in-up">
-            <h2 className="text-3xl font-bold text-slate-900">Create Your Account</h2>
-            <p className="mt-2 text-slate-500">
-              Free to start. Takes less than a minute.
-            </p>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create your account</h1>
+            <p className="mt-2 text-slate-500">Free to start. Takes less than a minute.</p>
           </div>
 
-          <div className="relative animate-fade-in-up-delay-1">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-4 text-slate-400 tracking-wider">
-                Continue with email
-              </span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in-up-delay-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="firstName" className="text-slate-700">First Name</Label>
-                <div className="mt-1.5 relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <Input
-                    id="firstName"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="pl-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="First name"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="lastName" className="text-slate-700">Last Name</Label>
-                <div className="mt-1.5">
-                  <Input
-                    id="lastName"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Last name"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="text-slate-700">Email address</Label>
-              <div className="mt-1.5 relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">First name</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
+                  id="firstName"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Enter your email"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">Last name</Label>
+                <Input
+                  id="lastName"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+                  placeholder="Smith"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-slate-700">Password</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
               <div className="mt-1.5 relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -187,75 +131,106 @@ export default function Signup() {
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                  className="h-11 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                   placeholder="Min. 6 characters"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword" className="text-slate-700">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">Confirm password</Label>
               <div className="mt-1.5 relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                  className="h-11 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                   placeholder="Re-enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-slate-400 hover:text-slate-600" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium mt-2"
               disabled={loading}
             >
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Account
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Create account
+              {!loading && <ArrowRight className="h-4 w-4 ml-2" />}
             </Button>
           </form>
 
-          <div className="text-center animate-fade-in-up-delay-3">
-            <span className="text-sm text-slate-500">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign in
-              </Link>
-            </span>
-          </div>
-
-          <p className="text-center text-xs text-slate-400 animate-fade-in-up-delay-4">
-            By signing up, you agree to our{' '}
-            <Link to="/terms" className="underline hover:text-slate-600">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="underline hover:text-slate-600">Privacy Policy</Link>
+          <p className="mt-8 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-slate-900 hover:text-slate-700">
+              Sign in
+            </Link>
           </p>
+        </div>
+      </div>
+
+      {/* Right — Brand panel */}
+      <div className="hidden lg:flex lg:w-1/2 text-white flex-col justify-between p-12 relative overflow-hidden">
+        {/* Background image — fills entire panel */}
+        <img
+          src="/buildingggimage.png"
+          alt=""
+          className="signup-mockup absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Dark overlay so text is readable */}
+        <div className="absolute inset-0 bg-slate-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/70" />
+
+        <p className="relative z-10 text-sm text-slate-300/70">
+          Built for landlords who want to spend less time chasing rent.
+        </p>
+
+        <div className="relative z-10 space-y-6">
+          <h2 className="text-6xl font-bold leading-tight drop-shadow-lg">
+            Rent collection,
+            <br />
+            <span className="text-blue-400">simplified</span>
+          </h2>
+
+          <div className="flex items-center gap-8 pt-4">
+            <div>
+              <p className="text-2xl font-bold">2 min</p>
+              <p className="text-sm text-slate-300/60">Setup time</p>
+            </div>
+            <div className="w-px h-10 bg-white/10" />
+            <div>
+              <p className="text-2xl font-bold">Free</p>
+              <p className="text-sm text-slate-300/60">To get started</p>
+            </div>
+            <div className="w-px h-10 bg-white/10" />
+            <div>
+              <p className="text-2xl font-bold">100%</p>
+              <p className="text-sm text-slate-300/60">Online</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10">
+          <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.5)" />
         </div>
       </div>
     </div>

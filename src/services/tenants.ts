@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { createNotification } from '@/services/notifications';
+import { logActivity } from '@/services/activityLog';
 import type { TenantWithDetails } from '@/types/app.types';
 
 export async function getTenants(landlordId: string): Promise<TenantWithDetails[]> {
@@ -20,11 +22,13 @@ export async function getTenants(landlordId: string): Promise<TenantWithDetails[
   const { data: invoiceData } = await supabase
     .from('invoices')
     .select('tenant_id, status')
-    .in('tenant_id', tenantIds.length > 0 ? tenantIds : ['__none__']);
+    .in('tenant_id', tenantIds.length > 0 ? tenantIds : ['__none__'])
+    .order('due_date', { ascending: false });
 
   const invoiceRows = (invoiceData ?? []) as any[];
   const statusMap = new Map<string, 'paid' | 'pending' | 'overdue'>();
   for (const inv of invoiceRows) {
+    // First entry per tenant is the most recent (ordered by due_date desc)
     if (!statusMap.has(inv.tenant_id)) {
       statusMap.set(inv.tenant_id, inv.status as 'paid' | 'pending' | 'overdue');
     }
@@ -58,6 +62,18 @@ export async function addTenant(landlordId: string, tenant: {
     .single();
 
   if (error) throw error;
+
+  // Fire-and-forget notification
+  const tenantName = `${tenant.first_name} ${tenant.last_name}`.trim();
+  createNotification(
+    landlordId,
+    'tenant_added',
+    'Tenant Added',
+    `${tenantName} has been added to your roster`,
+    (data as any).id,
+  );
+
+  logActivity(landlordId, 'tenant_added', 'tenant', `Added tenant ${tenantName}`, (data as any).id);
 
   // Fire-and-forget welcome email
   try {
@@ -97,14 +113,36 @@ export async function updateTenant(tenantId: string, updates: {
     .single();
 
   if (error) throw error;
+
+  const name = [updates.first_name, updates.last_name].filter(Boolean).join(' ');
+  logActivity((data as any).landlord_id, 'tenant_updated', 'tenant', `Updated tenant${name ? ` ${name}` : ''}`, tenantId, updates);
+
   return data;
 }
 
 export async function deleteTenant(tenantId: string) {
+  // Clean up payment_proofs first (FK lacks CASCADE until migration 014 is applied)
+  await supabase
+    .from('payment_proofs')
+    .delete()
+    .eq('tenant_id', tenantId);
+
+  // Get tenant info before deleting for the log
+  const { data: tenantInfo } = await supabase
+    .from('tenants')
+    .select('landlord_id, first_name, last_name')
+    .eq('id', tenantId)
+    .single();
+
   const { error } = await supabase
     .from('tenants')
     .delete()
     .eq('id', tenantId);
 
   if (error) throw error;
+
+  if (tenantInfo) {
+    const name = `${tenantInfo.first_name} ${tenantInfo.last_name}`.trim();
+    logActivity(tenantInfo.landlord_id, 'tenant_deleted', 'tenant', `Deleted tenant ${name}`, tenantId);
+  }
 }

@@ -53,6 +53,20 @@ export async function updateBankDetails(userId: string, updates: {
   return data;
 }
 
+export async function updatePaymentGateway(userId: string, updates: {
+  payment_link?: string;
+}) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function updateNotificationPreferences(
   userId: string,
   preferences: { payments: boolean; overdue: boolean; invoices: boolean }

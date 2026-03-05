@@ -23,6 +23,10 @@ export const updateBankDetailsSchema = z.object({
   bankBranch: z.string().optional(),
 });
 
+export const updatePaymentGatewaySchema = z.object({
+  paymentLink: z.string().url('Invalid URL').or(z.literal('')).optional(),
+});
+
 export const updateNotificationPreferencesSchema = z.object({
   payments: z.boolean(),
   overdue: z.boolean(),
