@@ -13,9 +13,8 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
 import { StatCard } from "@/components/ui/stat-card";
-import { Search, Plus, Loader2, Trash2, Users } from "lucide-react";
+import { Search, Plus, Trash2, Users } from "lucide-react";
 import { TenantsSkeleton } from "@/components/skeletons/TenantsSkeleton";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
@@ -38,7 +37,6 @@ export default function Tenants() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const PAGE_SIZE = 10;
 
   const loadTenants = async () => {

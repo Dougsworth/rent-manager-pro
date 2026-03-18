@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Pagination, paginate } from "@/components/Pagination";
 import {
   Bell,
-  Loader2,
   CheckCheck,
   Trash2,
   DollarSign,

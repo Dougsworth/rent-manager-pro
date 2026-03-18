@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exportToCsv } from '@/utils/exportCsv';
-import { Loader2, Download, Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { ReportsSkeleton } from '@/components/skeletons/ReportsSkeleton';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,

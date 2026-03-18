@@ -360,6 +360,13 @@ export interface Database {
           description: string;
           metadata?: Record<string, unknown> | null;
         };
+        Update: {
+          action?: string;
+          entity_type?: string;
+          entity_id?: string | null;
+          description?: string;
+          metadata?: Record<string, unknown> | null;
+        };
         Relationships: [];
       };
       lease_documents: {

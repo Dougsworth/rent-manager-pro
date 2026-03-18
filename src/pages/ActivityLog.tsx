@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { Pagination, paginate } from "@/components/Pagination";
 import {
   ClipboardList,
-  Loader2,
   FileText,
   CreditCard,
   UserPlus,
