@@ -7,7 +7,7 @@ import type { Invoice, PaymentProof, Profile } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Calendar, Upload, Loader2, CheckCircle, XCircle, Clock, Image as ImageIcon, X } from 'lucide-react';
+import { Calendar, Upload, Loader2, CheckCircle, XCircle, Clock, Image as ImageIcon, X, CreditCard } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 
 function formatCurrency(amount: number): string {
@@ -32,6 +32,7 @@ export default function TenantPayment() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checkingOutFor, setCheckingOutFor] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
@@ -112,6 +113,26 @@ export default function TenantPayment() {
       console.error('Failed to submit proof:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePayOnline = async (invoiceId: string) => {
+    setCheckingOutFor(invoiceId);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('handypay-checkout', {
+        body: { invoice_id: invoiceId },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      const url = data?.checkout_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setCheckingOutFor(null);
     }
   };
 
@@ -245,6 +266,22 @@ export default function TenantPayment() {
                             <span className="ml-1">— {latestProof.reviewer_note}</span>
                           )}
                         </div>
+                      )}
+
+                      {/* Pay Online */}
+                      {(!latestProof || latestProof.status === 'rejected') && !isUploading && (
+                        <Button
+                          className="w-full mb-3"
+                          onClick={() => handlePayOnline(invoice.id)}
+                          disabled={checkingOutFor === invoice.id}
+                        >
+                          {checkingOutFor === invoice.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <CreditCard className="h-4 w-4 mr-2" />
+                          )}
+                          {checkingOutFor === invoice.id ? 'Redirecting...' : `Pay ${formatCurrency(invoice.amount)} Online`}
+                        </Button>
                       )}
 
                       {/* Upload UI */}

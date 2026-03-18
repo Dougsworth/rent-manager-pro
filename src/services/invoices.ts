@@ -123,6 +123,12 @@ export async function bulkCreateInvoices(landlordId: string, invoices: {
   }
 
   if (created > 0) {
+    createNotification(
+      landlordId,
+      'invoice_created',
+      'Invoices Created',
+      `Bulk created ${created} invoice(s)${skipped > 0 ? `, ${skipped} skipped` : ''}`,
+    );
     logActivity(landlordId, 'invoice_bulk_created', 'invoice', `Bulk created ${created} invoice(s), ${skipped} skipped`, undefined, { created, skipped });
   }
 

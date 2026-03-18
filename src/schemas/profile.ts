@@ -24,7 +24,12 @@ export const updateBankDetailsSchema = z.object({
 });
 
 export const updatePaymentGatewaySchema = z.object({
-  paymentLink: z.string().url('Invalid URL').or(z.literal('')).optional(),
+  handypayApiKey: z.string()
+    .refine(
+      (val) => val === '' || val.startsWith('hp_test_') || val.startsWith('hp_live_'),
+      'API key must start with hp_test_ or hp_live_'
+    )
+    .optional(),
 });
 
 export const updateNotificationPreferencesSchema = z.object({

@@ -115,6 +115,13 @@ export async function approveProof(
     notes: 'Approved from payment proof',
   });
 
+  createNotification(
+    landlordId,
+    'proof_approved',
+    'Payment Proof Approved',
+    `Payment proof approved — J$${amount.toLocaleString()} recorded`,
+    proofId,
+  );
   logActivity(landlordId, 'proof_approved', 'proof', `Approved payment proof and created payment of J$${amount.toLocaleString()}`, proofId, { amount, invoice_id: invoiceId });
 
   // Fire-and-forget receipt email
@@ -134,5 +141,12 @@ export async function rejectProof(proofId: string, landlordId: string, note?: st
 
   if (error) throw error;
 
+  createNotification(
+    landlordId,
+    'proof_rejected',
+    'Payment Proof Rejected',
+    `A payment proof was rejected${note ? `: ${note}` : ''}`,
+    proofId,
+  );
   logActivity(landlordId, 'proof_rejected', 'proof', `Rejected payment proof${note ? `: ${note}` : ''}`, proofId);
 }

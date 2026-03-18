@@ -57,12 +57,16 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recent, setRecent] = useState<Notification[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Poll unread count every 30s
   useEffect(() => {
     if (!user) return;
-    const fetchCount = () => getUnreadCount(user.id).then(setUnreadCount).catch(() => {});
+    const fetchCount = () => getUnreadCount(user.id).then(setUnreadCount).catch((err) => console.error('NotificationBell: failed to fetch unread count', err));
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
@@ -73,8 +77,11 @@ export function NotificationBell() {
     if (!open || !user) return;
     setLoadingRecent(true);
     getNotifications(user.id)
-      .then((data) => setRecent(data.slice(0, 8)))
-      .catch(() => {})
+      .then((data) => {
+        console.log('NotificationBell: fetched', data.length, 'notifications');
+        setRecent(data.slice(0, 8));
+      })
+      .catch((err) => console.error('NotificationBell: failed to fetch notifications', err))
       .finally(() => setLoadingRecent(false));
   }, [open, user]);
 
@@ -82,7 +89,10 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inButton = ref.current?.contains(target);
+      const inDropdown = dropdownRef.current?.contains(target);
+      if (!inButton && !inDropdown) {
         setOpen(false);
       }
     };
@@ -110,7 +120,17 @@ export function NotificationBell() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        ref={buttonRef}
+        onClick={() => {
+          if (!open && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setDropdownPos({
+              top: rect.bottom + 8,
+              left: Math.max(8, rect.right - 320),
+            });
+          }
+          setOpen(!open);
+        }}
         className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-colors duration-150"
         title="Notifications"
       >
@@ -122,8 +142,12 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200/60 z-50 overflow-hidden">
+      {open && dropdownPos && (
+        <div
+          ref={dropdownRef}
+          style={{ top: dropdownPos.top, left: dropdownPos.left }}
+          className="fixed w-80 bg-white rounded-xl shadow-lg border border-slate-200/60 z-50 overflow-hidden"
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
@@ -157,27 +181,31 @@ export function NotificationBell() {
               </div>
             ) : (
               recent.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => !n.is_read && handleMarkRead(n.id)}
-                  className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
-                    !n.is_read ? "bg-blue-50/30" : ""
-                  }`}
-                >
-                  <div className="flex-shrink-0 mt-0.5">{getIcon(n.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-xs leading-tight ${
-                        !n.is_read ? "font-semibold text-slate-900" : "font-medium text-slate-600"
-                      }`}
-                    >
-                      {n.title}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">{n.message}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
-                  </div>
-                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
-                </button>
+                  <button
+                    key={n.id}
+                    onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                    onMouseEnter={() => setExpandedId(n.id)}
+                    onMouseLeave={() => setExpandedId(null)}
+                    className={`group w-full flex items-start gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-slate-50 ${
+                      !n.is_read ? "bg-blue-50/30" : ""
+                    }`}
+                  >
+                    <div className="flex-shrink-0 mt-0.5">{getIcon(n.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-xs leading-tight ${
+                          !n.is_read ? "font-semibold text-slate-900" : "font-medium text-slate-600"
+                        }`}
+                      >
+                        {n.title}
+                      </p>
+                      <p className={`text-xs text-slate-500 mt-0.5 transition-all duration-200 ${expandedId === n.id ? "whitespace-normal" : "truncate"}`}>
+                        {n.message}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
+                    </div>
+                    {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
+                  </button>
               ))
             )}
           </div>

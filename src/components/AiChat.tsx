@@ -282,7 +282,13 @@ export function AiChat() {
                   <kbd className="px-1 py-0.5 rounded bg-white border border-slate-200 text-[9px] font-medium mr-0.5">esc</kbd> close
                 </span>
               </div>
-              <span>AI Assistant</span>
+              <span className="flex items-center gap-2">
+                <span className={`${aiCount >= 5 ? 'text-red-400' : aiCount >= 3 ? 'text-amber-400' : 'text-slate-400'}`}>
+                  {5 - aiCount}/5 credits
+                </span>
+                <span className="text-slate-300">|</span>
+                AI Assistant
+              </span>
             </div>
           </div>
         </div>

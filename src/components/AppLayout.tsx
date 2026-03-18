@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           {/* Logo + Notification Bell */}
-          <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-hidden">
+          <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-visible">
             <Link to="/dashboard" className="flex items-center gap-2 tracking-tight min-w-0">
               {sidebarHovered ? (
                 <BrandLogo className="text-base font-bold text-slate-900 whitespace-nowrap" />

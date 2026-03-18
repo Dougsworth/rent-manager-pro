@@ -82,6 +82,14 @@ Deno.serve(async (_req) => {
           skipped++;
         } else {
           applied++;
+          // Create notification for late fee
+          await supabase.from('notifications').insert({
+            landlord_id,
+            type: 'late_fee_applied',
+            title: 'Late Fee Applied',
+            message: `Late fee of J$${lateFee.toLocaleString()} applied to an overdue invoice`,
+            related_entity_id: invoice.id,
+          });
         }
       }
     }

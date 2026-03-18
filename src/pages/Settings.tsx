@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { updateProfile, updateCompanyInfo, updateBankDetails, updatePaymentGateway, updateNotificationPreferences } from '@/services/profile';
+import { updateProfile, updateCompanyInfo, updateBankDetails, updateNotificationPreferences } from '@/services/profile';
 import {
   updateProfileSchema,
   updateCompanyInfoSchema,
   updateBankDetailsSchema,
-  updatePaymentGatewaySchema,
   lateFeeSettingsSchema,
   recurringInvoiceSettingsSchema,
 } from '@/schemas';
 import { getLateFeeSettings, upsertLateFeeSettings } from '@/services/lateFees';
+import { seedTestNotifications } from '@/utils/seedNotifications';
 import { getRecurringInvoiceSettings, upsertRecurringInvoiceSettings } from '@/services/recurringInvoices';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, ExternalLink, RefreshCw
+  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
@@ -58,8 +58,7 @@ export default function Settings() {
   const [bankAccountNumber, setBankAccountNumber] = useState(profile?.bank_account_number ?? '');
   const [bankBranch, setBankBranch] = useState(profile?.bank_branch ?? '');
 
-  // Payment gateway state
-  const [paymentLink, setPaymentLink] = useState(profile?.payment_link ?? '');
+  // Payment gateway — HandyPay API key is stored server-side
 
   // Notification preferences state
   const defaultPrefs = { payments: true, overdue: true, invoices: true, auto_remind: false };
@@ -96,6 +95,9 @@ export default function Settings() {
   const [recurringLoading, setRecurringLoading] = useState(false);
   const [recurringError, setRecurringError] = useState('');
 
+  // Seed notifications state
+  const [seeding, setSeeding] = useState(false);
+
   // Billing "Get Notified" state
   const [proEmail, setProEmail] = useState('');
   const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
@@ -119,7 +121,7 @@ export default function Settings() {
     setBankAccountName(profile.bank_account_name ?? '');
     setBankAccountNumber(profile.bank_account_number ?? '');
     setBankBranch(profile.bank_branch ?? '');
-    setPaymentLink(profile.payment_link ?? '');
+    // payment_link no longer used (HandyPay API key is server-side)
     const prefs = (profile as any)?.notification_preferences;
     if (prefs) setNotifPrefs(prefs);
   }, [profile]);
@@ -194,9 +196,6 @@ export default function Settings() {
     } else if (activeSection === 'bank') {
       const result = updateBankDetailsSchema.safeParse({ bankName, bankAccountName, bankAccountNumber, bankBranch });
       if (!result.success) { setSaveError(result.error.issues[0].message); return; }
-    } else if (activeSection === 'payment') {
-      const result = updatePaymentGatewaySchema.safeParse({ paymentLink });
-      if (!result.success) { setSaveError(result.error.issues[0].message); return; }
     }
 
     setSaving(true);
@@ -219,10 +218,6 @@ export default function Settings() {
           bank_account_name: bankAccountName,
           bank_account_number: bankAccountNumber,
           bank_branch: bankBranch,
-        });
-      } else if (activeSection === 'payment') {
-        await updatePaymentGateway(user.id, {
-          payment_link: paymentLink || undefined,
         });
       }
       await refreshProfile();
@@ -327,28 +322,14 @@ export default function Settings() {
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-1">Payment Gateway</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Paste your HandyPay payment link. Tenants will see a "Pay Online" button on their invoice page.
+          Accept online payments from tenants via HandyPay. When tenants view their invoices, they'll see a "Pay Online" button with the exact amount pre-filled.
         </p>
-        <div className="space-y-4">
+        <div className="p-4 border rounded-lg bg-green-50 flex items-center gap-3">
+          <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
           <div>
-            <Label htmlFor="paymentLink">HandyPay Payment Link</Label>
-            <Input
-              id="paymentLink"
-              type="url"
-              placeholder="https://handypay.com/pay/your-link"
-              value={paymentLink}
-              onChange={(e) => setPaymentLink(e.target.value)}
-            />
+            <p className="font-medium text-green-900">HandyPay Connected</p>
+            <p className="text-sm text-green-700">Online payments are enabled for all invoices.</p>
           </div>
-          {paymentLink && (
-            <Button
-              variant="outline"
-              onClick={() => window.open(paymentLink, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Test Link
-            </Button>
-          )}
         </div>
       </div>
     </div>
@@ -407,7 +388,7 @@ export default function Settings() {
             </div>
           ))}
         </div>
-        <div className="pt-4">
+        <div className="pt-4 flex gap-3">
           <Button className="" onClick={handleSaveNotifs} disabled={savingNotifs}>
             {savingNotifs ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -417,6 +398,26 @@ export default function Settings() {
               <Save className="h-4 w-4 mr-2" />
             )}
             {savedNotifs ? 'Saved!' : 'Save Preferences'}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={seeding}
+            onClick={async () => {
+              if (!user) return;
+              setSeeding(true);
+              try {
+                const count = await seedTestNotifications(user.id);
+                toast(`${count} test notifications created!`, 'success');
+              } catch (err) {
+                console.error('Failed to seed notifications:', err);
+                toast('Failed to seed notifications.', 'error');
+              } finally {
+                setSeeding(false);
+              }
+            }}
+          >
+            {seeding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
+            Seed Test Notifications
           </Button>
         </div>
       </div>
@@ -839,7 +840,7 @@ export default function Settings() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank' || activeSection === 'payment') && (
+        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
           <div className="flex items-center gap-3">
             {saveError && <p className="text-sm text-red-600">{saveError}</p>}
           <Button className="" onClick={handleSave} disabled={saving}>

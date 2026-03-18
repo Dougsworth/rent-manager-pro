@@ -21,6 +21,7 @@ export default function PublicPayment() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadInvoice = async () => {
@@ -72,6 +73,35 @@ export default function PublicPayment() {
       setError(msg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePayOnline = async () => {
+    if (!invoice) return;
+    setCheckingOut(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${supabaseUrl}/functions/v1/handypay-checkout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({ invoice_id: invoice.invoice_id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed to create checkout');
+      const url = data.checkout_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to start checkout. Please try again.');
+      setCheckingOut(false);
     }
   };
 
@@ -151,7 +181,7 @@ export default function PublicPayment() {
         </Card>
 
         {/* Pay Online */}
-        {invoice.payment_link && invoice.status !== 'paid' && (
+        {invoice.status !== 'paid' && (
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
@@ -161,10 +191,15 @@ export default function PublicPayment() {
               <p className="text-sm text-gray-600 mb-4">Pay securely via HandyPay</p>
               <Button
                 className="w-full"
-                onClick={() => window.open(invoice.payment_link!, '_blank')}
+                onClick={handlePayOnline}
+                disabled={checkingOut}
               >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Pay Online
+                {checkingOut ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CreditCard className="h-4 w-4 mr-2" />
+                )}
+                {checkingOut ? 'Redirecting to payment...' : `Pay ${formatCurrency(invoice.amount)} Online`}
               </Button>
             </CardContent>
           </Card>
@@ -174,7 +209,7 @@ export default function PublicPayment() {
         {hasBankDetails && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">{invoice.payment_link && invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank Transfer Details'}</h2>
+              <h2 className="font-semibold text-gray-900 mb-3">{invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank Transfer Details'}</h2>
               <p className="text-sm text-gray-600 mb-4">
                 Transfer your rent to the account below, then upload a screenshot of your confirmation.
               </p>
