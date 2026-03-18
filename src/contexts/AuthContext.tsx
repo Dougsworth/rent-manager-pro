@@ -84,7 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: {
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/email-verified`,
+      },
     });
 
     // Fire-and-forget welcome email for new landlords

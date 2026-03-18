@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://easycollect.com';
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://easycollectja.com';
     const today = new Date().toISOString().split('T')[0];
 
     // Find all overdue invoices (due_date < today, not paid)
