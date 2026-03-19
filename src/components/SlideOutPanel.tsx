@@ -17,12 +17,22 @@ export function SlideOutPanel({
   actions,
   children,
 }: SlideOutPanelProps) {
+  // Lock scroll on body when panel is open
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = "hidden";
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      const scrollY = document.body.style.top;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      window.scrollTo(0, parseInt(scrollY || "0") * -1);
     };
   }, [open]);
 
@@ -31,7 +41,7 @@ export function SlideOutPanel({
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 transition-opacity duration-300",
+          "fixed inset-0 bg-black/20 z-40 transition-opacity duration-300",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
@@ -40,13 +50,13 @@ export function SlideOutPanel({
       {/* Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full sm:max-w-lg bg-white shadow-2xl shadow-black/10 z-50 transition-transform duration-300 ease-out",
+          "fixed right-0 top-0 h-full w-full sm:max-w-lg bg-white border-l border-slate-200 shadow-2xl shadow-black/10 z-50 transition-transform duration-300 ease-out",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 sm:px-6 py-4 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 sm:px-6 py-4 bg-white">
             <h2 className="text-lg font-semibold text-slate-900 truncate">{title}</h2>
             <div className="flex items-center gap-2 shrink-0">
               {actions}
@@ -54,13 +64,13 @@ export function SlideOutPanel({
                 onClick={onClose}
                 className="rounded-lg p-2 hover:bg-slate-100 transition-colors"
               >
-                <X className="h-5 w-5 text-slate-500" />
+                <X className="h-5 w-5 text-slate-400" />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50/50">{children}</div>
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6">{children}</div>
         </div>
       </div>
     </>
