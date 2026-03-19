@@ -210,11 +210,11 @@ export default function Tenants() {
       </div>
 
       {/* Split View: Tenant List + Detail Panel */}
-      <div className="flex gap-6">
+      <div className="flex gap-5">
         {/* Tenant List */}
         <div className={cn(
           "transition-all duration-300 min-w-0",
-          selectedTenant ? "flex-1" : "w-full"
+          selectedTenant ? "w-[340px] flex-shrink-0" : "w-full"
         )}>
           {filteredTenants.length === 0 ? (
             <EmptyState
@@ -241,16 +241,16 @@ export default function Tenants() {
               }
             />
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200/60 divide-y divide-slate-100">
+            <div className="bg-white rounded-2xl border border-slate-200/60 divide-y divide-slate-100 overflow-hidden">
               {paginatedTenants.map((tenant) => (
                 <button
                   key={tenant.id}
                   onClick={() => setSelectedTenant(tenant)}
                   className={cn(
-                    "w-full flex items-center gap-4 px-6 py-4 transition-colors duration-150 text-left",
+                    "w-full flex items-center gap-3 px-4 py-3.5 transition-all duration-150 text-left",
                     selectedTenant?.id === tenant.id
-                      ? "bg-blue-50/60 border-l-2 border-l-blue-500"
-                      : "hover:bg-slate-50"
+                      ? "bg-blue-50 border-l-[3px] border-l-blue-500"
+                      : "hover:bg-slate-50 border-l-[3px] border-l-transparent"
                   )}
                 >
                   <AvatarInitial name={`${tenant.first_name} ${tenant.last_name}`} />
@@ -258,15 +258,15 @@ export default function Tenants() {
                     <p className="text-sm font-medium text-slate-900 truncate">
                       {tenant.first_name} {tenant.last_name}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 truncate">
                       {tenant.unit_name
-                        ? `${tenant.unit_name}${tenant.property_name ? ` · ${tenant.property_name}` : ''}`
+                        ? `${tenant.unit_name}${!selectedTenant && tenant.property_name ? ` · ${tenant.property_name}` : ''}`
                         : <span className="text-slate-400">Archived</span>
                       }
                     </p>
                   </div>
-                  {!selectedTenant && (
-                    <div className="text-right flex items-center gap-3">
+                  {!selectedTenant ? (
+                    <div className="text-right flex items-center gap-3 shrink-0">
                       {tenant.unit_name ? (
                         <>
                           <p className="text-sm font-medium text-slate-900">{formatCurrency(tenant.rent_amount)}</p>
@@ -275,6 +275,12 @@ export default function Tenants() {
                       ) : (
                         <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">Archived</span>
                       )}
+                    </div>
+                  ) : (
+                    <div className="shrink-0">
+                      <StatusBadge variant={tenant.unit_name ? tenant.payment_status : 'pending'}>
+                        {tenant.unit_name ? tenant.payment_status : 'archived'}
+                      </StatusBadge>
                     </div>
                   )}
                 </button>
@@ -291,13 +297,21 @@ export default function Tenants() {
 
         {/* Inline Detail Panel */}
         {selectedTenant && tenantForDetail && (
-          <div className="w-[440px] flex-shrink-0 hidden lg:block">
+          <div className="flex-1 min-w-0 hidden lg:block">
             <div className="bg-white rounded-2xl border border-slate-200/60 sticky top-8 overflow-hidden">
               {/* Panel Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <h2 className="text-base font-semibold text-slate-900 truncate">
-                  {selectedTenant.first_name} {selectedTenant.last_name}
-                </h2>
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50">
+                <div className="flex items-center gap-3 min-w-0">
+                  <AvatarInitial name={`${selectedTenant.first_name} ${selectedTenant.last_name}`} />
+                  <div className="min-w-0">
+                    <h2 className="text-base font-semibold text-slate-900 truncate">
+                      {selectedTenant.first_name} {selectedTenant.last_name}
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      {selectedTenant.unit_name ? `${selectedTenant.unit_name} · ${selectedTenant.property_name}` : 'No unit assigned'}
+                    </p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedTenant.id)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -312,7 +326,7 @@ export default function Tenants() {
                 </div>
               </div>
               {/* Panel Content */}
-              <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-5">
+              <div className="max-h-[calc(100vh-220px)] overflow-y-auto p-6">
                 <TenantDetail
                   tenant={tenantForDetail}
                   tenantId={selectedTenant?.id}
