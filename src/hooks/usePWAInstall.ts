@@ -11,32 +11,33 @@ export function usePWAInstall() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Check if already running as installed PWA
+    const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches;
+    const iosStandalone = (navigator as any).standalone === true;
+    if (standaloneMedia || iosStandalone) {
       setIsInstalled(true);
       return;
     }
 
-    // Check if iOS
-    const ua = navigator.userAgent;
-    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setIsIOS(isIOSDevice);
+    // Detect iOS Safari — navigator.standalone exists ONLY in Safari
+    // This is the canonical detection method (not UA sniffing)
+    if ('standalone' in navigator) {
+      setIsIOS(true);
+    }
 
-    // Listen for install prompt (Chrome/Edge/Android)
-    const handler = (e: Event) => {
+    // Listen for Chrome/Edge/Android install prompt
+    const handlePrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // Detect successful install
+    window.addEventListener('beforeinstallprompt', handlePrompt);
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
     });
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handlePrompt);
   }, []);
 
   const promptInstall = async () => {

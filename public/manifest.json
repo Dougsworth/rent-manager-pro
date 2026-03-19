@@ -2,12 +2,16 @@
   "name": "EasyCollect — Rent Collection",
   "short_name": "EasyCollect",
   "description": "Simplify rent collection for Jamaican landlords. Send invoices, track payments, automate reminders.",
+  "id": "/",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone"],
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
-  "scope": "/",
+  "orientation": "portrait",
+  "categories": ["business", "finance"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/favicon.svg",
@@ -16,19 +20,28 @@
       "purpose": "any"
     },
     {
-      "src": "/easycollect.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/easycollect.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "categories": ["business", "finance"],
-  "screenshots": [],
-  "prefer_related_applications": false
+  ]
 }

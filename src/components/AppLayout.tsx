@@ -20,6 +20,7 @@ import { useState } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { AiChat } from "@/components/AiChat";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { SetupGuide } from "@/components/SetupGuide";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -257,6 +258,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AiChat />
         <SetupGuide />
         <PWAInstallPrompt />
+        <OfflineBanner />
       </div>
     </TooltipProvider>
   );
