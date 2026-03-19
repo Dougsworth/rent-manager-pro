@@ -117,31 +117,43 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Expected"
-          value={formatCurrency(stats.expected)}
-          subtext={`${stats.tenantCount} tenants this month`}
-        />
-        <StatCard
-          label="Collected"
-          value={formatCurrency(stats.collected)}
-          valueColor="text-emerald-600"
-          subtext={collectionPercentage > 0 ? `+${collectionPercentage}% collected` : "No payments yet"}
-          subtextColor="text-emerald-500"
-        />
-        <StatCard
-          label="Outstanding"
-          value={formatCurrency(stats.outstanding)}
-          valueColor="text-amber-600"
-          subtext={stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
-        />
-        <StatCard
-          label="Overdue"
-          value={stats.overdue > 0 ? `${stats.overdue} tenant${stats.overdue !== 1 ? 's' : ''}` : "0"}
-          valueColor={stats.overdue > 0 ? "text-red-500" : "text-slate-900"}
-          subtext={stats.overdue > 0 ? "Needs attention" : "No overdue"}
-          subtextColor={stats.overdue > 0 ? "text-red-400" : "text-slate-500"}
-        />
+        <Link to="/tenants" className="block">
+          <StatCard
+            label="Expected"
+            value={formatCurrency(stats.expected)}
+            subtext={`${stats.tenantCount} tenants this month`}
+            className="hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer"
+          />
+        </Link>
+        <Link to="/payments" className="block">
+          <StatCard
+            label="Collected"
+            value={formatCurrency(stats.collected)}
+            valueColor="text-emerald-600"
+            subtext={collectionPercentage > 0 ? `+${collectionPercentage}% collected` : "No payments yet"}
+            subtextColor="text-emerald-500"
+            className="hover:border-emerald-200 hover:shadow-sm transition-all cursor-pointer"
+          />
+        </Link>
+        <Link to="/invoices" className="block">
+          <StatCard
+            label="Outstanding"
+            value={formatCurrency(stats.outstanding)}
+            valueColor="text-amber-600"
+            subtext={stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
+            className="hover:border-amber-200 hover:shadow-sm transition-all cursor-pointer"
+          />
+        </Link>
+        <Link to="/tenants" className="block">
+          <StatCard
+            label="Overdue"
+            value={stats.overdue > 0 ? `${stats.overdue} tenant${stats.overdue !== 1 ? 's' : ''}` : "0"}
+            valueColor={stats.overdue > 0 ? "text-red-500" : "text-slate-900"}
+            subtext={stats.overdue > 0 ? "Needs attention" : "No overdue"}
+            subtextColor={stats.overdue > 0 ? "text-red-400" : "text-slate-500"}
+            className="hover:border-red-200 hover:shadow-sm transition-all cursor-pointer"
+          />
+        </Link>
         </div>
       </div>
 
