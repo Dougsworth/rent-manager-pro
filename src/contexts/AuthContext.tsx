@@ -25,13 +25,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userObj?: User | null) => {
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    setProfile(data as Profile | null);
+
+    if (data) {
+      // If profile has empty names (e.g. Google OAuth), patch from user metadata
+      const p = data as Profile;
+      const meta = userObj?.user_metadata;
+      if (meta && (!p.first_name || !p.last_name)) {
+        const firstName = meta.first_name || meta.given_name || meta.full_name?.split(' ')[0] || '';
+        const lastName = meta.last_name || meta.family_name || meta.full_name?.split(' ').slice(1).join(' ') || '';
+        if (firstName || lastName) {
+          await supabase
+            .from('profiles')
+            .update({ first_name: firstName, last_name: lastName })
+            .eq('id', userId);
+          p.first_name = firstName;
+          p.last_name = lastName;
+        }
+      }
+      setProfile(p);
+    } else {
+      setProfile(null);
+    }
   };
 
   const refreshProfile = async () => {
@@ -45,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user);
       }
       setLoading(false);
     });
@@ -54,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user);
       } else {
         setProfile(null);
       }
