@@ -574,9 +574,11 @@ export default function Settings() {
       setSavedRecurring(true);
       toast('Recurring invoice settings saved!', 'success');
       setTimeout(() => setSavedRecurring(false), 2000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save recurring invoice settings:', err);
-      toast('Failed to save recurring invoice settings.', 'error');
+      const msg = err?.message ?? 'Failed to save recurring invoice settings.';
+      setRecurringError(msg);
+      toast(msg, 'error');
     } finally {
       setSavingRecurring(false);
     }

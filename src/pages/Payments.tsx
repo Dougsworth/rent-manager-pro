@@ -101,17 +101,18 @@ export default function Payments() {
     try {
       await createPayment(user.id, {
         tenant_id: newPayment.tenant_id,
-        invoice_id: newPayment.invoice_id || null,
-        amount: parseInt(newPayment.amount),
+        invoice_id: newPayment.invoice_id || undefined,
+        amount: Math.round(Number(newPayment.amount)),
         method: newPayment.method as any,
         payment_date: newPayment.payment_date || undefined,
-        notes: newPayment.notes,
+        notes: newPayment.notes || undefined,
       });
       setShowRecord(false);
       setNewPayment({ tenant_id: '', invoice_id: '', amount: '', method: 'bank_transfer', payment_date: '', notes: '' });
       await loadData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to record payment:', err);
+      setRecordError(err?.message ?? 'Failed to record payment. Please try again.');
     } finally {
       setRecording(false);
     }
