@@ -21,7 +21,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { AiChat } from "@/components/AiChat";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineBanner } from "@/components/OfflineBanner";
-import { AnnouncementPopup } from "@/components/AnnouncementPopup";
+import { AnnouncementBanner } from "@/components/AnnouncementPopup";
 import { SetupGuide } from "@/components/SetupGuide";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -239,6 +239,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
+        {/* Top banners */}
+        <div style={{ marginLeft: sidebarWidth }} className="hidden lg:block transition-[margin-left] duration-300 ease-in-out">
+          <AnnouncementBanner />
+        </div>
+        <div className="lg:hidden">
+          <AnnouncementBanner />
+        </div>
+
         {/* Main Content — margin transitions smoothly with sidebar */}
         <main
           style={{ marginLeft: sidebarWidth }}
@@ -260,7 +268,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SetupGuide />
         <PWAInstallPrompt />
         <OfflineBanner />
-        <AnnouncementPopup />
       </div>
     </TooltipProvider>
   );

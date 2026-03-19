@@ -5,7 +5,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 export function PWAInstallPrompt() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => !!localStorage.getItem('pwa-install-dismissed'));
   const [showGuide, setShowGuide] = useState(false);
 
   // Don't show if already installed or user dismissed
@@ -19,7 +19,7 @@ export function PWAInstallPrompt() {
       setShowGuide(true);
     } else {
       const accepted = await promptInstall();
-      if (!accepted) setDismissed(true);
+      if (!accepted) { localStorage.setItem('pwa-install-dismissed', 'true'); setDismissed(true); };
     }
   };
 
@@ -45,7 +45,7 @@ export function PWAInstallPrompt() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setDismissed(true)}
+                  onClick={() => { localStorage.setItem('pwa-install-dismissed', 'true'); setDismissed(true); }}
                   className="text-xs h-8 px-3"
                 >
                   Not now
@@ -53,7 +53,7 @@ export function PWAInstallPrompt() {
               </div>
             </div>
             <button
-              onClick={() => setDismissed(true)}
+              onClick={() => { localStorage.setItem('pwa-install-dismissed', 'true'); setDismissed(true); }}
               className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <X className="h-4 w-4 text-slate-400" />
