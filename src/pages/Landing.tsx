@@ -771,9 +771,9 @@ export default function Landing() {
                     <h3 className="text-lg font-bold text-neutral-900 mb-1">Automatic invoicing</h3>
                     <p className="text-sm text-neutral-500 leading-relaxed max-w-sm">Generate invoices with auto-numbering per tenant. Track every dollar owed, per tenant, per month.</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
-                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                  <Link to="/signup" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0">
+                    Try free &rarr;
+                  </Link>
                 </div>
               </div>
 
@@ -803,9 +803,9 @@ export default function Landing() {
                     <h3 className="text-lg font-bold text-neutral-900 mb-1">Track revenue & payouts</h3>
                     <p className="text-sm text-neutral-500 leading-relaxed">See expected vs. collected revenue at a glance from your dashboard.</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
-                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                  <Link to="/signup" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0">
+                    Try free &rarr;
+                  </Link>
                 </div>
               </div>
             </div>
@@ -835,9 +835,9 @@ export default function Landing() {
                     <h3 className="text-lg font-bold text-neutral-900 mb-1">Proof of payment upload</h3>
                     <p className="text-sm text-neutral-500 leading-relaxed">Tenants upload proof of their bank transfers. Review, approve, or reject with one click.</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
-                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                  <Link to="/signup" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0">
+                    Try free &rarr;
+                  </Link>
                 </div>
               </div>
 
@@ -873,9 +873,9 @@ export default function Landing() {
                     <h3 className="text-lg font-bold text-neutral-900 mb-1">Shareable payment links</h3>
                     <p className="text-sm text-neutral-500 leading-relaxed">Each invoice gets a unique link — tenants view details and upload proof. No account needed.</p>
                   </div>
-                  <div className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors">
-                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                  <Link to="/signup" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0">
+                    Try free &rarr;
+                  </Link>
                 </div>
               </div>
             </div>
