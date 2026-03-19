@@ -4,7 +4,6 @@ import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/servi
 import { sendReminder } from '@/services/reminders';
 import type { DashboardStats, PaymentWithDetails } from '@/types/app.types';
 import { PageHeader } from "@/components/PageHeader";
-import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -233,7 +232,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {recentPayments.slice(0, 5).map((payment, idx) => (
+                {recentPayments.slice(0, 5).map((payment) => (
                   <div key={payment.id} className="flex items-center gap-3 group">
                     <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
                       <DollarSign className="h-4 w-4 text-emerald-500" />

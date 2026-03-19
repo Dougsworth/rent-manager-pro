@@ -3,7 +3,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
-import { Phone, Mail, Loader2, Upload, FileText, Trash2, Download, Clock, Eye, X } from "lucide-react";
+import { Phone, Mail, Loader2, Upload, FileText, Trash2, Download, Clock, Eye } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { getPaymentsForTenant } from "@/services/payments";
 import { getInvoicesForTenant } from "@/services/invoices";
