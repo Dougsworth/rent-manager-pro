@@ -241,14 +241,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           style={{ marginLeft: sidebarWidth }}
           className="hidden lg:block transition-[margin-left] duration-300 ease-in-out"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-enter" key={location.pathname}>
             {children}
           </div>
         </main>
 
         {/* Mobile Main Content — no sidebar offset */}
         <main className="lg:hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 page-enter" key={location.pathname}>
             {children}
           </div>
         </main>
