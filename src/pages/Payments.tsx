@@ -36,7 +36,7 @@ const methodLabels: Record<string, string> = {
 const statusVariantMap: Record<string, 'paid' | 'pending' | 'overdue'> = {
   completed: 'paid',
   pending: 'pending',
-  failed: 'overdue',
+  failed: 'pending', // failed payments are not overdue — they just didn't go through
 };
 
 export default function Payments() {

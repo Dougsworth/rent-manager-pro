@@ -361,7 +361,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                       {formatDate(p.payment_date)} &middot; {methodLabels[p.method] ?? p.method}
                     </p>
                   </div>
-                  <StatusBadge variant={p.status === 'completed' ? 'paid' : p.status === 'failed' ? 'overdue' : 'pending'}>
+                  <StatusBadge variant={p.status === 'completed' ? 'paid' : 'pending'}>
                     {p.status}
                   </StatusBadge>
                 </div>

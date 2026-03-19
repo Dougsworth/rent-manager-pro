@@ -17,20 +17,28 @@ export async function getTenants(landlordId: string): Promise<TenantWithDetails[
 
   const rows = (data ?? []) as any[];
 
-  // Determine payment status per tenant by checking their latest invoice
+  // Determine payment status per tenant by checking ALL invoices (worst status wins)
+  // Priority: overdue > pending > paid
   const tenantIds = rows.map(t => t.id as string);
   const { data: invoiceData } = await supabase
     .from('invoices')
     .select('tenant_id, status')
-    .in('tenant_id', tenantIds.length > 0 ? tenantIds : ['__none__'])
-    .order('due_date', { ascending: false });
+    .eq('landlord_id', landlordId)
+    .in('tenant_id', tenantIds.length > 0 ? tenantIds : ['__none__']);
 
   const invoiceRows = (invoiceData ?? []) as any[];
   const statusMap = new Map<string, 'paid' | 'pending' | 'overdue'>();
   for (const inv of invoiceRows) {
-    // First entry per tenant is the most recent (ordered by due_date desc)
-    if (!statusMap.has(inv.tenant_id)) {
-      statusMap.set(inv.tenant_id, inv.status as 'paid' | 'pending' | 'overdue');
+    const current = statusMap.get(inv.tenant_id);
+    const incoming = inv.status as 'paid' | 'pending' | 'overdue';
+
+    // Escalate to worst status: overdue > pending > paid
+    if (!current) {
+      statusMap.set(inv.tenant_id, incoming);
+    } else if (incoming === 'overdue') {
+      statusMap.set(inv.tenant_id, 'overdue');
+    } else if (incoming === 'pending' && current !== 'overdue') {
+      statusMap.set(inv.tenant_id, 'pending');
     }
   }
 

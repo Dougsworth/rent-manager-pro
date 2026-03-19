@@ -51,11 +51,45 @@ export async function createPayment(landlordId: string, payment: {
   if (error) throw error;
 
   // If linked to an invoice, mark it as paid
-  if (payment.invoice_id) {
+  let linkedInvoiceId = payment.invoice_id;
+
+  if (linkedInvoiceId) {
     await supabase
       .from('invoices')
       .update({ status: 'paid' })
-      .eq('id', payment.invoice_id);
+      .eq('id', linkedInvoiceId);
+  } else {
+    // Auto-link: if no invoice specified, find a matching unpaid invoice for this tenant
+    const { data: unpaidInvoices } = await supabase
+      .from('invoices')
+      .select('id, amount')
+      .eq('tenant_id', payment.tenant_id)
+      .eq('landlord_id', landlordId)
+      .in('status', ['pending', 'overdue'])
+      .order('due_date', { ascending: true })
+      .limit(5);
+
+    if (unpaidInvoices && unpaidInvoices.length > 0) {
+      // Only auto-link if we find an exact amount match — don't guess on partial payments
+      const exactMatch = unpaidInvoices.find(inv => inv.amount === payment.amount);
+
+      if (exactMatch) {
+        linkedInvoiceId = exactMatch.id;
+
+        await supabase
+          .from('invoices')
+          .update({ status: 'paid' })
+          .eq('id', exactMatch.id);
+
+        // Update the payment record to link it
+        await supabase
+          .from('payments')
+          .update({ invoice_id: exactMatch.id })
+          .eq('id', (data as any).id);
+
+        logActivity(landlordId, 'invoice_updated', 'invoice', `Invoice auto-marked as paid via payment`, exactMatch.id, { payment_amount: payment.amount });
+      }
+    }
   }
 
   // Fire-and-forget notification

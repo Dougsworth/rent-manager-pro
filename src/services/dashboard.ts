@@ -12,17 +12,33 @@ export async function getDashboardStats(landlordId: string): Promise<DashboardSt
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-  const { data: invoiceData } = await supabase
-    .from('invoices')
-    .select('amount, status')
-    .eq('landlord_id', landlordId)
-    .gte('due_date', monthStart)
-    .lte('due_date', monthEnd);
+  // Fetch both invoices and payments for this month
+  const [{ data: invoiceData }, { data: paymentData }] = await Promise.all([
+    supabase
+      .from('invoices')
+      .select('amount, status')
+      .eq('landlord_id', landlordId)
+      .gte('due_date', monthStart)
+      .lte('due_date', monthEnd),
+    supabase
+      .from('payments')
+      .select('amount, status')
+      .eq('landlord_id', landlordId)
+      .gte('payment_date', monthStart)
+      .lte('payment_date', monthEnd),
+  ]);
 
   const invoices = (invoiceData ?? []) as { amount: number; status: string }[];
+  const payments = (paymentData ?? []) as { amount: number; status: string }[];
+
   const expected = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const collected = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + inv.amount, 0);
-  const outstanding = expected - collected;
+  const invoiceCollected = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + inv.amount, 0);
+  const paymentCollected = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
+
+  // Use actual payments received as collected (most accurate),
+  // but at minimum use invoice-based collected (in case of data lag)
+  const collected = Math.max(invoiceCollected, paymentCollected);
+  const outstanding = Math.max(0, expected - collected);
   const overdue = invoices.filter(i => i.status === 'overdue').length;
 
   return { expected, collected, outstanding, overdue, tenantCount: tenantCount ?? 0 };
