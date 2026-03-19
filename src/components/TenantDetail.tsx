@@ -3,7 +3,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
-import { Phone, Mail, Loader2, Upload, FileText, Trash2, Download, Clock } from "lucide-react";
+import { Phone, Mail, Loader2, Upload, FileText, Trash2, Download, Clock, Eye, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { getPaymentsForTenant } from "@/services/payments";
 import { getInvoicesForTenant } from "@/services/invoices";
 import { uploadLeaseDocument, getDocumentsForTenant, deleteLeaseDocument } from "@/services/leaseDocuments";
@@ -60,6 +61,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
   const [uploading, setUploading] = useState(false);
   const [docType, setDocType] = useState<'lease' | 'addendum' | 'other'>('lease');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<LeaseDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load documents and invoices with late fees on mount
@@ -277,11 +279,19 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => setPreviewDoc(doc)}
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
+                    title="Preview"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
                   <a
                     href={doc.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
+                    title="Download"
                   >
                     <Download className="h-4 w-4" />
                   </a>
@@ -289,6 +299,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                     onClick={() => handleDelete(doc)}
                     disabled={deletingId === doc.id}
                     className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 disabled:opacity-50"
+                    title="Delete"
                   >
                     {deletingId === doc.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -359,6 +370,68 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
           )}
         </div>
       )}
+      {/* Document Preview Modal */}
+      <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+          {previewDoc && (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{previewDoc.file_name}</p>
+                  <p className="text-xs text-gray-500">
+                    {formatFileSize(previewDoc.file_size)} &middot; {formatDate(previewDoc.created_at)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={previewDoc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </a>
+                </div>
+              </div>
+              <div className="flex-1 bg-gray-50 overflow-auto" style={{ minHeight: '60vh' }}>
+                {previewDoc.file_type === 'application/pdf' ? (
+                  <iframe
+                    src={previewDoc.file_url}
+                    className="w-full h-full"
+                    style={{ minHeight: '60vh' }}
+                    title={previewDoc.file_name}
+                  />
+                ) : previewDoc.file_type.startsWith('image/') ? (
+                  <div className="flex items-center justify-center p-4 h-full">
+                    <img
+                      src={previewDoc.file_url}
+                      alt={previewDoc.file_name}
+                      className="max-w-full max-h-[70vh] rounded-lg object-contain shadow-sm"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-500 mb-4">
+                      Preview not available for this file type
+                    </p>
+                    <a
+                      href={previewDoc.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download to view
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
