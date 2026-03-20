@@ -399,7 +399,6 @@ export interface Database {
         };
         Relationships: [];
       };
-    };
       announcements: {
         Row: {
           id: string;
