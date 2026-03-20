@@ -41,7 +41,7 @@ export function AnnouncementBanner() {
       const unseen = data.find((a: any) => !dismissedIds.has(a.id));
 
       if (unseen) {
-        setAnnouncement(unseen as Announcement);
+        setAnnouncement(unseen as unknown as Announcement);
         setTimeout(() => setVisible(true), 600);
       }
     };
