@@ -71,7 +71,7 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex">
       {/* Left — Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-white">
+      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">
           <div className="mb-12">
             <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />

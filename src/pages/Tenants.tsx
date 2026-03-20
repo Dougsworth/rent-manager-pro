@@ -164,8 +164,8 @@ export default function Tenants() {
       />
 
       {/* Stat Cards */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
           label="Total Tenants"
           value={String(counts.all)}
@@ -214,7 +214,7 @@ export default function Tenants() {
         {/* Tenant List */}
         <div className={cn(
           "transition-all duration-300 min-w-0",
-          selectedTenant ? "w-[340px] flex-shrink-0" : "w-full"
+          selectedTenant ? "w-full lg:w-[340px] lg:flex-shrink-0" : "w-full"
         )}>
           {filteredTenants.length === 0 ? (
             <EmptyState

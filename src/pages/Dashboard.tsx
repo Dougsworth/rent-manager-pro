@@ -97,7 +97,7 @@ export default function Dashboard() {
         title={`${getGreeting()}, ${firstName}`}
         description={today}
         action={
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Collected</span>
             <div className="flex gap-0.5">
               {Array.from({ length: 20 }).map((_, i) => (
@@ -115,9 +115,9 @@ export default function Dashboard() {
       />
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 p-5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200 hover:-translate-y-0.5">
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200 hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full opacity-60" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
@@ -126,14 +126,14 @@ export default function Dashboard() {
                   <Receipt className="h-4 w-4 text-blue-500" />
                 </div>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">{formatCurrency(stats.expected)}</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900">{formatCurrency(stats.expected)}</p>
               <p className="text-xs font-medium text-slate-500 mt-1">{stats.tenantCount} tenants this month</p>
             </div>
           </div>
         </Link>
 
         <Link to="/payments" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 p-5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-200 hover:-translate-y-0.5">
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-200 hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full opacity-60" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
                 </div>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatCurrency(stats.collected)}</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{formatCurrency(stats.collected)}</p>
               <p className="text-xs font-medium text-emerald-500 mt-1">
                 {collectionPercentage > 0 ? `${collectionPercentage}% collected` : "No payments yet"}
               </p>
@@ -151,7 +151,7 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/invoices" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 p-5 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-200 hover:-translate-y-0.5">
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-200 hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 to-transparent rounded-bl-full opacity-60" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
@@ -160,7 +160,7 @@ export default function Dashboard() {
                   <Clock className="h-4 w-4 text-amber-500" />
                 </div>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-amber-600">{formatCurrency(stats.outstanding)}</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-amber-600">{formatCurrency(stats.outstanding)}</p>
               <p className="text-xs font-medium text-slate-500 mt-1">
                 {stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
               </p>
@@ -169,7 +169,7 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/60 p-5 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/5 hover:border-red-200 hover:-translate-y-0.5">
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/5 hover:border-red-200 hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-50 to-transparent rounded-bl-full opacity-60" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
@@ -190,7 +190,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="flex gap-3 mb-8">
+      <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
         <Link to="/invoices">
           <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
             <Receipt className="h-3.5 w-3.5 mr-1.5" />

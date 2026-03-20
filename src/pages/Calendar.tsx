@@ -257,7 +257,7 @@ export default function Calendar() {
           <div className="grid grid-cols-7">
             {/* Empty cells before first day */}
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} className="min-h-[80px] border-b border-r border-slate-50 bg-slate-25" />
+              <div key={`empty-${i}`} className="min-h-[52px] sm:min-h-[80px] border-b border-r border-slate-50 bg-slate-25" />
             ))}
 
             {/* Actual days */}
@@ -275,7 +275,7 @@ export default function Calendar() {
                 <div
                   key={dateKey}
                   onClick={() => setSelectedDay(events.length > 0 ? dateKey : null)}
-                  className={`min-h-[80px] border-b border-r border-slate-50 p-1.5 transition-colors duration-150 ${
+                  className={`min-h-[52px] sm:min-h-[80px] border-b border-r border-slate-50 p-1.5 transition-colors duration-150 ${
                     events.length > 0 ? "cursor-pointer hover:bg-slate-50" : ""
                   } ${isSelected ? "bg-slate-100 ring-1 ring-inset ring-slate-300" : ""}`}
                 >

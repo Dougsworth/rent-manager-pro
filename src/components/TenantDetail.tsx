@@ -281,7 +281,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => setPreviewDoc(doc)}
-                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
                     title="Preview"
                   >
                     <Eye className="h-4 w-4" />
@@ -290,7 +290,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                     href={doc.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100"
                     title="Download"
                   >
                     <Download className="h-4 w-4" />
@@ -298,7 +298,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
                   <button
                     onClick={() => handleDelete(doc)}
                     disabled={deletingId === doc.id}
-                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 disabled:opacity-50"
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 disabled:opacity-50"
                     title="Delete"
                   >
                     {deletingId === doc.id ? (
@@ -372,7 +372,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
       )}
       {/* Document Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] p-0 overflow-hidden">
           {previewDoc && (
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">

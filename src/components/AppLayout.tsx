@@ -200,7 +200,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Drawer */}
         <div
           className={cn(
-            "lg:hidden fixed left-0 top-0 h-full z-50 w-64 bg-white border-r border-slate-200/60 transition-transform duration-300 ease-in-out",
+            "lg:hidden fixed left-0 top-0 h-full z-50 w-[min(280px,85vw)] bg-white border-r border-slate-200/60 transition-transform duration-300 ease-in-out",
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -259,7 +259,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile Main Content — no sidebar offset */}
         <main className="lg:hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 page-enter" key={location.pathname}>
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 page-enter" key={location.pathname}>
             {children}
           </div>
         </main>

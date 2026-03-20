@@ -9,8 +9,8 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, count, action }: PageHeaderProps) {
   return (
-    <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="mb-4 sm:mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
             {title}

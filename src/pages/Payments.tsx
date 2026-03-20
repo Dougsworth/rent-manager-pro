@@ -349,7 +349,7 @@ export default function Payments() {
         <>
           {/* Stat Cards */}
           <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             <StatCard
               label="Total Collected"
               value={formatCurrency(totalCollected)}
