@@ -400,6 +400,53 @@ export interface Database {
         Relationships: [];
       };
     };
+      announcements: {
+        Row: {
+          id: string;
+          title: string;
+          message: string;
+          icon: string;
+          cta_text: string | null;
+          cta_link: string | null;
+          active: boolean;
+          created_at: string;
+          expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          message: string;
+          icon?: string;
+          cta_text?: string | null;
+          cta_link?: string | null;
+          active?: boolean;
+          expires_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          message?: string;
+          icon?: string;
+          active?: boolean;
+          expires_at?: string | null;
+        };
+        Relationships: [];
+      };
+      announcement_dismissals: {
+        Row: {
+          id: string;
+          announcement_id: string;
+          user_id: string;
+          dismissed_at: string;
+        };
+        Insert: {
+          id?: string;
+          announcement_id: string;
+          user_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+    };
     Views: Record<string, never>;
     Functions: {
       get_invoice_by_token: {

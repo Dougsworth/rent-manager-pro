@@ -22,7 +22,7 @@ export function AnnouncementBanner() {
 
     const load = async () => {
       const { data } = await supabase
-        .from('announcements' as any)
+        .from('announcements')
         .select('*')
         .eq('active', true)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
@@ -33,7 +33,7 @@ export function AnnouncementBanner() {
 
       const ids = data.map((a: any) => a.id);
       const { data: dismissals } = await supabase
-        .from('announcement_dismissals' as any)
+        .from('announcement_dismissals')
         .select('announcement_id')
         .eq('user_id', user.id)
         .in('announcement_id', ids);
@@ -42,7 +42,7 @@ export function AnnouncementBanner() {
       const unseen = data.find((a: any) => !dismissedIds.has(a.id));
 
       if (unseen) {
-        setAnnouncement(unseen as unknown as Announcement);
+        setAnnouncement(unseen as Announcement);
         setTimeout(() => setVisible(true), 600);
       }
     };
@@ -53,7 +53,7 @@ export function AnnouncementBanner() {
   const handleDismiss = async () => {
     setVisible(false);
     if (announcement && user) {
-      await supabase.from('announcement_dismissals' as any).insert({
+      await supabase.from('announcement_dismissals').insert({
         announcement_id: announcement.id,
         user_id: user.id,
       });
