@@ -132,30 +132,46 @@ export function PWAInstallPrompt() {
               </button>
             </div>
 
+            {/* Safari required notice */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-amber-800">
+                <span className="font-semibold">Must use Safari</span> — this won't work in Chrome or other browsers on iPhone.
+              </p>
+            </div>
+
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">1</div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Tap the Share button</p>
+                  <p className="text-sm font-medium text-slate-900">Open in Safari</p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    In Safari, tap <Share className="inline h-3.5 w-3.5 text-blue-500 -mt-0.5" /> at the bottom
+                    Go to <span className="font-medium text-blue-600">easycollectja.com</span> in Safari
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">2</div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Tap "Add to Home Screen"</p>
+                  <p className="text-sm font-medium text-slate-900">Tap the menu <span className="text-slate-400">(⋯)</span> or Share button</p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Look for <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700"><Plus className="h-3 w-3" /> Add to Home Screen</span>
+                    Tap <span className="font-mono font-bold text-slate-700">⋯</span> next to the address bar, or tap <Share className="inline h-3.5 w-3.5 text-blue-500 -mt-0.5" /> at the bottom
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">3</div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Tap "Add" to confirm</p>
-                  <p className="text-xs text-slate-500 mt-0.5">EasyCollect will appear on your home screen</p>
+                  <p className="text-sm font-medium text-slate-900">Tap "Add to Home Screen"</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Scroll down if needed — look for <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700"><Plus className="h-3 w-3" /> Add to Home Screen</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">4</div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Keep "Open as Web App" on, tap "Add"</p>
+                  <p className="text-xs text-slate-500 mt-0.5">EasyCollect will appear on your home screen and open like a native app</p>
                 </div>
               </div>
             </div>
