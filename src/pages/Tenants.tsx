@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AvatarInitial } from "@/components/ui/avatar-initial";
 import { StatCard } from "@/components/ui/stat-card";
-import { Search, Plus, Trash2, Users, X } from "lucide-react";
+import { Search, Plus, Trash2, Users, X, Edit2 } from "lucide-react";
 import { TenantsSkeleton } from "@/components/skeletons/TenantsSkeleton";
 import { useToast } from "@/components/ui/toast";
 import { AddTenantModal } from "@/components/AddTenantModal";
 import { TenantDetail } from "@/components/TenantDetail";
+import { EditTenantModal } from "@/components/EditTenantModal";
 import { Pagination, paginate } from '@/components/Pagination';
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function Tenants() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTenant, setSelectedTenant] = useState<TenantWithDetails | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<TenantWithDetails | null>(null);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -313,6 +315,10 @@ export default function Tenants() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setEditingTenant(selectedTenant)}>
+                    <Edit2 className="h-3.5 w-3.5 mr-1" />
+                    Edit
+                  </Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedTenant.id)}>
                     <Trash2 className="h-3.5 w-3.5 mr-1" />
                     Remove
@@ -348,6 +354,10 @@ export default function Tenants() {
               {selectedTenant.first_name} {selectedTenant.last_name}
             </h2>
             <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setEditingTenant(selectedTenant)}>
+                <Edit2 className="h-3.5 w-3.5 mr-1" />
+                Edit
+              </Button>
               <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedTenant.id)}>
                 <Trash2 className="h-3.5 w-3.5 mr-1" />
                 Remove
@@ -378,6 +388,18 @@ export default function Tenants() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           setShowAddModal(false);
+          loadTenants();
+        }}
+      />
+
+      {/* Edit Tenant Modal */}
+      <EditTenantModal
+        open={!!editingTenant}
+        tenant={editingTenant}
+        onClose={() => setEditingTenant(null)}
+        onSuccess={() => {
+          setEditingTenant(null);
+          setSelectedTenant(null);
           loadTenants();
         }}
       />

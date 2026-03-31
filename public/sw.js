@@ -1,6 +1,6 @@
 const CACHE_NAME = 'easycollect-v1';
 const STATIC_ASSETS = [
-  '/favicon.svg',
+  '/favicon.png',
   '/easycollect.png',
   '/icon-192.png',
   '/icon-maskable-192.png',

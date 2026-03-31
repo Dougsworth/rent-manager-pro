@@ -260,19 +260,20 @@ export default function Payments() {
                 <Label htmlFor="pay-invoice">Link to Invoice (optional)</Label>
                 <Select
                   id="pay-invoice"
-                  value={newPayment.invoice_id}
+                  value={newPayment.invoice_id || '__none__'}
                   onValueChange={(val) => {
-                    const inv = unpaidInvoices.find(i => i.id === val);
+                    const realVal = val === '__none__' ? '' : val;
+                    const inv = unpaidInvoices.find(i => i.id === realVal);
                     setNewPayment({
                       ...newPayment,
-                      invoice_id: val,
+                      invoice_id: realVal,
                       amount: inv ? inv.amount.toString() : newPayment.amount,
                     });
                   }}
                   placeholder="None"
                   className="mt-1"
                   options={[
-                    { value: '', label: 'None' },
+                    { value: '__none__', label: 'None' },
                     ...unpaidInvoices.map(i => ({
                       value: i.id,
                       label: `${i.invoice_number} — ${formatCurrency(i.amount)} (due ${i.due_date})`,

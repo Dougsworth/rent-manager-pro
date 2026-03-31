@@ -12,13 +12,35 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function LandingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Coin swap animation
+  const coinLetterOpacity = useRef(new Animated.Value(1)).current;
+  const coinIconOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = () => {
+      Animated.parallel([
+        Animated.timing(coinLetterOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(coinIconOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ]).start(() => {
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(coinLetterOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.timing(coinIconOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+          ]).start();
+        }, 2000);
+      });
+    };
+    const interval = setInterval(animate, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Staggered fade-in animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -95,11 +117,33 @@ export default function LandingScreen() {
               { opacity: logoOpacity, transform: [{ translateY: logoTranslate }] },
             ]}
           >
-            <Image
-              source={require("../../assets/logo.png")}
-              style={[styles.logo, { width: logoSize, height: logoSize }]}
-              resizeMode="contain"
-            />
+            {(() => {
+              const fontSize = isSmallScreen ? 28 : isMediumScreen ? 34 : 40;
+              const coinSize = fontSize * 0.78;
+              return (
+                <View style={styles.brandRow}>
+                  <Text style={[styles.brandText, { fontSize }]}>EasyC</Text>
+                  <View style={{ width: coinSize, height: fontSize, justifyContent: "center", alignItems: "center" }}>
+                    <Animated.Text style={[styles.brandText, { fontSize, opacity: coinLetterOpacity, position: "absolute" }]}>
+                      o
+                    </Animated.Text>
+                    <Animated.View style={{ opacity: coinIconOpacity, position: "absolute" }}>
+                      <Svg width={coinSize} height={coinSize} viewBox="0 0 100 100" fill="none">
+                        <Circle cx="50" cy="50" r="44" stroke="#ffffff" strokeWidth="6" />
+                        <Path
+                          d="M50 24v4m0 44v4M39 57c0 5 4.9 9 11 9s11-4 11-9-4.9-7.5-11-7.5S39 45 39 40s4.9-9 11-9 11 4 11 9"
+                          stroke="#ffffff"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    </Animated.View>
+                  </View>
+                  <Text style={[styles.brandText, { fontSize }]}>llect</Text>
+                </View>
+              );
+            })()}
           </Animated.View>
 
           {/* Flexible spacer */}
@@ -210,8 +254,14 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
   },
-  logo: {
-    borderRadius: 20,
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  brandText: {
+    color: "#ffffff",
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   textContent: {
     paddingHorizontal: 32,
