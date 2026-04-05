@@ -2,9 +2,7 @@
   "rewrites": [
     { "source": "/((?!googledbadba89a1309f9c\\.html|sitemap\\.xml|robots\\.txt).*)", "destination": "/index.html" }
   ],
-  "redirects": [
-    { "source": "/", "destination": "/dashboard", "permanent": false }
-  ],
+  "redirects": [],
   "headers": [
     {
       "source": "/sw.js",
