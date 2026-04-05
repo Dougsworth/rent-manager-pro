@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/80">
+      <SEO
+        title="Privacy Policy"
+        description="EasyCollect privacy policy — how we collect, use, and protect your data. Your privacy matters."
+        path="/privacy"
+      />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '@/components/SEO';
 import BrandLogo from '@/components/BrandLogo';
 import {
   Building2,
@@ -367,6 +368,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white text-black antialiased">
+      <SEO
+        title="Rent Collection Made Easy for Jamaican Landlords"
+        description="Jamaica's #1 rent collection platform. Send invoices, track payments, automate reminders, and manage tenants and properties — all in one place. Start free today."
+        keywords="rent collection Jamaica, collect rent online, Jamaican landlord software, rent management, tenant management, invoice tenants, rent payment app, property management Jamaica, EasyCollect, easy rent collect, easycollectja, landlord app Jamaica, rental property management, rent tracker, online rent payment Jamaica"
+        path="/"
+      />
       {/* ═══ HEADER ═══ */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-lg border-b border-neutral-200/50 shadow-sm' : 'bg-transparent'}`}>
         <div className="transition-all duration-500 max-w-7xl mx-auto py-3 sm:py-5 px-4 sm:px-6">

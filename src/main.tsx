@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import * as Sentry from '@sentry/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './components/ui/toast';
@@ -39,13 +40,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </div>
       </div>
     }>
-      <BrowserRouter>
-        <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <HelmetProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </HelmetProvider>
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 );

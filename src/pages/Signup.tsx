@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff, Loader2, ArrowRight, Mail } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function Signup() {
   const { signUp, signInWithGoogle } = useAuth();
@@ -70,6 +71,12 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Sign Up Free"
+        description="Create your free EasyCollect account and start collecting rent online. Built for Jamaican landlords — manage tenants, send invoices, and track payments."
+        keywords="sign up EasyCollect, free landlord software Jamaica, rent collection registration, create account"
+        path="/signup"
+      />
       {/* Left — Form */}
       <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -38,6 +39,11 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Forgot Password"
+        description="Reset your EasyCollect password. We'll send you a link to get back into your account."
+        path="/forgot-password"
+      />
       {/* Left — Form */}
       <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">

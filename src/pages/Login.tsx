@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function Login() {
   const { signIn, signInWithGoogle } = useAuth();
@@ -36,6 +37,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Log In"
+        description="Sign in to your EasyCollect account. Manage your rental properties, tenants, and payments in Jamaica."
+        keywords="EasyCollect login, landlord login Jamaica, rent collection login"
+        path="/login"
+      />
       {/* Left — Form */}
       <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">

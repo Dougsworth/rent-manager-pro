@@ -3,10 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function EmailVerified() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/80 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <SEO title="Email Verified" description="Your email has been verified. You can now sign in to EasyCollect." path="/email-verified" />
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
         <div className="flex justify-center mb-8">
           <Link to="/">

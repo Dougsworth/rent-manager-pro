@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import SEO from '@/components/SEO';
 
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/80">
+      <SEO
+        title="Terms of Service"
+        description="EasyCollect terms of service — the terms and conditions for using our rent collection platform."
+        path="/terms"
+      />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6">
