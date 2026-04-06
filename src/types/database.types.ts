@@ -319,7 +319,7 @@ export interface Database {
         Row: {
           id: string;
           landlord_id: string;
-          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system';
+          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system' | 'loan_payment_received' | 'loan_overdue';
           title: string;
           message: string;
           related_entity_id: string | null;
@@ -329,7 +329,7 @@ export interface Database {
         Insert: {
           id?: string;
           landlord_id: string;
-          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system';
+          type: 'payment_received' | 'payment_overdue' | 'invoice_created' | 'proof_submitted' | 'proof_approved' | 'proof_rejected' | 'tenant_added' | 'lease_expiring' | 'late_fee_applied' | 'system' | 'loan_payment_received' | 'loan_overdue';
           title: string;
           message: string;
           related_entity_id?: string | null;
@@ -427,6 +427,148 @@ export interface Database {
           icon?: string;
           active?: boolean;
           expires_at?: string | null;
+        };
+        Relationships: [];
+      };
+      borrowers: {
+        Row: {
+          id: string;
+          landlord_id: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          phone: string;
+          notes: string;
+          status: 'active' | 'inactive';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          landlord_id: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+          phone?: string;
+          notes?: string;
+          status?: 'active' | 'inactive';
+        };
+        Update: {
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+          phone?: string;
+          notes?: string;
+          status?: 'active' | 'inactive';
+        };
+        Relationships: [];
+      };
+      loans: {
+        Row: {
+          id: string;
+          loan_number: string;
+          landlord_id: string;
+          borrower_id: string;
+          principal: number;
+          interest_rate: number;
+          term_months: number;
+          monthly_installment: number;
+          start_date: string;
+          end_date: string;
+          total_paid: number;
+          status: 'active' | 'paid_off' | 'defaulted';
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          loan_number?: string;
+          landlord_id: string;
+          borrower_id: string;
+          principal: number;
+          interest_rate?: number;
+          term_months: number;
+          monthly_installment: number;
+          start_date?: string;
+          end_date: string;
+          total_paid?: number;
+          status?: 'active' | 'paid_off' | 'defaulted';
+          notes?: string;
+        };
+        Update: {
+          principal?: number;
+          interest_rate?: number;
+          term_months?: number;
+          monthly_installment?: number;
+          start_date?: string;
+          end_date?: string;
+          total_paid?: number;
+          status?: 'active' | 'paid_off' | 'defaulted';
+          notes?: string;
+        };
+        Relationships: [];
+      };
+      loan_installments: {
+        Row: {
+          id: string;
+          loan_id: string;
+          landlord_id: string;
+          installment_number: number;
+          amount: number;
+          due_date: string;
+          status: 'paid' | 'pending' | 'overdue';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          loan_id: string;
+          landlord_id: string;
+          installment_number: number;
+          amount: number;
+          due_date: string;
+          status?: 'paid' | 'pending' | 'overdue';
+        };
+        Update: {
+          amount?: number;
+          due_date?: string;
+          status?: 'paid' | 'pending' | 'overdue';
+        };
+        Relationships: [];
+      };
+      loan_payments: {
+        Row: {
+          id: string;
+          payment_number: string;
+          loan_id: string;
+          installment_id: string | null;
+          landlord_id: string;
+          amount: number;
+          payment_date: string;
+          method: 'bank_transfer' | 'card' | 'cash' | 'other';
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          payment_number?: string;
+          loan_id: string;
+          installment_id?: string | null;
+          landlord_id: string;
+          amount: number;
+          payment_date?: string;
+          method?: 'bank_transfer' | 'card' | 'cash' | 'other';
+          notes?: string;
+        };
+        Update: {
+          loan_id?: string;
+          installment_id?: string | null;
+          amount?: number;
+          payment_date?: string;
+          method?: 'bank_transfer' | 'card' | 'cash' | 'other';
+          notes?: string;
         };
         Relationships: [];
       };

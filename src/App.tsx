@@ -24,6 +24,8 @@ import EmailVerified from './pages/EmailVerified';
 import Notifications from './pages/Notifications';
 import ActivityLog from './pages/ActivityLog';
 import Calendar from './pages/Calendar';
+import Loans from './pages/Loans';
+import Borrowers from './pages/Borrowers';
 
 function App() {
   // Public payment route — no auth required
@@ -97,6 +99,8 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/activity-log" element={<ActivityLog />} />
+        <Route path="/loans" element={<Loans />} />
+        <Route path="/borrowers" element={<Borrowers />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/receipt/:id" element={<Receipt />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

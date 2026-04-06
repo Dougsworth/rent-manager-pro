@@ -15,13 +15,20 @@ export type RecurringInvoiceSettings = Database['public']['Tables']['recurring_i
 
 export type NotificationType = Notification['type'];
 export type ActivityLog = Database['public']['Tables']['activity_logs']['Row'];
+export type Borrower = Database['public']['Tables']['borrowers']['Row'];
+export type Loan = Database['public']['Tables']['loans']['Row'];
+export type LoanInstallment = Database['public']['Tables']['loan_installments']['Row'];
+export type LoanPayment = Database['public']['Tables']['loan_payments']['Row'];
+
 export type ActivityLogAction =
   | 'invoice_created' | 'invoice_bulk_created' | 'invoice_updated'
   | 'payment_created'
   | 'tenant_added' | 'tenant_updated' | 'tenant_deleted'
   | 'proof_submitted' | 'proof_approved' | 'proof_rejected'
   | 'property_created' | 'property_updated' | 'property_deleted'
-  | 'unit_created' | 'unit_updated' | 'unit_deleted';
+  | 'unit_created' | 'unit_updated' | 'unit_deleted'
+  | 'loan_created' | 'loan_updated' | 'loan_payment_created'
+  | 'borrower_added' | 'borrower_updated' | 'borrower_deleted';
 
 export interface PaymentProofWithDetails extends PaymentProof {
   tenant_first_name: string;
@@ -51,6 +58,25 @@ export interface PaymentWithDetails extends Payment {
   property_name: string;
   unit_name: string;
   invoice_number: string | null;
+}
+
+export interface LoanWithBorrower extends Loan {
+  borrower_first_name: string;
+  borrower_last_name: string;
+}
+
+export interface LoanPaymentWithDetails extends LoanPayment {
+  borrower_first_name: string;
+  borrower_last_name: string;
+  loan_number: string;
+}
+
+export interface LoanDashboardStats {
+  totalLent: number;
+  totalCollected: number;
+  totalOutstanding: number;
+  activeLoanCount: number;
+  overdueInstallments: number;
 }
 
 export interface DashboardStats {

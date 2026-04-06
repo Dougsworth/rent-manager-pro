@@ -158,10 +158,12 @@ export default function Tenants() {
         description="Manage your tenants and track payments"
         count={tenants.length}
         action={
-          <Button type="button" onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" />
-            Add Tenant
-          </Button>
+          tenants.length > 0 ? (
+            <Button type="button" onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4" />
+              Add Tenant
+            </Button>
+          ) : undefined
         }
       />
 

@@ -12,3 +12,5 @@ export {
 export { createPropertySchema, createUnitSchema } from './property';
 export { lateFeeSettingsSchema } from './lateFees';
 export { recurringInvoiceSettingsSchema } from './recurringInvoices';
+export { addBorrowerSchema, updateBorrowerSchema } from './borrower';
+export { createLoanSchema, createLoanPaymentSchema } from './loan';

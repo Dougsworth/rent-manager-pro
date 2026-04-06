@@ -11,6 +11,8 @@ import {
   Settings,
   ClipboardList,
   CalendarDays,
+  Landmark,
+  UserCheck,
   Menu,
   X,
   LogOut
@@ -34,6 +36,8 @@ const navigation = [
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Loans", href: "/loans", icon: Landmark },
+  { name: "Borrowers", href: "/borrowers", icon: UserCheck },
   { name: "Calendar", href: "/calendar", icon: CalendarDays },
   { name: "Activity Log", href: "/activity-log", icon: ClipboardList },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -71,10 +75,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           {/* Logo + Notification Bell */}
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-visible">
-            <Link to="/dashboard" className="flex items-center gap-2 tracking-tight min-w-0">
-              <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8 flex-shrink-0" />
-              {sidebarHovered && (
+            <Link to="/dashboard" className="flex items-center tracking-tight min-w-0">
+              {sidebarHovered ? (
                 <span className="text-base font-bold text-slate-900 whitespace-nowrap">EasyCollect</span>
+              ) : (
+                <span className="text-base font-bold text-slate-900 flex-shrink-0">EC</span>
               )}
             </Link>
             {sidebarHovered && <NotificationBell />}
@@ -162,8 +167,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="lg:hidden bg-white border-b border-slate-200/60 sticky top-0 z-30">
           <div className="px-4">
             <div className="flex justify-between h-14 items-center">
-              <Link to="/dashboard" className="flex items-center gap-2 tracking-tight">
-                <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8" />
+              <Link to="/dashboard" className="tracking-tight">
                 <span className="text-base font-bold text-slate-900">EasyCollect</span>
               </Link>
               <div className="flex items-center gap-1">
@@ -202,8 +206,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60">
-            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 tracking-tight">
-              <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8" />
+            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="tracking-tight">
               <span className="text-base font-bold text-slate-900">EasyCollect</span>
             </Link>
             <button

@@ -361,9 +361,9 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white text-black antialiased">
       <SEO
-        title="Rent Collection Made Easy for Jamaican Landlords"
-        description="Jamaica's #1 rent collection platform. Send invoices, track payments, automate reminders, and manage tenants and properties — all in one place. Start free today."
-        keywords="rent collection Jamaica, collect rent online, Jamaican landlord software, rent management, tenant management, invoice tenants, rent payment app, property management Jamaica, EasyCollect, easy rent collect, easycollectja, landlord app Jamaica, rental property management, rent tracker, online rent payment Jamaica"
+        title="Rent Collection & Loan Tracking Made Easy for Jamaicans"
+        description="Jamaica's #1 collection platform. Track rent and personal loans, send invoices, automate reminders, and manage borrowers — all in one place. Start free today."
+        keywords="rent collection Jamaica, collect rent online, Jamaican landlord software, rent management, tenant management, invoice tenants, rent payment app, property management Jamaica, EasyCollect, easy rent collect, easycollectja, landlord app Jamaica, rental property management, rent tracker, online rent payment Jamaica, loan tracking Jamaica, personal loan management, track money lent"
         path="/"
       />
       {/* ═══ HEADER ═══ */}
@@ -731,7 +731,7 @@ export default function Landing() {
                   Everything You Need To Get Paid
                 </h2>
                 <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-                  Send invoices, track payments, automate reminders, and manage your entire rent collection from one simple dashboard.
+                  Send invoices, track rent and loan payments, automate reminders, and manage your entire collection from one simple dashboard.
                 </p>
               </div>
             </Reveal>
@@ -1145,7 +1145,7 @@ export default function Landing() {
                     <p className="text-sm text-neutral-500 mt-3">Perfect for landlords just getting started with a few tenants.</p>
                   </div>
                   <div className="space-y-3 mb-8 flex-1">
-                    {['Up to 5 tenants', 'Up to 2 properties', 'Invoice generation', 'Payment links', 'Proof upload & review', 'Email reminders', 'Dashboard & reports'].map((f) => (
+                    {['Up to 5 tenants', 'Up to 2 properties', 'Invoice generation', 'Loan tracking', 'Payment links', 'Proof upload & review', 'Email reminders', 'Dashboard & reports'].map((f) => (
                       <div key={f} className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
                           <Check className="w-3 h-3 text-neutral-600" strokeWidth={3} />
@@ -1173,15 +1173,15 @@ export default function Landing() {
                       <span className="text-4xl sm:text-5xl font-bold text-neutral-900">J$3,500</span>
                       <span className="text-neutral-400 text-sm">/month</span>
                     </div>
-                    <p className="text-sm text-neutral-500 mt-3">For growing landlords who need unlimited power and premium features.</p>
+                    <p className="text-sm text-neutral-500 mt-3">For growing landlords and lenders who need unlimited power and premium features.</p>
                   </div>
                   <div className="space-y-3 mb-8 flex-1">
-                    {['Unlimited tenants', 'Unlimited properties', 'Everything in Free, plus:', 'Auto-reminders (daily)', 'CSV export', 'Receipt generation', 'Priority support', 'Custom branding', 'Team members'].map((f, i) => (
-                      <div key={f} className={`flex items-center gap-3 ${i === 2 ? 'pt-2 mt-2 border-t border-neutral-100' : ''}`}>
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${i === 2 ? 'bg-transparent' : 'bg-blue-50'}`}>
-                          {i === 2 ? null : <Check className="w-3 h-3 text-blue-600" strokeWidth={3} />}
+                    {['Unlimited tenants', 'Unlimited properties', 'Unlimited loans', 'Everything in Free, plus:', 'Auto-reminders (daily)', 'CSV export', 'Receipt generation', 'Priority support', 'Custom branding', 'Team members'].map((f, i) => (
+                      <div key={f} className={`flex items-center gap-3 ${i === 3 ? 'pt-2 mt-2 border-t border-neutral-100' : ''}`}>
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${i === 3 ? 'bg-transparent' : 'bg-blue-50'}`}>
+                          {i === 3 ? null : <Check className="w-3 h-3 text-blue-600" strokeWidth={3} />}
                         </div>
-                        <span className={`text-sm ${i === 2 ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>{f}</span>
+                        <span className={`text-sm ${i === 3 ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>{f}</span>
                       </div>
                     ))}
                   </div>
@@ -1445,7 +1445,7 @@ export default function Landing() {
                   <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.8)" />
                 </div>
                 <p className="text-sm text-white/60 mb-6">
-                  Collect rent simply.<br />Get paid on time.
+                  Track rent & loans simply.<br />Get paid on time.
                 </p>
                 <p className="text-xs text-white/40">&copy; {new Date().getFullYear()} EasyCollect</p>
               </div>
@@ -1486,7 +1486,7 @@ export default function Landing() {
 
             <div className="max-w-3xl mx-auto text-center mb-8">
               <p className="text-sm text-white/60 leading-relaxed">
-                <span className="text-blue-400 font-semibold">EasyCollect</span> was created to simplify rent collection for landlords and property managers across Jamaica. Our mission is to remove the friction from getting paid — making it simple to send invoices, receive proof of payment, and track your rental income.
+                <span className="text-blue-400 font-semibold">EasyCollect</span> was created to simplify rent collection and loan tracking for landlords, property managers, and lenders across Jamaica. Our mission is to remove the friction from getting paid — making it simple to send invoices, manage loans, receive proof of payment, and track your income.
               </p>
             </div>
           </div>
