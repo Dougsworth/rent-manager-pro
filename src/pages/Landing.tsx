@@ -358,14 +358,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function Landing() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-white text-black antialiased">
       <SEO
@@ -375,7 +367,7 @@ export default function Landing() {
         path="/"
       />
       {/* ═══ HEADER ═══ */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-lg border-b border-neutral-200/50 shadow-sm' : 'bg-transparent'}`}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-200/50 shadow-sm">
         <div className="transition-all duration-500 max-w-7xl mx-auto py-3 sm:py-5 px-4 sm:px-6">
           <div className="relative flex items-center justify-between">
             <Link to="/" className="flex items-center flex-shrink-0 relative z-10">

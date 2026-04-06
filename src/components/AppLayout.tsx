@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import BrandLogo, { CoinSvg } from "@/components/BrandLogo";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -73,12 +72,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Logo + Notification Bell */}
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-visible">
             <Link to="/dashboard" className="flex items-center gap-2 tracking-tight min-w-0">
-              {sidebarHovered ? (
-                <BrandLogo className="text-base font-bold text-slate-900 whitespace-nowrap" />
-              ) : (
-                <span className="text-xl text-slate-900 flex-shrink-0">
-                  <CoinSvg />
-                </span>
+              <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8 flex-shrink-0" />
+              {sidebarHovered && (
+                <span className="text-base font-bold text-slate-900 whitespace-nowrap">EasyCollect</span>
               )}
             </Link>
             {sidebarHovered && <NotificationBell />}
@@ -166,8 +162,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="lg:hidden bg-white border-b border-slate-200/60 sticky top-0 z-30">
           <div className="px-4">
             <div className="flex justify-between h-14 items-center">
-              <Link to="/dashboard" className="tracking-tight">
-                <BrandLogo className="text-base font-bold text-slate-900" />
+              <Link to="/dashboard" className="flex items-center gap-2 tracking-tight">
+                <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8" />
+                <span className="text-base font-bold text-slate-900">EasyCollect</span>
               </Link>
               <div className="flex items-center gap-1">
                 <NotificationBell />
@@ -205,8 +202,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60">
-            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="tracking-tight">
-              <BrandLogo className="text-base font-bold text-slate-900" />
+            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 tracking-tight">
+              <img src="/easycollectlogoimage.png" alt="EasyCollect" className="h-8 w-8" />
+              <span className="text-base font-bold text-slate-900">EasyCollect</span>
             </Link>
             <button
               onClick={() => setMobileMenuOpen(false)}
