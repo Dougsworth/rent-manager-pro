@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Printer, Download, Calendar, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
+import { ReceiptDownloadDialog } from '@/components/ReceiptDownloadDialog';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -42,6 +43,7 @@ export default function Receipt() {
     load();
   }, [id]);
 
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const handlePrint = () => window.print();
 
   if (loading) {
@@ -78,7 +80,7 @@ export default function Receipt() {
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
-            <Button variant="outline" onClick={handlePrint}>
+            <Button variant="outline" onClick={() => setDownloadOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>
@@ -195,6 +197,13 @@ export default function Receipt() {
           </CardContent>
         </Card>
       </div>
+
+      <ReceiptDownloadDialog
+        open={downloadOpen}
+        onOpenChange={setDownloadOpen}
+        payment={payment}
+        profile={profile}
+      />
     </div>
   );
 }
