@@ -82,7 +82,7 @@ export default function PublicPayment() {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const res = await fetch(`${supabaseUrl}/functions/v1/handypay-checkout`, {
+      const res = await fetch(`${supabaseUrl}/functions/v1/lunipay-checkout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${anonKey}`,

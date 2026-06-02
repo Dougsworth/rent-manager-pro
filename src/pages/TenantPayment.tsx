@@ -119,7 +119,7 @@ export default function TenantPayment() {
   const handlePayOnline = async (invoiceId: string) => {
     setCheckingOutFor(invoiceId);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('handypay-checkout', {
+      const { data, error: fnError } = await supabase.functions.invoke('lunipay-checkout', {
         body: { invoice_id: invoiceId },
       });
       if (fnError) throw fnError;
