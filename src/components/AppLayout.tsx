@@ -25,6 +25,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { AnnouncementBanner } from "@/components/AnnouncementPopup";
 import { SetupGuide } from "@/components/SetupGuide";
 import { NotificationBell } from "@/components/NotificationBell";
+import BrandLogo, { CoinSvg } from "@/components/BrandLogo";
 
 const SIDEBAR_COLLAPSED = 64;   // px
 const SIDEBAR_EXPANDED = 220;   // px
@@ -78,11 +79,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link to="/dashboard" className="flex items-center tracking-tight min-w-0">
               {sidebarHovered ? (
                 <span className="flex flex-col leading-tight min-w-0">
-                  <span className="text-base font-bold text-slate-900 whitespace-nowrap">EasyCollect</span>
+                  <BrandLogo className="text-base font-bold text-slate-900 whitespace-nowrap" />
                   <span className="text-[10px] text-slate-400 whitespace-nowrap">Collect anything, easily</span>
                 </span>
               ) : (
-                <span className="text-base font-bold text-slate-900 flex-shrink-0">EC</span>
+                <span className="text-xl text-slate-900 flex-shrink-0">
+                  <CoinSvg />
+                </span>
               )}
             </Link>
             {sidebarHovered && <NotificationBell />}
@@ -171,7 +174,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="px-4">
             <div className="flex justify-between h-14 items-center">
               <Link to="/dashboard" className="tracking-tight flex flex-col leading-tight">
-                <span className="text-base font-bold text-slate-900">EasyCollect</span>
+                <BrandLogo className="text-base font-bold text-slate-900" />
                 <span className="text-[10px] text-slate-400">Collect anything, easily</span>
               </Link>
               <div className="flex items-center gap-1">
@@ -211,7 +214,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60">
             <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="tracking-tight flex flex-col leading-tight">
-              <span className="text-base font-bold text-slate-900">EasyCollect</span>
+              <BrandLogo className="text-base font-bold text-slate-900" />
               <span className="text-[10px] text-slate-400">Collect anything, easily</span>
             </Link>
             <button
