@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Printer, Download, Calendar, Loader2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
-import { ReceiptDownloadDialog } from '@/components/ReceiptDownloadDialog';
+import { generateReceiptPdf } from '@/utils/generateReceiptPdf';
+import { toast } from 'sonner';
 
 function formatCurrency(amount: number): string {
   return `J$${amount.toLocaleString()}`;
@@ -43,8 +44,20 @@ export default function Receipt() {
     load();
   }, [id]);
 
-  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const handlePrint = () => window.print();
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await generateReceiptPdf({ payment, profile });
+    } catch (err) {
+      console.error('Receipt PDF download failed', err);
+      toast.error('Could not generate the PDF. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -80,8 +93,12 @@ export default function Receipt() {
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
-            <Button variant="outline" onClick={() => setDownloadOpen(true)}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={handleDownload} disabled={downloading}>
+              {downloading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
               Download PDF
             </Button>
           </div>
@@ -197,13 +214,6 @@ export default function Receipt() {
           </CardContent>
         </Card>
       </div>
-
-      <ReceiptDownloadDialog
-        open={downloadOpen}
-        onOpenChange={setDownloadOpen}
-        payment={payment}
-        profile={profile}
-      />
     </div>
   );
 }
