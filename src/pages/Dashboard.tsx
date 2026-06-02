@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
-import { getLoanStats } from '@/services/loans';
+import { getLoanStats, getOverdueLoans } from '@/services/loans';
+import type { OverdueLoan } from '@/services/loans';
+import { getLoanPayments } from '@/services/loanPayments';
 import { sendReminder } from '@/services/reminders';
-import type { DashboardStats, PaymentWithDetails, LoanDashboardStats } from '@/types/app.types';
+import type { DashboardStats, PaymentWithDetails, LoanDashboardStats, LoanPaymentWithDetails } from '@/types/app.types';
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,8 @@ export default function Dashboard() {
   const [loanStats, setLoanStats] = useState<LoanDashboardStats>({ totalLent: 0, totalCollected: 0, totalOutstanding: 0, activeLoanCount: 0, overdueInstallments: 0 });
   const [recentPayments, setRecentPayments] = useState<PaymentWithDetails[]>([]);
   const [overdueTenants, setOverdueTenants] = useState<{ id: string; tenant_id: string; invoice_id: string; name: string; unit: string; amount: number; daysOverdue: number }[]>([]);
+  const [recentLoanPayments, setRecentLoanPayments] = useState<LoanPaymentWithDetails[]>([]);
+  const [overdueLoans, setOverdueLoans] = useState<OverdueLoan[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
@@ -50,16 +54,20 @@ export default function Dashboard() {
     if (!user) return;
     const load = async () => {
       try {
-        const [s, p, o, ls] = await Promise.all([
+        const [s, p, o, ls, lp, ol] = await Promise.all([
           getDashboardStats(user.id),
           getRecentPayments(user.id),
           getOverdueTenants(user.id),
           getLoanStats(user.id),
+          getLoanPayments(user.id).catch(() => []),
+          getOverdueLoans(user.id).catch(() => []),
         ]);
         setStats(s);
         setRecentPayments(p);
         setOverdueTenants(o);
         setLoanStats(ls);
+        setRecentLoanPayments(lp);
+        setOverdueLoans(ol);
       } catch (err) {
         console.error('Failed to load dashboard:', err);
       } finally {
@@ -409,6 +417,110 @@ export default function Dashboard() {
                 {loanStats.overdueInstallments > 0 ? `installment${loanStats.overdueInstallments !== 1 ? 's' : ''} overdue` : 'No overdue'}
               </p>
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Loan activity: recent loan payments + overdue borrowers */}
+      {showLoans && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Recent Loan Payments */}
+          <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Recent Loan Payments</h2>
+              {recentLoanPayments.length > 0 && (
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Last 5</span>
+              )}
+            </div>
+            <div className="p-6">
+              {recentLoanPayments.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 p-4 inline-block mb-3">
+                    <Landmark className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <p className="text-sm text-slate-400">No loan payments yet</p>
+                  <p className="text-xs text-slate-300 mt-1">Repayments will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentLoanPayments.slice(0, 5).map((p) => (
+                    <div key={p.id} className="flex items-center gap-3 group">
+                      <div className="w-9 h-9 rounded-full bg-violet-50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 transition-colors">
+                        <Landmark className="h-4 w-4 text-violet-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-slate-900">
+                          <span className="font-medium">{p.borrower_first_name} {p.borrower_last_name}</span>
+                        </p>
+                        <p className="text-xs text-slate-400">{formatCurrency(p.amount)} · {p.loan_number}</p>
+                      </div>
+                      <span className="text-[11px] text-slate-300 font-medium shrink-0">{timeAgo(p.payment_date)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {recentLoanPayments.length > 0 && (
+              <div className="px-6 py-3 border-t border-slate-100/60 bg-slate-50/30">
+                <Link to="/loans" className="text-sm font-medium text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
+                  View all loans
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Overdue Loans */}
+          <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Overdue Loans</h2>
+              {overdueLoans.length > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  {overdueLoans.length} overdue
+                </span>
+              )}
+            </div>
+            <div className="p-6">
+              {overdueLoans.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 p-4 inline-block mb-3">
+                    <AlertTriangle className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <p className="text-sm text-slate-400">All loans on track</p>
+                  <p className="text-xs text-slate-300 mt-1">No overdue installments</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {overdueLoans.map((l) => (
+                    <Link key={l.loan_id} to="/loans" className="block p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-white transition-all duration-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-red-500">
+                              {l.borrower_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">{l.borrower_name}</p>
+                            <p className="text-xs text-slate-400">{l.loan_number} · {formatCurrency(l.amount)}{l.count > 1 ? ` · ${l.count} installments` : ''}</p>
+                          </div>
+                        </div>
+                        <StatusBadge variant="overdue">{l.daysOverdue}d late</StatusBadge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            {overdueLoans.length > 0 && (
+              <div className="px-6 py-3 border-t border-slate-100/60 bg-slate-50/30">
+                <Link to="/loans" className="text-sm font-medium text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
+                  View all
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

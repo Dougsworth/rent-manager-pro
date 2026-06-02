@@ -235,6 +235,54 @@ export async function getLoanInstallments(loanId: string): Promise<LoanInstallme
   return (data ?? []) as LoanInstallment[];
 }
 
+export type OverdueLoan = {
+  loan_id: string;
+  loan_number: string;
+  borrower_name: string;
+  amount: number;        // total overdue across this loan's installments
+  count: number;         // number of overdue installments
+  daysOverdue: number;   // days since the oldest overdue installment
+};
+
+// Borrowers with past-due installments, aggregated per loan, worst first.
+export async function getOverdueLoans(landlordId: string): Promise<OverdueLoan[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase
+    .from('loan_installments')
+    .select('amount, due_date, loan_id, loans(loan_number, borrowers(first_name, last_name))')
+    .eq('landlord_id', landlordId)
+    .in('status', ['pending', 'overdue'])
+    .lt('due_date', today)
+    .order('due_date', { ascending: true });
+
+  if (error) throw error;
+
+  const now = new Date(today).getTime();
+  const byLoan = new Map<string, OverdueLoan>();
+  for (const row of (data ?? []) as any[]) {
+    const loan = row.loans;
+    const borrower = loan?.borrowers;
+    const name = borrower ? `${borrower.first_name} ${borrower.last_name}`.trim() : 'Unknown';
+    const days = Math.floor((now - new Date(row.due_date).getTime()) / 86400000);
+    const existing = byLoan.get(row.loan_id);
+    if (existing) {
+      existing.amount += row.amount;
+      existing.count += 1;
+      existing.daysOverdue = Math.max(existing.daysOverdue, days);
+    } else {
+      byLoan.set(row.loan_id, {
+        loan_id: row.loan_id,
+        loan_number: loan?.loan_number ?? '',
+        borrower_name: name,
+        amount: row.amount,
+        count: 1,
+        daysOverdue: days,
+      });
+    }
+  }
+  return Array.from(byLoan.values()).sort((a, b) => b.daysOverdue - a.daysOverdue);
+}
+
 export async function getLoanStats(landlordId: string): Promise<LoanDashboardStats> {
   const { data: loans, error } = await supabase
     .from('loans')
