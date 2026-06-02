@@ -17,10 +17,27 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-// Register service worker for PWA
+// Register service worker for PWA, and auto-reload when a new version deploys.
 if ('serviceWorker' in navigator) {
+  // Was this page already controlled by a SW at load? If so, a later
+  // controllerchange means a NEW version took over → reload to get fresh assets.
+  // (On a first-ever visit there's no controller, so we don't reload.)
+  const hadControllerAtLoad = navigator.serviceWorker.controller != null;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading || !hadControllerAtLoad) return;
+    reloading = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        // Poll for a new service worker so open tabs pick up deploys promptly.
+        setInterval(() => reg.update().catch(() => {}), 60_000);
+      })
+      .catch(() => {});
   });
 }
 

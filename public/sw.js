@@ -1,4 +1,4 @@
-const CACHE_NAME = 'easycollect-v1';
+const CACHE_NAME = 'easycollect-v2';
 const STATIC_ASSETS = [
   '/favicon.png',
   '/easycollect.png',
