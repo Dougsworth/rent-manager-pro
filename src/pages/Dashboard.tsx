@@ -90,6 +90,17 @@ export default function Dashboard() {
     ? Math.round((stats.collected / stats.expected) * 100)
     : 0;
 
+  // Adapt the layout to what the user actually does. Pure lenders hide the rent
+  // panels; everyone else (rent-only, both, and brand-new users) keeps them.
+  const hasRent = stats.tenantCount > 0 || stats.expected > 0 || recentPayments.length > 0;
+  const hasLoans = loanStats.totalLent > 0 || loanStats.activeLoanCount > 0;
+  const showRent = hasRent || !hasLoans;
+  const showLoans = hasLoans;
+  const loanCollectionPct = loanStats.totalLent > 0
+    ? Math.round((loanStats.totalCollected / loanStats.totalLent) * 100)
+    : 0;
+  const headlinePct = showRent ? collectionPercentage : loanCollectionPct;
+
   if (loading) return <DashboardSkeleton />;
 
   const firstName = profile?.first_name || 'there';
@@ -102,23 +113,24 @@ export default function Dashboard() {
         description={today}
         action={
           <div className="hidden sm:flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Collected</span>
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{showRent ? 'Collected' : 'Repaid'}</span>
             <div className="flex gap-0.5">
               {Array.from({ length: 20 }).map((_, i) => (
                 <div
                   key={i}
                   className={`w-1.5 h-2.5 rounded-sm transition-all duration-500 ${
-                    i < Math.round(collectionPercentage / 5) ? 'bg-blue-500' : 'bg-slate-200'
+                    i < Math.round(headlinePct / 5) ? 'bg-blue-500' : 'bg-slate-200'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-sm font-bold text-blue-600">{collectionPercentage}%</span>
+            <span className="text-sm font-bold text-blue-600">{headlinePct}%</span>
           </div>
         }
       />
 
-      {/* Stat Cards */}
+      {/* Rent stat cards — hidden for pure-lending users */}
+      {showRent && (
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Link to="/tenants" className="block group">
           <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200 hover:-translate-y-0.5">
@@ -192,30 +204,52 @@ export default function Dashboard() {
           </div>
         </Link>
       </div>
+      )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions — adapt to rent vs lending */}
       <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
-        <Link to="/invoices">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <Receipt className="h-3.5 w-3.5 mr-1.5" />
-            Create Invoice
-          </Button>
-        </Link>
-        <Link to="/tenants">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <Users className="h-3.5 w-3.5 mr-1.5" />
-            Add Tenant
-          </Button>
-        </Link>
-        <Link to="/payments">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <DollarSign className="h-3.5 w-3.5 mr-1.5" />
-            Record Payment
-          </Button>
-        </Link>
+        {showRent && (
+          <>
+            <Link to="/invoices">
+              <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+                <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                Create Invoice
+              </Button>
+            </Link>
+            <Link to="/tenants">
+              <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+                <Users className="h-3.5 w-3.5 mr-1.5" />
+                Add Tenant
+              </Button>
+            </Link>
+            <Link to="/payments">
+              <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+                <DollarSign className="h-3.5 w-3.5 mr-1.5" />
+                Record Payment
+              </Button>
+            </Link>
+          </>
+        )}
+        {showLoans && (
+          <>
+            <Link to="/loans">
+              <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+                <Landmark className="h-3.5 w-3.5 mr-1.5" />
+                New Loan
+              </Button>
+            </Link>
+            <Link to="/borrowers">
+              <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+                <Users className="h-3.5 w-3.5 mr-1.5" />
+                Add Borrower
+              </Button>
+            </Link>
+          </>
+        )}
       </div>
 
-      {/* Two Column: Recent Activity + Overdue */}
+      {/* Recent Activity + Overdue tenants — rent only */}
+      {showRent && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Recent Activity Feed */}
         <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
@@ -338,9 +372,10 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      )}
 
-      {/* Loans Summary — only shown once there's loan activity */}
-      {loanStats.totalLent > 0 && (
+      {/* Loans Summary — shown for lending users */}
+      {showLoans && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
