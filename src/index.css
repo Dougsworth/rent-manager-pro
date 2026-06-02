@@ -248,7 +248,7 @@
   .brand-logo .coin-swap {
     display: inline-block;
     position: relative;
-    width: 0.62em;
+    width: 0.82em;
     text-align: center;
     transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
@@ -259,24 +259,25 @@
   .brand-logo .coin-icon {
     transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
+  /* Coin is always visible (it IS the "o" in EasyCollect); the plain letter stays hidden */
   .brand-logo .coin-letter {
-    opacity: 1;
-    transform: scale(1);
+    opacity: 0;
+    transform: scale(0.5);
   }
   .brand-logo .coin-icon {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%) scale(0.5);
-    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
   .brand-logo.coin-active .coin-letter {
     opacity: 0;
-    transform: scale(0.5);
   }
+  /* Periodic flourish: spin the coin in place */
   .brand-logo.coin-active .coin-icon {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(1) rotate(360deg);
   }
 
   .animate-float-slow {
