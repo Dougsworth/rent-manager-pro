@@ -13,6 +13,17 @@ export async function getBorrowers(landlordId: string): Promise<Borrower[]> {
   return (data ?? []) as Borrower[];
 }
 
+export async function getBorrower(borrowerId: string): Promise<Borrower> {
+  const { data, error } = await supabase
+    .from('borrowers')
+    .select('*')
+    .eq('id', borrowerId)
+    .single();
+
+  if (error) throw error;
+  return data as Borrower;
+}
+
 export async function addBorrower(landlordId: string, borrower: {
   first_name: string;
   last_name: string;

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getLoans, createLoan, updateLoan, getLoanInstallments, getLoanStats } from '@/services/loans';
+import { getLoans, createLoan, updateLoan, editLoan, deleteLoan, getLoanInstallments, getLoanStats } from '@/services/loans';
 import { getLoanPaymentsForLoan } from '@/services/loanPayments';
 import { createLoanPayment } from '@/services/loanPayments';
 import { getBorrowers } from '@/services/borrowers';
-import { createLoanSchema, createLoanPaymentSchema } from '@/schemas';
+import { createLoanSchema, editLoanSchema, createLoanPaymentSchema } from '@/schemas';
 import type { LoanWithBorrower, Borrower, LoanInstallment, LoanDashboardStats } from '@/types/app.types';
 import { PageHeader } from '@/components/PageHeader';
 import { FilterTabs } from '@/components/FilterTabs';
@@ -17,8 +18,9 @@ import { StatCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { Pagination, paginate } from '@/components/Pagination';
-import { Search, Plus, Loader2, Landmark, DollarSign, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { Search, Plus, Loader2, Landmark, DollarSign, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Download, Pencil, Trash2 } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { exportToCsv } from '@/utils/exportCsv';
 
@@ -45,6 +47,7 @@ function statusLabel(status: string) {
 export default function Loans() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loans, setLoans] = useState<LoanWithBorrower[]>([]);
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
   const [stats, setStats] = useState<LoanDashboardStats>({ totalLent: 0, totalCollected: 0, totalOutstanding: 0, activeLoanCount: 0, overdueInstallments: 0 });
@@ -59,6 +62,12 @@ export default function Loans() {
   const [creating, setCreating] = useState(false);
   const [loanForm, setLoanForm] = useState({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' });
   const [formError, setFormError] = useState('');
+
+  // Edit loan modal
+  const [editingLoan, setEditingLoan] = useState<LoanWithBorrower | null>(null);
+  const [editForm, setEditForm] = useState({ principal: '', interest_rate: '', term_months: '', start_date: '', notes: '' });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState('');
 
   // Loan detail expansion
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
@@ -91,6 +100,30 @@ export default function Loans() {
   };
 
   useEffect(() => { loadData(); }, [user]);
+
+  const activeBorrowers = borrowers.filter(b => b.status === 'active');
+
+  // Deep link from a borrower row: /loans?borrower=<id> opens the New Loan modal
+  // with that borrower preselected. Guarded so it fires exactly once — otherwise
+  // creating a loan refreshes `borrowers` and would re-trigger this, popping the
+  // modal back open after a successful create.
+  const deepLinkConsumed = useRef(false);
+  useEffect(() => {
+    if (deepLinkConsumed.current) return;
+    const borrowerId = searchParams.get('borrower');
+    if (!borrowerId) return;
+    if (borrowers.length === 0) return; // wait until borrowers load to validate the id
+
+    deepLinkConsumed.current = true;
+    if (borrowers.some(b => b.id === borrowerId && b.status === 'active')) {
+      setLoanForm(f => ({ ...f, borrower_id: borrowerId }));
+      setShowCreate(true);
+    }
+    setSearchParams(prev => {
+      prev.delete('borrower');
+      return prev;
+    }, { replace: true });
+  }, [borrowers, searchParams, setSearchParams]);
 
   const filtered = loans
     .filter(l => activeTab === 'all' || l.status === activeTab)
@@ -240,6 +273,67 @@ export default function Loans() {
     }
   };
 
+  const openEditLoan = (loan: LoanWithBorrower) => {
+    setEditingLoan(loan);
+    setEditForm({
+      principal: String(loan.principal),
+      interest_rate: String(loan.interest_rate),
+      term_months: String(loan.term_months),
+      start_date: loan.start_date,
+      notes: loan.notes ?? '',
+    });
+    setEditError('');
+  };
+
+  const editTermsLocked = (editingLoan?.total_paid ?? 0) > 0;
+
+  const handleEditLoan = async () => {
+    if (!editingLoan) return;
+    setEditError('');
+    const result = editLoanSchema.safeParse(editForm);
+    if (!result.success) {
+      setEditError(result.error.issues[0].message);
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await editLoan(editingLoan.id, {
+        principal: Number(editForm.principal),
+        interest_rate: Number(editForm.interest_rate),
+        term_months: Number(editForm.term_months),
+        start_date: editForm.start_date,
+        notes: editForm.notes || undefined,
+      });
+      toast(editTermsLocked ? 'Notes updated!' : 'Loan updated!');
+      setEditingLoan(null);
+      if (expandedLoanId === editingLoan.id) {
+        const [inst, pay] = await Promise.all([
+          getLoanInstallments(editingLoan.id),
+          getLoanPaymentsForLoan(editingLoan.id),
+        ]);
+        setInstallments(inst);
+        setLoanPayments(pay);
+      }
+      await loadData();
+    } catch (err) {
+      setEditError('Failed to update loan');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteLoan = async (loan: LoanWithBorrower) => {
+    if (!confirm(`Delete loan ${loan.loan_number}? This permanently removes its schedule and payment history.`)) return;
+    try {
+      await deleteLoan(loan.id);
+      toast('Loan deleted');
+      if (expandedLoanId === loan.id) setExpandedLoanId(null);
+      await loadData();
+    } catch (err) {
+      toast('Failed to delete loan', 'error');
+    }
+  };
+
   // Calculate preview
   const previewMonthly = loanForm.principal && loanForm.interest_rate !== '' && loanForm.term_months
     ? Math.round(
@@ -248,6 +342,13 @@ export default function Loans() {
     : 0;
   const previewTotal = loanForm.principal && loanForm.interest_rate !== '' && loanForm.term_months
     ? Math.round(Number(loanForm.principal) * (1 + Number(loanForm.interest_rate) / 100 * Number(loanForm.term_months) / 12))
+    : 0;
+
+  const editPreviewTotal = !editTermsLocked && editForm.principal && editForm.interest_rate !== '' && editForm.term_months
+    ? Math.round(Number(editForm.principal) * (1 + Number(editForm.interest_rate) / 100 * Number(editForm.term_months) / 12))
+    : 0;
+  const editPreviewMonthly = editPreviewTotal && Number(editForm.term_months)
+    ? Math.round(editPreviewTotal / Number(editForm.term_months))
     : 0;
 
   if (loading) {
@@ -319,6 +420,7 @@ export default function Loans() {
               return (
                 <div key={loan.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden">
                   {/* Loan Row */}
+                  <SimpleTooltip label={isExpanded ? 'Hide details' : 'View schedule & payments'} side="top">
                   <button
                     onClick={() => toggleExpand(loan.id)}
                     className="w-full flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors text-left"
@@ -358,6 +460,7 @@ export default function Loans() {
                       {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
                     </div>
                   </button>
+                  </SimpleTooltip>
 
                   {/* Mobile stats */}
                   <div className="sm:hidden px-4 pb-3 flex items-center gap-4 text-xs text-slate-500">
@@ -384,17 +487,23 @@ export default function Loans() {
                           </div>
 
                           {/* Actions */}
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             {loan.status === 'active' && (
                               <>
                                 <Button size="sm" onClick={() => openPaymentModal(loan.id, loan.monthly_installment)}>
                                   <DollarSign className="h-4 w-4 mr-1" />Record Payment
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => openEditLoan(loan)}>
+                                  <Pencil className="h-4 w-4 mr-1" />Edit
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => handleMarkDefaulted(loan.id)}>
                                   Mark Defaulted
                                 </Button>
                               </>
                             )}
+                            <Button size="sm" variant="outline" onClick={() => handleDeleteLoan(loan)} className="text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4 mr-1" />Delete
+                            </Button>
                           </div>
 
                           {/* Installment Schedule */}
@@ -475,15 +584,25 @@ export default function Loans() {
           <div className="space-y-4">
             <div>
               <Label>Borrower *</Label>
-              <Select
-                value={loanForm.borrower_id}
-                onValueChange={(v: string) => setLoanForm(f => ({ ...f, borrower_id: v }))}
-                placeholder="Select borrower..."
-                options={borrowers.filter(b => b.status === 'active').map(b => ({
-                  value: b.id,
-                  label: `${b.first_name} ${b.last_name}`,
-                }))}
-              />
+              {activeBorrowers.length === 0 ? (
+                <p className="text-sm text-slate-500 bg-slate-50 rounded-lg px-3 py-2.5">
+                  No active borrowers yet.{' '}
+                  <Link to="/borrowers" className="text-blue-600 font-medium hover:underline">
+                    Add a borrower
+                  </Link>{' '}
+                  first.
+                </p>
+              ) : (
+                <Select
+                  value={loanForm.borrower_id}
+                  onValueChange={(v: string) => setLoanForm(f => ({ ...f, borrower_id: v }))}
+                  placeholder="Select borrower..."
+                  options={activeBorrowers.map(b => ({
+                    value: b.id,
+                    label: `${b.first_name} ${b.last_name}`,
+                  }))}
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -524,6 +643,61 @@ export default function Loans() {
               <Button onClick={handleCreateLoan} disabled={creating}>
                 {creating && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
                 Create Loan
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Loan Modal */}
+      <Dialog open={!!editingLoan} onOpenChange={(open) => { if (!open) setEditingLoan(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Loan {editingLoan?.loan_number}</DialogTitle></DialogHeader>
+          {editError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{editError}</p>}
+          {editTermsLocked && (
+            <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2.5">
+              Payments have been recorded, so the loan terms are locked. You can still edit the notes.
+            </p>
+          )}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Loan Amount (J$) *</Label>
+                <Input type="number" value={editForm.principal} disabled={editTermsLocked} onChange={e => setEditForm(f => ({ ...f, principal: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Interest Rate (% annual)</Label>
+                <Input type="number" step="0.01" value={editForm.interest_rate} disabled={editTermsLocked} onChange={e => setEditForm(f => ({ ...f, interest_rate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Term (months) *</Label>
+                <Input type="number" value={editForm.term_months} disabled={editTermsLocked} onChange={e => setEditForm(f => ({ ...f, term_months: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Start Date *</Label>
+                <Input type="date" value={editForm.start_date} disabled={editTermsLocked} onChange={e => setEditForm(f => ({ ...f, start_date: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Input value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional notes" />
+            </div>
+
+            {editPreviewMonthly > 0 && (
+              <div className="bg-blue-50 rounded-lg p-3 text-sm space-y-1">
+                <p className="text-blue-700"><span className="font-medium">New Monthly Payment:</span> {formatCurrency(editPreviewMonthly)}</p>
+                <p className="text-blue-700"><span className="font-medium">New Total Repayment:</span> {formatCurrency(editPreviewTotal)}</p>
+                <p className="text-blue-600 text-xs">Saving rebuilds the installment schedule.</p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditingLoan(null)}>Cancel</Button>
+              <Button onClick={handleEditLoan} disabled={savingEdit}>
+                {savingEdit && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+                Save Changes
               </Button>
             </div>
           </div>

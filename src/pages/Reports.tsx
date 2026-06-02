@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPnLReport } from '@/services/reports';
-import type { PnLData } from '@/types/app.types';
+import { getLoans, getLoanStats } from '@/services/loans';
+import type { PnLData, LoanWithBorrower, LoanDashboardStats } from '@/types/app.types';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/ui/stat-card';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +61,8 @@ export default function Reports() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<PnLData | null>(null);
+  const [loans, setLoans] = useState<LoanWithBorrower[]>([]);
+  const [loanStats, setLoanStats] = useState<LoanDashboardStats | null>(null);
 
   const defaultDates = getPresetDates('this-year');
   const [startDate, setStartDate] = useState(defaultDates.start);
@@ -80,6 +84,52 @@ export default function Reports() {
   useEffect(() => {
     loadReport();
   }, [user, startDate, endDate]);
+
+  // Loan portfolio reflects current state, so it loads once (not tied to the date range).
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([getLoans(user.id), getLoanStats(user.id)])
+      .then(([l, s]) => { setLoans(l); setLoanStats(s); })
+      .catch((err) => console.error('Failed to load loan portfolio:', err));
+  }, [user]);
+
+  const handleExportLoansCsv = () => {
+    const rows = loans.map((l) => ({
+      loan_number: l.loan_number,
+      borrower: `${l.borrower_first_name} ${l.borrower_last_name}`.trim(),
+      principal: l.principal,
+      total_paid: l.total_paid,
+      outstanding: Math.max(0, l.principal - l.total_paid),
+      interest_rate: `${l.interest_rate}%`,
+      term_months: l.term_months,
+      status: l.status,
+      start_date: l.start_date,
+      end_date: l.end_date,
+    }));
+    exportToCsv('loan-portfolio.csv', rows, [
+      { key: 'loan_number', header: 'Loan #' },
+      { key: 'borrower', header: 'Borrower' },
+      { key: 'principal', header: 'Principal' },
+      { key: 'total_paid', header: 'Paid' },
+      { key: 'outstanding', header: 'Outstanding' },
+      { key: 'interest_rate', header: 'Interest Rate' },
+      { key: 'term_months', header: 'Term (months)' },
+      { key: 'status', header: 'Status' },
+      { key: 'start_date', header: 'Start Date' },
+      { key: 'end_date', header: 'End Date' },
+    ]);
+  };
+
+  function loanStatusLabel(status: string) {
+    if (status === 'paid_off') return 'Paid Off';
+    if (status === 'defaulted') return 'Defaulted';
+    return 'Active';
+  }
+  function loanStatusVariant(status: string) {
+    if (status === 'paid_off') return 'paid' as const;
+    if (status === 'defaulted') return 'overdue' as const;
+    return 'pending' as const;
+  }
 
   const applyPreset = (preset: string) => {
     const { start, end } = getPresetDates(preset);
@@ -283,6 +333,63 @@ export default function Reports() {
                       <td className="py-3 px-4 text-sm text-right text-slate-900">{report.collectionRate.toFixed(1)}%</td>
                     </tr>
                   </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Loan Portfolio — current state, independent of the date range above */}
+      {loanStats && loans.length > 0 && (
+        <>
+          <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-slate-900">Loan Portfolio <span className="text-xs font-normal text-slate-400">(current)</span></h2>
+              <Button variant="outline" size="sm" onClick={handleExportLoansCsv} className="no-print">
+                <Download className="h-4 w-4 mr-2" />
+                Export Loans
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Total Lent" value={formatCurrency(loanStats.totalLent)} />
+              <StatCard label="Collected" value={formatCurrency(loanStats.totalCollected)} valueColor="text-emerald-600" />
+              <StatCard label="Outstanding" value={formatCurrency(loanStats.totalOutstanding)} valueColor={loanStats.totalOutstanding > 0 ? 'text-amber-600' : 'text-slate-900'} />
+              <StatCard label="Active Loans" value={String(loanStats.activeLoanCount)} />
+            </div>
+          </div>
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Loans</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Loan #</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Borrower</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Principal</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Paid</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Outstanding</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loans.map((l) => (
+                      <tr key={l.id} className="hover:bg-slate-50">
+                        <td className="py-3 px-4 text-sm font-mono text-slate-400">{l.loan_number}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-slate-900">{l.borrower_first_name} {l.borrower_last_name}</td>
+                        <td className="py-3 px-4 text-sm text-right text-slate-600">{formatCurrency(l.principal)}</td>
+                        <td className="py-3 px-4 text-sm text-right text-emerald-600 font-medium">{formatCurrency(l.total_paid)}</td>
+                        <td className="py-3 px-4 text-sm text-right text-amber-600">{formatCurrency(Math.max(0, l.principal - l.total_paid))}</td>
+                        <td className="py-3 px-4 text-right">
+                          <StatusBadge variant={loanStatusVariant(l.status)}>{loanStatusLabel(l.status)}</StatusBadge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
             </CardContent>

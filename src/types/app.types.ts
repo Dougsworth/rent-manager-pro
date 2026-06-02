@@ -161,4 +161,5 @@ export type LocalIntent =
   | 'tenant_count'
   | 'collected'
   | 'recent_payments'
-  | 'dashboard_stats';
+  | 'dashboard_stats'
+  | 'loan_stats';

@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string, userObj?: User | null) => {
+    try {
     const { data } = await supabase
       .from('profiles')
       .select('*')
@@ -52,6 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setProfile(null);
     }
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+    }
   };
 
   const refreshProfile = async () => {
@@ -61,16 +65,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user);
+    let mounted = true;
+
+    // Resolve the initial session. getSession() can reject when GoTrue's auth
+    // lock is contended (e.g. StrictMode double-mount / multiple tabs), so the
+    // finally guarantees we always leave the "Loading…" state instead of hanging.
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id, session.user);
+        }
+      } catch (err) {
+        console.error('Auth init failed:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -78,9 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
       }
+      // Safety net: onAuthStateChange fires an INITIAL_SESSION event on load, so
+      // even if the getSession() call above stalls, this still clears loading.
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   const signIn = async (email: string, password: string) => {

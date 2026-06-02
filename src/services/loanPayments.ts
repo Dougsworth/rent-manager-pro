@@ -31,22 +31,21 @@ export async function createLoanPayment(landlordId: string, payment: {
   method?: 'bank_transfer' | 'card' | 'cash' | 'other';
   notes?: string;
 }) {
-  // Find oldest pending installment for this loan to auto-link
-  const { data: pendingInstallments } = await supabase
+  // Fetch all open installments oldest-first so we can allocate this payment.
+  const { data: openInstallments } = await supabase
     .from('loan_installments')
     .select('id, amount')
     .eq('loan_id', payment.loan_id)
-    .eq('status', 'pending')
-    .order('due_date', { ascending: true })
-    .limit(1);
+    .in('status', ['pending', 'overdue'])
+    .order('due_date', { ascending: true });
 
-  const installment = pendingInstallments?.[0];
+  const firstOpen = openInstallments?.[0];
 
   const { data, error } = await supabase
     .from('loan_payments')
     .insert({
       loan_id: payment.loan_id,
-      installment_id: installment?.id ?? null,
+      installment_id: firstOpen?.id ?? null,
       landlord_id: landlordId,
       amount: payment.amount,
       payment_date: payment.payment_date ?? new Date().toISOString().split('T')[0],
@@ -59,12 +58,26 @@ export async function createLoanPayment(landlordId: string, payment: {
 
   if (error) throw error;
 
-  // Mark installment as paid if auto-linked
-  if (installment) {
-    await supabase
-      .from('loan_installments')
-      .update({ status: 'paid' })
-      .eq('id', installment.id);
+  // Allocate the payment across installments oldest-first, marking each one
+  // paid only when this payment fully covers it. A lump sum clears several;
+  // an underpayment leaves the next installment pending (not wrongly paid).
+  if (openInstallments && openInstallments.length > 0) {
+    let remaining = payment.amount;
+    const toMarkPaid: string[] = [];
+    for (const inst of openInstallments) {
+      if (remaining >= inst.amount) {
+        remaining -= inst.amount;
+        toMarkPaid.push(inst.id);
+      } else {
+        break;
+      }
+    }
+    if (toMarkPaid.length > 0) {
+      await supabase
+        .from('loan_installments')
+        .update({ status: 'paid' })
+        .in('id', toMarkPaid);
+    }
   }
 
   // Update loan.total_paid and check if fully paid

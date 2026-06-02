@@ -25,6 +25,7 @@ import {
   Clock,
   Info,
   X,
+  Landmark,
 } from "lucide-react";
 import { NotificationsSkeleton } from "@/components/skeletons/NotificationsSkeleton";
 
@@ -41,6 +42,8 @@ const NOTIFICATION_TYPE_OPTIONS: { value: NotificationType | "all"; label: strin
   { value: "tenant_added", label: "Tenant Added" },
   { value: "lease_expiring", label: "Lease Expiring" },
   { value: "late_fee_applied", label: "Late Fee Applied" },
+  { value: "loan_payment_received", label: "Loan Payment Received" },
+  { value: "loan_overdue", label: "Loan Overdue" },
   { value: "system", label: "System" },
 ];
 
@@ -64,6 +67,10 @@ function getNotificationIcon(type: NotificationType) {
       return <Clock className="h-4 w-4 text-amber-500" />;
     case "late_fee_applied":
       return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+    case "loan_payment_received":
+      return <Landmark className="h-4 w-4 text-emerald-500" />;
+    case "loan_overdue":
+      return <AlertTriangle className="h-4 w-4 text-red-500" />;
     case "system":
       return <Info className="h-4 w-4 text-slate-500" />;
   }
@@ -73,9 +80,11 @@ function getNotificationColor(type: NotificationType) {
   switch (type) {
     case "payment_received":
     case "proof_approved":
+    case "loan_payment_received":
       return "bg-emerald-50";
     case "payment_overdue":
     case "proof_rejected":
+    case "loan_overdue":
       return "bg-red-50";
     case "invoice_created":
     case "tenant_added":

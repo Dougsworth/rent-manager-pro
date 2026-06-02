@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
+import { getLoanStats } from '@/services/loans';
+import { getBorrowers } from '@/services/borrowers';
 import type { LocalIntent, AiChatUsage } from '@/types/app.types';
 
 const DAILY_LIMIT = 5;
@@ -48,6 +50,17 @@ const intentPatterns: { intent: LocalIntent; patterns: RegExp[] }[] = [
       /latest\s*(payment|transaction)/i,
       /last\s*(few\s*)?(payment|transaction)/i,
       /who\s*(paid|made\s*payment)\s*(recently|lately|last)/i,
+    ],
+  },
+  {
+    intent: 'loan_stats',
+    patterns: [
+      /how\s*many\s*(active\s*)?loan/i,
+      /loan\s*(portfolio|summary|stats|overview|book)/i,
+      /how\s*much.*(lent|loaned|disburs)/i,
+      /total\s*(lent|loaned)/i,
+      /loan.*(overdue|outstanding|collected|owed)/i,
+      /(overdue|outstanding).*loan/i,
     ],
   },
   {
@@ -130,15 +143,33 @@ export async function executeLocalQuery(intent: LocalIntent, landlordId: string)
         `- **Overdue invoices**: ${stats.overdue}`,
       ].join('\n');
     }
+
+    case 'loan_stats': {
+      const stats = await getLoanStats(landlordId);
+      if (stats.totalLent === 0) {
+        return 'You don’t have any loans yet. Add a borrower, then create a loan to start tracking repayments.';
+      }
+      return [
+        `Here's your loan portfolio:`,
+        ``,
+        `- **Total lent**: ${formatCurrency(stats.totalLent)}`,
+        `- **Collected**: ${formatCurrency(stats.totalCollected)}`,
+        `- **Outstanding**: ${formatCurrency(stats.totalOutstanding)}`,
+        `- **Active loans**: ${stats.activeLoanCount}`,
+        `- **Overdue installments**: ${stats.overdueInstallments}`,
+      ].join('\n');
+    }
   }
 }
 
 export async function buildAnonymizedContext(landlordId: string): Promise<string> {
   try {
-    const [stats, payments, overdue] = await Promise.all([
+    const [stats, payments, overdue, loanStats, borrowers] = await Promise.all([
       getDashboardStats(landlordId),
       getRecentPayments(landlordId, 5),
       getOverdueTenants(landlordId),
+      getLoanStats(landlordId).catch(() => null),
+      getBorrowers(landlordId).catch(() => []),
     ]);
 
     // Anonymize tenant names
@@ -159,10 +190,16 @@ export async function buildAnonymizedContext(landlordId: string): Promise<string
       (p) => `${getLabel(`${p.tenant_first_name} ${p.tenant_last_name}`)}: J$${p.amount.toLocaleString()} on ${p.payment_date}`
     );
 
+    const activeBorrowers = borrowers.filter((b) => b.status === 'active').length;
+    const loanLine = loanStats && loanStats.totalLent > 0
+      ? `Loans: ${borrowers.length} borrowers (${activeBorrowers} active), ${loanStats.activeLoanCount} active loans, J$${loanStats.totalLent.toLocaleString()} lent, J$${loanStats.totalCollected.toLocaleString()} repaid, J$${loanStats.totalOutstanding.toLocaleString()} outstanding, ${loanStats.overdueInstallments} overdue installments.`
+      : `Loans: none yet${borrowers.length ? ` (${borrowers.length} borrowers on file)` : ''}.`;
+
     return [
       `Monthly stats: ${stats.tenantCount} tenants, J$${stats.expected.toLocaleString()} expected, J$${stats.collected.toLocaleString()} collected, J$${stats.outstanding.toLocaleString()} outstanding, ${stats.overdue} overdue invoices.`,
       overdue.length > 0 ? `Overdue: ${overdueLines.join('; ')}` : 'No overdue tenants.',
       payments.length > 0 ? `Recent payments: ${paymentLines.join('; ')}` : 'No recent payments.',
+      loanLine,
     ].join('\n');
   } catch {
     return 'Unable to fetch context data.';

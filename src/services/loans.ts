@@ -32,6 +32,45 @@ export async function getLoan(loanId: string) {
   return data;
 }
 
+// Simple interest: total = principal * (1 + rate/100 * term/12).
+function computeLoanTotals(principal: number, interestRate: number, termMonths: number) {
+  const totalRepayment = Math.round(principal * (1 + (interestRate / 100) * (termMonths / 12)));
+  const monthlyInstallment = Math.round(totalRepayment / termMonths);
+  return { totalRepayment, monthlyInstallment };
+}
+
+function addMonths(dateStr: string, months: number): string {
+  const d = new Date(dateStr);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
+}
+
+// Build the monthly installment rows, pushing any rounding remainder onto the last one.
+function buildInstallments(
+  loanId: string,
+  landlordId: string,
+  startDate: string,
+  termMonths: number,
+  monthlyInstallment: number,
+  totalRepayment: number,
+) {
+  const installments = [];
+  for (let i = 0; i < termMonths; i++) {
+    installments.push({
+      loan_id: loanId,
+      landlord_id: landlordId,
+      installment_number: i + 1,
+      amount: monthlyInstallment,
+      due_date: addMonths(startDate, i + 1), // first payment due one month after start
+    });
+  }
+  if (installments.length > 0) {
+    const sumSoFar = monthlyInstallment * (termMonths - 1);
+    installments[installments.length - 1].amount = totalRepayment - sumSoFar;
+  }
+  return installments;
+}
+
 export async function createLoan(landlordId: string, loan: {
   borrower_id: string;
   principal: number;
@@ -40,17 +79,8 @@ export async function createLoan(landlordId: string, loan: {
   start_date: string;
   notes?: string;
 }) {
-  // Calculate simple interest: total = principal * (1 + rate/100 * term/12)
-  const totalRepayment = Math.round(
-    loan.principal * (1 + (loan.interest_rate / 100) * (loan.term_months / 12))
-  );
-  const monthlyInstallment = Math.round(totalRepayment / loan.term_months);
-
-  // Calculate end date
-  const start = new Date(loan.start_date);
-  const end = new Date(start);
-  end.setMonth(end.getMonth() + loan.term_months);
-  const endDate = end.toISOString().split('T')[0];
+  const { totalRepayment, monthlyInstallment } = computeLoanTotals(loan.principal, loan.interest_rate, loan.term_months);
+  const endDate = addMonths(loan.start_date, loan.term_months);
 
   const { data, error } = await supabase
     .from('loans')
@@ -73,25 +103,7 @@ export async function createLoan(landlordId: string, loan: {
 
   const loanId = (data as any).id;
 
-  // Generate installment rows
-  const installments = [];
-  for (let i = 0; i < loan.term_months; i++) {
-    const dueDate = new Date(loan.start_date);
-    dueDate.setMonth(dueDate.getMonth() + i + 1); // first payment due one month after start
-    installments.push({
-      loan_id: loanId,
-      landlord_id: landlordId,
-      installment_number: i + 1,
-      amount: monthlyInstallment,
-      due_date: dueDate.toISOString().split('T')[0],
-    });
-  }
-
-  // Adjust last installment to account for rounding
-  if (installments.length > 0) {
-    const sumSoFar = monthlyInstallment * (loan.term_months - 1);
-    installments[installments.length - 1].amount = totalRepayment - sumSoFar;
-  }
+  const installments = buildInstallments(loanId, landlordId, loan.start_date, loan.term_months, monthlyInstallment, totalRepayment);
 
   const { error: installError } = await supabase
     .from('loan_installments')
@@ -134,6 +146,84 @@ export async function updateLoan(loanId: string, updates: {
   return data;
 }
 
+// Edit a loan's terms. Once any payment exists the schedule is locked, so only
+// the notes are updated; otherwise the loan is recomputed and its schedule rebuilt.
+export async function editLoan(loanId: string, updates: {
+  principal: number;
+  interest_rate: number;
+  term_months: number;
+  start_date: string;
+  notes?: string;
+}) {
+  const { data: current, error: fetchErr } = await supabase
+    .from('loans')
+    .select('landlord_id, total_paid, loan_number')
+    .eq('id', loanId)
+    .single();
+
+  if (fetchErr) throw fetchErr;
+
+  const landlordId = (current as any).landlord_id;
+  const loanNumber = (current as any).loan_number;
+  const hasPayments = (current as any).total_paid > 0;
+
+  if (hasPayments) {
+    const { data, error } = await supabase
+      .from('loans')
+      .update({ notes: updates.notes ?? '' })
+      .eq('id', loanId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logActivity(landlordId, 'loan_updated', 'loan', `Updated notes for loan ${loanNumber}`, loanId);
+    return data;
+  }
+
+  const { totalRepayment, monthlyInstallment } = computeLoanTotals(updates.principal, updates.interest_rate, updates.term_months);
+  const endDate = addMonths(updates.start_date, updates.term_months);
+
+  const { data, error } = await supabase
+    .from('loans')
+    .update({
+      principal: updates.principal,
+      interest_rate: updates.interest_rate,
+      term_months: updates.term_months,
+      monthly_installment: monthlyInstallment,
+      start_date: updates.start_date,
+      end_date: endDate,
+      notes: updates.notes ?? '',
+    })
+    .eq('id', loanId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Replace the schedule with one matching the new terms.
+  const { error: delErr } = await supabase.from('loan_installments').delete().eq('loan_id', loanId);
+  if (delErr) throw delErr;
+
+  const installments = buildInstallments(loanId, landlordId, updates.start_date, updates.term_months, monthlyInstallment, totalRepayment);
+  const { error: instErr } = await supabase.from('loan_installments').insert(installments);
+  if (instErr) throw instErr;
+
+  logActivity(landlordId, 'loan_updated', 'loan', `Updated loan ${loanNumber}`, loanId, {
+    principal: updates.principal,
+    interest_rate: updates.interest_rate,
+    term_months: updates.term_months,
+  });
+
+  return data;
+}
+
+// Delete a loan. Installments and payments cascade via FK ON DELETE CASCADE.
+export async function deleteLoan(loanId: string) {
+  const { error } = await supabase.from('loans').delete().eq('id', loanId);
+  if (error) throw error;
+}
+
 export async function getLoanInstallments(loanId: string): Promise<LoanInstallment[]> {
   const { data, error } = await supabase
     .from('loan_installments')
@@ -155,11 +245,13 @@ export async function getLoanStats(landlordId: string): Promise<LoanDashboardSta
 
   const rows = (loans ?? []) as any[];
 
+  // Count anything past its due date that isn't paid — both installments the
+  // cron has already flipped to 'overdue' and ones still 'pending' (not yet swept).
   const { data: overdueData } = await supabase
     .from('loan_installments')
     .select('id')
     .eq('landlord_id', landlordId)
-    .eq('status', 'pending')
+    .in('status', ['pending', 'overdue'])
     .lt('due_date', new Date().toISOString().split('T')[0]);
 
   return {

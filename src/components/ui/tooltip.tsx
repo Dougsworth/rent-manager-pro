@@ -24,4 +24,24 @@ const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = "TooltipContent";
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+// Convenience wrapper for the common case: hover a single element to show a label.
+// Relies on a TooltipProvider ancestor (AppLayout wraps every page in one).
+function SimpleTooltip({
+  label,
+  children,
+  side = "top",
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+}) {
+  if (!label) return <>{children}</>;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side={side}>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, SimpleTooltip };

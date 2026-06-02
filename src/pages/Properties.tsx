@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import {
   Home, Plus, Loader2, ChevronDown, ChevronRight,
   Edit2, Trash2, Users, MapPin,
@@ -436,26 +437,30 @@ export default function Properties() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditProperty(property);
-                          setEditPropName(property.name);
-                          setEditPropAddress(property.address ?? '');
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletePropertyId(property.id);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <SimpleTooltip label="Edit property">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditProperty(property);
+                            setEditPropName(property.name);
+                            setEditPropAddress(property.address ?? '');
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      </SimpleTooltip>
+                      <SimpleTooltip label="Delete property">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletePropertyId(property.id);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </SimpleTooltip>
                     </div>
                   </div>
 
@@ -505,22 +510,26 @@ export default function Properties() {
                             <span className="text-sm font-bold text-slate-700">
                               J${unit.rent_amount.toLocaleString()}/mo
                             </span>
-                            <button
-                              onClick={() => {
-                                setEditUnit(unit);
-                                setEditUnitName(unit.name);
-                                setEditUnitRent(String(unit.rent_amount));
-                              }}
-                              className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteUnitId(unit.id)}
-                              className="p-1 text-slate-400 hover:text-red-500 rounded hover:bg-red-50"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            <SimpleTooltip label="Edit unit">
+                              <button
+                                onClick={() => {
+                                  setEditUnit(unit);
+                                  setEditUnitName(unit.name);
+                                  setEditUnitRent(String(unit.rent_amount));
+                                }}
+                                className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                            </SimpleTooltip>
+                            <SimpleTooltip label="Delete unit">
+                              <button
+                                onClick={() => setDeleteUnitId(unit.id)}
+                                className="p-1 text-slate-400 hover:text-red-500 rounded hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </SimpleTooltip>
                           </div>
                         </div>
                       );

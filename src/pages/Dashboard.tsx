@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
+import { getLoanStats } from '@/services/loans';
 import { sendReminder } from '@/services/reminders';
-import type { DashboardStats, PaymentWithDetails } from '@/types/app.types';
+import type { DashboardStats, PaymentWithDetails, LoanDashboardStats } from '@/types/app.types';
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, DollarSign, AlertTriangle, TrendingUp, Users, Receipt, Clock } from "lucide-react";
+import { ArrowRight, Loader2, DollarSign, AlertTriangle, TrendingUp, Users, Receipt, Clock, Landmark } from "lucide-react";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useToast } from "@/components/ui/toast";
 
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({ expected: 0, collected: 0, outstanding: 0, overdue: 0, tenantCount: 0 });
+  const [loanStats, setLoanStats] = useState<LoanDashboardStats>({ totalLent: 0, totalCollected: 0, totalOutstanding: 0, activeLoanCount: 0, overdueInstallments: 0 });
   const [recentPayments, setRecentPayments] = useState<PaymentWithDetails[]>([]);
   const [overdueTenants, setOverdueTenants] = useState<{ id: string; tenant_id: string; invoice_id: string; name: string; unit: string; amount: number; daysOverdue: number }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,14 +50,16 @@ export default function Dashboard() {
     if (!user) return;
     const load = async () => {
       try {
-        const [s, p, o] = await Promise.all([
+        const [s, p, o, ls] = await Promise.all([
           getDashboardStats(user.id),
           getRecentPayments(user.id),
           getOverdueTenants(user.id),
+          getLoanStats(user.id),
         ]);
         setStats(s);
         setRecentPayments(p);
         setOverdueTenants(o);
+        setLoanStats(ls);
       } catch (err) {
         console.error('Failed to load dashboard:', err);
       } finally {
@@ -334,6 +338,45 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Loans Summary — only shown once there's loan activity */}
+      {loanStats.totalLent > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-slate-400" /> Loans
+            </h2>
+            <Link to="/loans" className="text-sm font-medium text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
+              View all
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Link to="/loans" className="block bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/5 hover:border-violet-200 hover:-translate-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-2">Total Lent</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900">{formatCurrency(loanStats.totalLent)}</p>
+              <p className="text-xs font-medium text-slate-500 mt-1">{loanStats.activeLoanCount} active loan{loanStats.activeLoanCount !== 1 ? 's' : ''}</p>
+            </Link>
+            <Link to="/loans" className="block bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-200 hover:-translate-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-2">Collected</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{formatCurrency(loanStats.totalCollected)}</p>
+              <p className="text-xs font-medium text-slate-500 mt-1">Repayments received</p>
+            </Link>
+            <Link to="/loans" className="block bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-200 hover:-translate-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-2">Outstanding</p>
+              <p className="text-lg sm:text-2xl font-bold tracking-tight text-amber-600">{formatCurrency(loanStats.totalOutstanding)}</p>
+              <p className="text-xs font-medium text-slate-500 mt-1">{loanStats.totalOutstanding > 0 ? 'Yet to be repaid' : 'All settled'}</p>
+            </Link>
+            <Link to="/loans" className="block bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/5 hover:border-red-200 hover:-translate-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-2">Overdue</p>
+              <p className={`text-lg sm:text-2xl font-bold tracking-tight ${loanStats.overdueInstallments > 0 ? 'text-red-500' : 'text-slate-900'}`}>{loanStats.overdueInstallments}</p>
+              <p className={`text-xs font-medium mt-1 ${loanStats.overdueInstallments > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                {loanStats.overdueInstallments > 0 ? `installment${loanStats.overdueInstallments !== 1 ? 's' : ''} overdue` : 'No overdue'}
+              </p>
+            </Link>
+          </div>
+        </div>
+      )}
     </>
   );
 }

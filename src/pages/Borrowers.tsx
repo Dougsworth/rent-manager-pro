@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBorrowers, addBorrower, updateBorrower, deleteBorrower } from '@/services/borrowers';
 import { addBorrowerSchema } from '@/schemas';
@@ -14,14 +15,16 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { AvatarInitial } from '@/components/ui/avatar-initial';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { Pagination, paginate } from '@/components/Pagination';
-import { Search, Plus, Loader2, Users, Trash2, Edit2, UserCheck } from 'lucide-react';
+import { Search, Plus, Loader2, Users, Trash2, Edit2, UserCheck, Landmark } from 'lucide-react';
 
 type BorrowerStatus = 'all' | 'active' | 'inactive';
 
 export default function Borrowers() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<BorrowerStatus>('all');
@@ -84,7 +87,7 @@ export default function Borrowers() {
         phone: form.phone || undefined,
         notes: form.notes || undefined,
       });
-      toast('Borrower added!');
+      toast('Borrower added! Use "New Loan" on their row to lend.');
       setShowAddModal(false);
       setForm({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
       await loadBorrowers();
@@ -190,23 +193,40 @@ export default function Borrowers() {
                 key={b.id}
                 className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200/60 hover:border-slate-300/60 transition-colors"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <AvatarInitial name={`${b.first_name} ${b.last_name}`} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{b.first_name} {b.last_name}</p>
-                    <p className="text-xs text-slate-500 truncate">{b.email || b.phone || 'No contact info'}</p>
-                  </div>
-                </div>
+                <SimpleTooltip label="View profile, loans & payment history" side="bottom">
+                  <button
+                    onClick={() => navigate(`/borrowers/${b.id}`)}
+                    className="flex items-center gap-3 min-w-0 text-left hover:opacity-80 transition-opacity"
+                  >
+                    <AvatarInitial name={`${b.first_name} ${b.last_name}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{b.first_name} {b.last_name}</p>
+                      <p className="text-xs text-slate-500 truncate">{b.email || b.phone || 'No contact info'}</p>
+                    </div>
+                  </button>
+                </SimpleTooltip>
                 <div className="flex items-center gap-2">
                   <StatusBadge variant={b.status === 'active' ? 'paid' : 'default'}>
                     {b.status === 'active' ? 'Active' : 'Inactive'}
                   </StatusBadge>
-                  <button onClick={() => openEdit(b)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(b.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {b.status === 'active' && (
+                    <SimpleTooltip label="Create a loan for this borrower">
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/loans?borrower=${b.id}`)}>
+                        <Landmark className="h-3.5 w-3.5 sm:mr-1.5" />
+                        <span className="hidden sm:inline">New Loan</span>
+                      </Button>
+                    </SimpleTooltip>
+                  )}
+                  <SimpleTooltip label="Edit borrower">
+                    <button onClick={() => openEdit(b)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                  </SimpleTooltip>
+                  <SimpleTooltip label="Delete borrower">
+                    <button onClick={() => handleDelete(b.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </SimpleTooltip>
                 </div>
               </div>
             ))}

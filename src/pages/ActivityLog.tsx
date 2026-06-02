@@ -21,10 +21,12 @@ import {
   CheckCircle,
   XCircle,
   Layers,
+  Landmark,
+  DollarSign,
 } from "lucide-react";
 import { ActivityLogSkeleton } from "@/components/skeletons/ActivityLogSkeleton";
 
-type EntityFilter = "all" | "invoice" | "payment" | "tenant" | "property" | "unit" | "proof";
+type EntityFilter = "all" | "invoice" | "payment" | "tenant" | "property" | "unit" | "proof" | "loan" | "borrower" | "loan_payment";
 
 const ENTITY_TABS: { value: EntityFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -34,6 +36,8 @@ const ENTITY_TABS: { value: EntityFilter; label: string }[] = [
   { value: "property", label: "Properties" },
   { value: "unit", label: "Units" },
   { value: "proof", label: "Proofs" },
+  { value: "loan", label: "Loans" },
+  { value: "borrower", label: "Borrowers" },
 ];
 
 const ACTION_OPTIONS: { value: ActivityLogAction | "all"; label: string }[] = [
@@ -54,6 +58,12 @@ const ACTION_OPTIONS: { value: ActivityLogAction | "all"; label: string }[] = [
   { value: "unit_created", label: "Unit Created" },
   { value: "unit_updated", label: "Unit Updated" },
   { value: "unit_deleted", label: "Unit Deleted" },
+  { value: "loan_created", label: "Loan Created" },
+  { value: "loan_updated", label: "Loan Updated" },
+  { value: "loan_payment_created", label: "Loan Payment" },
+  { value: "borrower_added", label: "Borrower Added" },
+  { value: "borrower_updated", label: "Borrower Updated" },
+  { value: "borrower_deleted", label: "Borrower Deleted" },
 ];
 
 function getActionIcon(action: string) {
@@ -90,6 +100,18 @@ function getActionIcon(action: string) {
       return <PenSquare className="h-4 w-4 text-teal-500" />;
     case "unit_deleted":
       return <Trash2 className="h-4 w-4 text-red-500" />;
+    case "loan_created":
+      return <Landmark className="h-4 w-4 text-violet-500" />;
+    case "loan_updated":
+      return <PenSquare className="h-4 w-4 text-violet-500" />;
+    case "loan_payment_created":
+      return <DollarSign className="h-4 w-4 text-emerald-500" />;
+    case "borrower_added":
+      return <UserPlus className="h-4 w-4 text-indigo-500" />;
+    case "borrower_updated":
+      return <UserCog className="h-4 w-4 text-indigo-500" />;
+    case "borrower_deleted":
+      return <UserMinus className="h-4 w-4 text-red-500" />;
     default:
       return <Home className="h-4 w-4 text-slate-400" />;
   }

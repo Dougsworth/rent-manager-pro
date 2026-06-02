@@ -13,6 +13,7 @@ import {
   CalendarDays,
   Landmark,
   UserCheck,
+  HelpCircle,
   Menu,
   X,
   LogOut
@@ -42,6 +43,7 @@ const navigation = [
   { name: "Calendar", href: "/calendar", icon: CalendarDays },
   { name: "Activity Log", href: "/activity-log", icon: ClipboardList },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Help & FAQ", href: "/help", icon: HelpCircle },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
