@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import BrandLogo from '@/components/BrandLogo';
+import { RotatingWord } from '@/components/RotatingWord';
 import {
   Building2,
   FileText,
@@ -605,7 +606,7 @@ export default function Landing() {
 
               <Reveal delay={100}>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-neutral-900 leading-[1.1] tracking-tight mb-4">
-                  The easiest way to<br />collect <span className="text-blue-600">rent</span> &amp; more.
+                  The easiest way to<br />collect <RotatingWord className="text-blue-600" /> &amp; more.
                 </h1>
               </Reveal>
 
