@@ -605,13 +605,13 @@ export default function Landing() {
 
               <Reveal delay={100}>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold text-neutral-900 leading-[1.1] tracking-tight mb-4">
-                  The easiest way to<br />collect <span className="text-blue-600">rent</span>.
+                  The easiest way to<br />collect <span className="text-blue-600">rent</span> &amp; more.
                 </h1>
               </Reveal>
 
               <Reveal delay={200}>
                 <p className="text-base md:text-lg text-neutral-600 max-w-xl mb-8 leading-relaxed">
-                  Send invoices, share payment links, get proof of payment, and track collections — all from one platform built for Jamaican landlords.
+                  Collect rent and loan payments, send invoices, share payment links, receive proof of payment, automate reminders, manage tenants and borrowers, and track it all with reports — one platform built for Jamaican landlords and lenders.
                 </p>
               </Reveal>
 

@@ -11,7 +11,7 @@ interface SEOProps {
 const SITE_NAME = 'EasyCollect';
 const SITE_URL = 'https://easycollectja.com';
 const DEFAULT_DESCRIPTION =
-  "Jamaica's #1 rent collection platform for landlords. Send invoices, track payments, automate reminders, and manage tenants — all in one place.";
+  "The easy way to collect anything you're owed — rent, loans, and more. Send invoices, track payments and loans, automate reminders, and manage tenants and borrowers, all in one place.";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export default function SEO({
@@ -21,7 +21,7 @@ export default function SEO({
   path = '/',
   type = 'website',
 }: SEOProps) {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `EasyCollectJA — Rent Collection for Jamaican Landlords | EasyCollect Jamaica`;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `EasyCollectJA — Collect Rent, Loans & More, Easily | EasyCollect Jamaica`;
   const url = `${SITE_URL}${path}`;
 
   return (

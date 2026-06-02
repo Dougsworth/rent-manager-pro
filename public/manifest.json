@@ -1,7 +1,7 @@
 {
-  "name": "EasyCollect — Rent Collection",
+  "name": "EasyCollect — Collect Anything, Easily",
   "short_name": "EasyCollect",
-  "description": "Simplify rent collection for Jamaican landlords. Send invoices, track payments, automate reminders.",
+  "description": "The easy way to collect anything you're owed — rent, loans, and more. Send invoices, track payments and loans, and automate reminders.",
   "id": "/",
   "start_url": "/dashboard",
   "scope": "/",

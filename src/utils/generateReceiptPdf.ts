@@ -152,7 +152,7 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   setColor(MUTED);
-  doc.text('Rent & Payment Management', margin + badgeSize + 10, y + 31);
+  doc.text('Collect anything, easily', margin + badgeSize + 10, y + 31);
 
   // Right side: document title + meta
   doc.setFont('helvetica', 'bold');

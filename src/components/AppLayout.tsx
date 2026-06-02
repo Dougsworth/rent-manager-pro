@@ -77,7 +77,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60 overflow-visible">
             <Link to="/dashboard" className="flex items-center tracking-tight min-w-0">
               {sidebarHovered ? (
-                <span className="text-base font-bold text-slate-900 whitespace-nowrap">EasyCollect</span>
+                <span className="flex flex-col leading-tight min-w-0">
+                  <span className="text-base font-bold text-slate-900 whitespace-nowrap">EasyCollect</span>
+                  <span className="text-[10px] text-slate-400 whitespace-nowrap">Collect anything, easily</span>
+                </span>
               ) : (
                 <span className="text-base font-bold text-slate-900 flex-shrink-0">EC</span>
               )}
@@ -167,8 +170,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="lg:hidden bg-white border-b border-slate-200/60 sticky top-0 z-30">
           <div className="px-4">
             <div className="flex justify-between h-14 items-center">
-              <Link to="/dashboard" className="tracking-tight">
+              <Link to="/dashboard" className="tracking-tight flex flex-col leading-tight">
                 <span className="text-base font-bold text-slate-900">EasyCollect</span>
+                <span className="text-[10px] text-slate-400">Collect anything, easily</span>
               </Link>
               <div className="flex items-center gap-1">
                 <NotificationBell />
@@ -206,8 +210,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100/60">
-            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="tracking-tight">
+            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="tracking-tight flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900">EasyCollect</span>
+              <span className="text-[10px] text-slate-400">Collect anything, easily</span>
             </Link>
             <button
               onClick={() => setMobileMenuOpen(false)}
