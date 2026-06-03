@@ -48,6 +48,26 @@ Deno.serve(async (req) => {
     const amountInCents = Math.round(invoice.amount * 100);
     const defaultOrigin = req.headers.get('origin') || 'https://easycollectja.com';
 
+    // Route the payment to the landlord's own LuniPay connected account so the
+    // money goes to them, not the platform. Falls back to the platform account
+    // until the landlord has connected (set up in Settings → Payouts).
+    const { data: landlord } = await supabase
+      .from('profiles')
+      .select('connected_account_id, payouts_enabled')
+      .eq('id', invoice.landlord_id)
+      .single();
+
+    const destination = landlord?.payouts_enabled ? landlord.connected_account_id : null;
+    const feeBps = Number(Deno.env.get('LUNIPAY_PLATFORM_FEE_BPS') || '0');
+    const connectParams = destination
+      ? {
+          payment_intent_data: {
+            transfer_data: { destination },
+            ...(feeBps > 0 ? { application_fee_amount: Math.round((amountInCents * feeBps) / 10000) } : {}),
+          },
+        }
+      : {};
+
     const lunipay = new LuniPay(secretKey);
     const session = await lunipay.checkout.sessions.create({
       amount: amountInCents,
@@ -58,6 +78,7 @@ Deno.serve(async (req) => {
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean),
+      ...connectParams,
       success_url: success_url || `${defaultOrigin}/pay/${invoice.payment_token}?status=success`,
       cancel_url: cancel_url || `${defaultOrigin}/pay/${invoice.payment_token}?status=cancelled`,
       // Metadata is the contract the webhook reads to fulfil the right invoice.
