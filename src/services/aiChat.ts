@@ -1,8 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
-import { getLoanStats } from '@/services/loans';
+import { getLoanStats, getOverdueLoans } from '@/services/loans';
 import { getBorrowers } from '@/services/borrowers';
 import type { LocalIntent, AiChatUsage } from '@/types/app.types';
+
+export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 const DAILY_LIMIT = 5;
 
@@ -53,14 +55,20 @@ const intentPatterns: { intent: LocalIntent; patterns: RegExp[] }[] = [
     ],
   },
   {
+    intent: 'loan_overdue',
+    patterns: [
+      /overdue|behind|late|default|missed?|owe/i,
+      /who.*(pay|repay).*(due|owe)/i,
+    ],
+  },
+  {
     intent: 'loan_stats',
     patterns: [
       /how\s*many\s*(active\s*)?loan/i,
       /loan\s*(portfolio|summary|stats|overview|book)/i,
       /how\s*much.*(lent|loaned|disburs)/i,
       /total\s*(lent|loaned)/i,
-      /loan.*(overdue|outstanding|collected|owed)/i,
-      /(overdue|outstanding).*loan/i,
+      /outstanding|owed|collected|repaid/i,
     ],
   },
   {
@@ -76,7 +84,13 @@ const intentPatterns: { intent: LocalIntent; patterns: RegExp[] }[] = [
 ];
 
 export function matchLocalIntent(message: string): LocalIntent | null {
+  // Route by topic first: if the message is about loans/borrowers, only consider
+  // loan intents (and vice-versa). This stops "who owes loans" from matching the
+  // rent "overdue" pattern that contains "owe".
+  const mentionsLoan = /\b(loans?|borrow(er)?s?|lend|lent|lending)\b/i.test(message);
   for (const { intent, patterns } of intentPatterns) {
+    const isLoanIntent = intent === 'loan_stats' || intent === 'loan_overdue';
+    if (mentionsLoan !== isLoanIntent) continue;
     for (const pattern of patterns) {
       if (pattern.test(message)) {
         return intent;
@@ -144,6 +158,17 @@ export async function executeLocalQuery(intent: LocalIntent, landlordId: string)
       ].join('\n');
     }
 
+    case 'loan_overdue': {
+      const overdue = await getOverdueLoans(landlordId);
+      if (overdue.length === 0) {
+        return 'Good news! No borrowers have overdue loan installments right now.';
+      }
+      const lines = overdue.map(
+        (l) => `- **${l.borrower_name}** (${l.loan_number}): ${formatCurrency(l.amount)} overdue — ${l.daysOverdue} days late`
+      );
+      return `You have **${overdue.length}** loan${overdue.length > 1 ? 's' : ''} with overdue installments:\n\n${lines.join('\n')}`;
+    }
+
     case 'loan_stats': {
       const stats = await getLoanStats(landlordId);
       if (stats.totalLent === 0) {
@@ -208,7 +233,8 @@ export async function buildAnonymizedContext(landlordId: string): Promise<string
 
 export async function sendToAI(
   message: string,
-  landlordId: string
+  landlordId: string,
+  history: ChatTurn[] = []
 ): Promise<{ reply: string; usage: AiChatUsage }> {
   const context = await buildAnonymizedContext(landlordId);
 
@@ -220,7 +246,7 @@ export async function sendToAI(
   }
 
   const { data, error } = await supabase.functions.invoke('ai-chat', {
-    body: { message, context },
+    body: { message, context, history: history.slice(-6) },
     headers,
   });
 
@@ -246,17 +272,19 @@ export async function sendToAI(
 
 export async function processMessage(
   message: string,
-  landlordId: string
+  landlordId: string,
+  history: ChatTurn[] = []
 ): Promise<{ reply: string; source: 'local' | 'ai'; usage?: AiChatUsage }> {
-  // Try local intent first
+  // Try local intent first (skip for follow-ups that lean on prior context, e.g.
+  // "who is that?" — let the AI answer those with conversation history).
   const intent = matchLocalIntent(message);
   if (intent) {
     const reply = await executeLocalQuery(intent, landlordId);
     return { reply, source: 'local' };
   }
 
-  // Fall back to AI
-  const { reply, usage } = await sendToAI(message, landlordId);
+  // Fall back to AI, passing recent conversation for follow-up questions.
+  const { reply, usage } = await sendToAI(message, landlordId, history);
   return { reply, source: 'ai', usage };
 }
 

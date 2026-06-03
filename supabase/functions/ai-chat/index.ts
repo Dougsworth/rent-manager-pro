@@ -5,6 +5,10 @@ import { corsHeaders } from '../_shared/cors.ts';
 const chatRequestSchema = z.object({
   message: z.string().min(1, 'message is required'),
   context: z.string().optional(),
+  history: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() }))
+    .max(12)
+    .optional(),
 });
 
 const DAILY_LIMIT = 5;
@@ -46,6 +50,7 @@ Deno.serve(async (req) => {
 
     let message: string;
     let context: string | undefined;
+    let history: { role: 'user' | 'assistant'; content: string }[] = [];
     try {
       const body = await req.json();
       const parsed = chatRequestSchema.safeParse(body);
@@ -57,6 +62,7 @@ Deno.serve(async (req) => {
       }
       message = parsed.data.message;
       context = parsed.data.context;
+      history = parsed.data.history ?? [];
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
         status: 400,
@@ -125,6 +131,7 @@ ${context || 'No additional context provided.'}`;
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
+          ...history,
           { role: 'user', content: message },
         ],
         temperature: 0.7,

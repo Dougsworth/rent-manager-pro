@@ -119,7 +119,12 @@ export function AiChat() {
     setLoading(true);
 
     try {
-      const result = await processMessage(msg, user.id);
+      // Recent turns so the AI can answer follow-ups ("who is that?")
+      const history = results.flatMap(r => [
+        { role: 'user' as const, content: r.query },
+        { role: 'assistant' as const, content: r.answer },
+      ]);
+      const result = await processMessage(msg, user.id, history);
       setResults(prev => [...prev, {
         id: crypto.randomUUID(),
         query: msg,

@@ -162,4 +162,5 @@ export type LocalIntent =
   | 'collected'
   | 'recent_payments'
   | 'dashboard_stats'
-  | 'loan_stats';
+  | 'loan_stats'
+  | 'loan_overdue';
