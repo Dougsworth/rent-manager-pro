@@ -209,9 +209,9 @@ export function AiChat() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open assistant"
-          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+          className="fixed bottom-5 right-5 z-40 h-10 w-10 rounded-full bg-blue-600 text-white shadow-md shadow-blue-600/20 ring-1 ring-blue-700/10 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
         >
-          <AssistantGlyph className="h-7 w-7" />
+          <AssistantGlyph className="h-[18px] w-[18px]" />
         </button>
       )}
 

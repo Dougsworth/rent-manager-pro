@@ -40,7 +40,8 @@ Deno.serve(async (req) => {
       return json({ received: true }); // acknowledge events we don't fulfil
     }
 
-    const session = event.data?.object;
+    // Stripe-style payload is event.data.object; fall back to event.data just in case.
+    const session = event.data?.object ?? event.data ?? {};
     const metadata = session?.metadata || {};
 
     // Only invoice payments are wired today. Loan repayments will use type: 'loan'.
@@ -80,7 +81,10 @@ Deno.serve(async (req) => {
     await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoiceId);
 
     const transactionId = session.id ?? session.payment_intent ?? null;
-    const paymentAmount = session.amount_cents ? session.amount_cents / 100 : invoice.amount;
+    // LuniPay echoes the persisted amount as amount_cents; tolerate `amount` too.
+    const paymentAmount = typeof session.amount_cents === 'number'
+      ? session.amount_cents / 100
+      : (typeof session.amount === 'number' ? session.amount / 100 : invoice.amount);
 
     await supabase.from('payments').insert({
       invoice_id: invoiceId,
