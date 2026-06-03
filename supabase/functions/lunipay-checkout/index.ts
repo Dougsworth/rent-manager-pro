@@ -52,6 +52,12 @@ Deno.serve(async (req) => {
     const session = await lunipay.checkout.sessions.create({
       amount: amountInCents,
       currency: CURRENCY,
+      // Be explicit so the session doesn't depend on auto-detected methods for the
+      // currency. Override via LUNIPAY_PAYMENT_METHODS (comma-separated) if needed.
+      payment_method_types: (Deno.env.get('LUNIPAY_PAYMENT_METHODS') || 'card')
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean),
       success_url: success_url || `${defaultOrigin}/pay/${invoice.payment_token}?status=success`,
       cancel_url: cancel_url || `${defaultOrigin}/pay/${invoice.payment_token}?status=cancelled`,
       // Metadata is the contract the webhook reads to fulfil the right invoice.
