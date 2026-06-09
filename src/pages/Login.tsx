@@ -39,8 +39,8 @@ export default function Login() {
     <div className="min-h-screen flex">
       <SEO
         title="Log In"
-        description="Sign in to your EasyCollect account. Manage your rental properties, tenants, and payments in Jamaica."
-        keywords="EasyCollect login, landlord login Jamaica, rent collection login"
+        description="Sign in to your EasyCollect account. Manage your rentals, loans, tenants, borrowers, and payments in Jamaica."
+        keywords="EasyCollect login, landlord login Jamaica, lender login Jamaica, rent collection login, loan tracking login"
         path="/login"
       />
       {/* Left — Form */}
@@ -168,7 +168,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/70" />
 
         <p className="relative z-10 text-sm text-slate-300/70">
-          Rent collection made simple — for landlords who value their time.
+          Getting paid made simple — for landlords and lenders who value their time.
         </p>
 
         <div className="relative z-10 space-y-6">
@@ -181,7 +181,7 @@ export default function Login() {
           <div className="flex items-center gap-8 pt-4">
             <div>
               <p className="text-2xl font-bold">500+</p>
-              <p className="text-sm text-slate-300/60">Landlords</p>
+              <p className="text-sm text-slate-300/60">Collectors</p>
             </div>
             <div className="w-px h-10 bg-white/10" />
             <div>
@@ -191,7 +191,7 @@ export default function Login() {
             <div className="w-px h-10 bg-white/10" />
             <div>
               <p className="text-2xl font-bold">J$2M+</p>
-              <p className="text-sm text-slate-300/60">Rent collected</p>
+              <p className="text-sm text-slate-300/60">Money collected</p>
             </div>
           </div>
         </div>
