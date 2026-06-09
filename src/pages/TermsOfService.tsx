@@ -86,6 +86,10 @@ export default function TermsOfService() {
               <p className="text-sm text-slate-600 leading-relaxed">
                 You are responsible for ensuring that any bank details, tenant information, or other data you provide is accurate and that you have the right to share it through the platform.
               </p>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                <strong>Data protection (JDPA).</strong> When you add tenants or borrowers, you act as the data controller for their personal data under Jamaica's Data Protection Act, 2020, and EasyCollect acts as your processor, handling that data only on your documented instructions. You confirm that you have a lawful basis to add each person and to share their information through the platform, and that you will inform them of how their data is used. Our handling of personal data — including security measures, retention periods, and data-subject rights — is described in our{' '}
+                <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>, which forms part of these Terms.
+              </p>
             </section>
 
             <section className="space-y-3">

@@ -156,6 +156,7 @@ export async function getPropertyOccupancy(landlordId: string): Promise<Map<stri
     .from('tenants')
     .select('id, first_name, last_name, unit_id')
     .eq('landlord_id', landlordId)
+    .is('deleted_at', null)
     .not('unit_id', 'is', null);
 
   if (error) throw error;

@@ -7,6 +7,7 @@ export async function getBorrowers(landlordId: string): Promise<Borrower[]> {
     .from('borrowers')
     .select('*')
     .eq('landlord_id', landlordId)
+    .is('deleted_at', null)
     .order('first_name');
 
   if (error) throw error;
@@ -69,6 +70,8 @@ export async function updateBorrower(borrowerId: string, updates: {
 }
 
 export async function deleteBorrower(borrowerId: string) {
+  // JDPA: soft delete (see deleteTenant). Keeps loan/payment history for the
+  // retention window; the data-retention cron anonymizes PII afterward.
   const { data: info } = await supabase
     .from('borrowers')
     .select('landlord_id, first_name, last_name')
@@ -77,7 +80,7 @@ export async function deleteBorrower(borrowerId: string) {
 
   const { error } = await supabase
     .from('borrowers')
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), status: 'inactive' })
     .eq('id', borrowerId);
 
   if (error) throw error;

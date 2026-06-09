@@ -123,6 +123,7 @@ export interface Database {
           lease_start: string | null;
           lease_end: string | null;
           status: 'active' | 'inactive';
+          deleted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -138,6 +139,7 @@ export interface Database {
           lease_start?: string | null;
           lease_end?: string | null;
           status?: 'active' | 'inactive';
+          deleted_at?: string | null;
         };
         Update: {
           profile_id?: string | null;
@@ -149,6 +151,7 @@ export interface Database {
           lease_start?: string | null;
           lease_end?: string | null;
           status?: 'active' | 'inactive';
+          deleted_at?: string | null;
         };
         Relationships: [];
       };
@@ -440,6 +443,7 @@ export interface Database {
           phone: string;
           notes: string;
           status: 'active' | 'inactive';
+          deleted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -452,6 +456,7 @@ export interface Database {
           phone?: string;
           notes?: string;
           status?: 'active' | 'inactive';
+          deleted_at?: string | null;
         };
         Update: {
           first_name?: string;
@@ -460,6 +465,7 @@ export interface Database {
           phone?: string;
           notes?: string;
           status?: 'active' | 'inactive';
+          deleted_at?: string | null;
         };
         Relationships: [];
       };

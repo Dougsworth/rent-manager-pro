@@ -208,3 +208,6 @@ ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check CHECK (
   'tenant_added', 'lease_expiring', 'late_fee_applied', 'system',
   'loan_payment_received', 'loan_overdue'
 ));
+
+
+

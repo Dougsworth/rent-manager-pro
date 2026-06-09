@@ -6,7 +6,8 @@ export async function getDashboardStats(landlordId: string): Promise<DashboardSt
     .from('tenants')
     .select('*', { count: 'exact', head: true })
     .eq('landlord_id', landlordId)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .is('deleted_at', null);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];

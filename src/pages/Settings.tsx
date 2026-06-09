@@ -20,8 +20,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import {
   Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, RefreshCw
+  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, RefreshCw,
+  Download, FileLock2
 } from 'lucide-react';
+import { downloadDataExport } from '@/services/dataExport';
 import { useToast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
 
@@ -101,6 +103,7 @@ export default function Settings() {
   // Billing "Get Notified" state
   const [proEmail, setProEmail] = useState('');
   const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { toast } = useToast();
 
@@ -137,6 +140,7 @@ export default function Settings() {
     { id: 'recurring', label: 'Recurring Invoices', icon: RefreshCw },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
+    { id: 'privacy', label: 'Privacy & Data', icon: FileLock2 },
   ];
 
   const loadLateFeeSettings = async () => {
@@ -822,6 +826,67 @@ export default function Settings() {
     </div>
   );
 
+  const handleDataExport = async () => {
+    if (!user) return;
+    setExporting(true);
+    try {
+      await downloadDataExport(user.id);
+      toast('Your data export has been downloaded.', 'success');
+    } catch (err) {
+      console.error('Data export failed:', err);
+      toast('Could not generate your data export. Please try again.', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const renderPrivacySection = () => (
+    <div className="space-y-8 max-w-2xl">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">Your data</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Under Jamaica's Data Protection Act you have the right to access a copy of the
+          personal data we hold for your account. The export includes your profile,
+          properties, tenants, borrowers, invoices, payments and loan records as a JSON file.
+        </p>
+        <Button onClick={handleDataExport} disabled={exporting} variant="outline">
+          {exporting ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          Download my data
+        </Button>
+      </div>
+
+      <div className="border-t border-gray-100 pt-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-1">How we handle deletion &amp; retention</h3>
+        <ul className="text-sm text-gray-500 leading-relaxed space-y-2 list-disc pl-5">
+          <li>
+            When you remove a tenant or borrower they are immediately hidden from your
+            account, but their linked financial records are retained to meet the 7-year
+            requirement under the Income Tax Act.
+          </li>
+          <li>
+            Personal details (name, email, phone) are automatically anonymized one year
+            after a tenancy or loan ends, or one year after removal.
+          </li>
+          <li>
+            To request correction or full erasure of your own account data, contact{' '}
+            <a href="mailto:support@easycollectja.com" className="text-blue-600 hover:underline">
+              support@easycollectja.com
+            </a>.
+          </li>
+        </ul>
+        <p className="text-xs text-gray-400 mt-4">
+          See our{' '}
+          <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>{' '}
+          for full details.
+        </p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'profile': return renderProfileSection();
@@ -834,6 +899,7 @@ export default function Settings() {
       case 'recurring': return renderRecurringSection();
       case 'billing': return renderBillingSection();
       case 'security': return renderSecuritySection();
+      case 'privacy': return renderPrivacySection();
       default: return renderProfileSection();
     }
   };

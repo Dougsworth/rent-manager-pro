@@ -5,7 +5,7 @@ let fromCallResponses: { data: unknown; error: unknown }[] = [];
 let fromCallIdx = 0;
 
 const mockChain: Record<string, any> = {};
-const chainMethods = ['select', 'insert', 'update', 'delete', 'eq', 'in', 'order', 'single'];
+const chainMethods = ['select', 'insert', 'update', 'delete', 'eq', 'in', 'is', 'order', 'single'];
 
 for (const m of chainMethods) {
   mockChain[m] = vi.fn().mockImplementation(() => {
@@ -94,11 +94,17 @@ describe('updateTenant', () => {
 });
 
 describe('deleteTenant', () => {
-  it('deletes without error', async () => {
+  it('soft-deletes by stamping deleted_at instead of removing the row', async () => {
     fromCallResponses = [
+      // First from() call: fetch tenant info for the activity log
+      { data: { landlord_id: 'landlord1', first_name: 'John', last_name: 'Doe' }, error: null },
+      // Second from() call: the soft-delete update
       { data: null, error: null },
     ];
     await expect(deleteTenant('t1')).resolves.toBeUndefined();
-    expect(mockChain.delete).toHaveBeenCalled();
+    expect(mockChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'inactive', deleted_at: expect.any(String) }),
+    );
+    expect(mockChain.delete).not.toHaveBeenCalled();
   });
 });

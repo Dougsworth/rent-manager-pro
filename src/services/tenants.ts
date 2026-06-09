@@ -11,6 +11,7 @@ export async function getTenants(landlordId: string): Promise<TenantWithDetails[
       unit:units(name, rent_amount, property:properties(name))
     `)
     .eq('landlord_id', landlordId)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -129,13 +130,10 @@ export async function updateTenant(tenantId: string, updates: {
 }
 
 export async function deleteTenant(tenantId: string) {
-  // Clean up payment_proofs first (FK lacks CASCADE until migration 014 is applied)
-  await supabase
-    .from('payment_proofs')
-    .delete()
-    .eq('tenant_id', tenantId);
-
-  // Get tenant info before deleting for the log
+  // JDPA: soft delete. The tenant disappears from active views immediately,
+  // but the row (and its linked invoices/payments) is retained so financial
+  // records survive the 7-year tax window. The data-retention cron anonymizes
+  // the PII once the retention window elapses. See migration 027/028.
   const { data: tenantInfo } = await supabase
     .from('tenants')
     .select('landlord_id, first_name, last_name')
@@ -144,7 +142,7 @@ export async function deleteTenant(tenantId: string) {
 
   const { error } = await supabase
     .from('tenants')
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), status: 'inactive' })
     .eq('id', tenantId);
 
   if (error) throw error;
