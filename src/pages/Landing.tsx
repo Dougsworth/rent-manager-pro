@@ -596,7 +596,7 @@ export default function Landing() {
               <Reveal>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-neutral-200 shadow-sm mb-6">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-xs sm:text-sm text-neutral-600">Built for Jamaican landlords</span>
+                  <span className="text-xs sm:text-sm text-neutral-600">Built for collecting in Jamaica</span>
                   <span className="text-xs sm:text-sm font-medium text-blue-600 flex items-center gap-1">
                     Learn more
                     <ArrowRight className="w-3 h-3" />
@@ -687,7 +687,7 @@ export default function Landing() {
                   <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs font-medium text-white/80 uppercase tracking-wider">Collecting rent since 2024</span>
+                      <span className="text-xs font-medium text-white/80 uppercase tracking-wider">Getting paid since 2024</span>
                     </div>
                     <p className="text-2xl lg:text-3xl font-bold text-white leading-tight mb-3">
                       &ldquo;No more chasing<br />tenants for payment.&rdquo;
@@ -1215,7 +1215,7 @@ export default function Landing() {
                   Results That Speak For<br />Themselves
                 </h2>
                 <p className="text-lg text-white/40 max-w-2xl mx-auto">
-                  Join landlords across Jamaica who are collecting rent faster and easier with EasyCollect
+                  Join landlords and lenders across Jamaica who are getting paid faster and easier with EasyCollect
                 </p>
               </div>
             </Reveal>
@@ -1398,7 +1398,7 @@ export default function Landing() {
                     Ready to get started?
                   </h2>
                   <p className="text-base md:text-lg text-white/90 max-w-xl leading-relaxed">
-                    Join landlords across Jamaica who use EasyCollect to send invoices, collect proof of payment, and track their rental income — all for free.
+                    Join landlords and lenders across Jamaica who use EasyCollect to send invoices, collect proof of payment, and track their income — all for free.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <Link
@@ -1426,7 +1426,7 @@ export default function Landing() {
                         <img key={i} src={src} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-blue-600" />
                       ))}
                     </div>
-                    <span className="text-sm">Trusted by landlords across Jamaica</span>
+                    <span className="text-sm">Trusted by landlords and lenders across Jamaica</span>
                   </div>
                 </div>
               </div>
@@ -1477,7 +1477,7 @@ export default function Landing() {
               </div>
 
               <div>
-                <h3 className="font-medium text-sm text-white/80 mb-4 uppercase tracking-wider">For Landlords</h3>
+                <h3 className="font-medium text-sm text-white/80 mb-4 uppercase tracking-wider">Get Started</h3>
                 <ul className="space-y-3">
                   <li><Link to="/signup" className="text-white/60 hover:text-white transition-colors text-sm">Sign Up</Link></li>
                   <li><Link to="/login" className="text-white/60 hover:text-white transition-colors text-sm">Log In</Link></li>
