@@ -229,7 +229,7 @@ export default function LandingScreen() {
               },
             ]}
           >
-            Built for Jamaican landlords
+            Built for collecting in Jamaica
           </Animated.Text>
         </LinearGradient>
       </ImageBackground>
