@@ -25,7 +25,7 @@ describe('Signup', () => {
     expect(screen.getByText('Create your account')).toBeInTheDocument();
     expect(screen.getByLabelText('First name')).toBeInTheDocument();
     expect(screen.getByLabelText('Last name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email address')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 
@@ -35,7 +35,7 @@ describe('Signup', () => {
 
     await user.type(screen.getByLabelText('First name'), 'John');
     await user.type(screen.getByLabelText('Last name'), 'Doe');
-    await user.type(screen.getByLabelText('Email address'), 'john@test.com');
+    await user.type(screen.getByLabelText('Email'), 'john@test.com');
     await user.type(screen.getByLabelText('Password'), '123');
 
     await user.click(screen.getByRole('button', { name: /create account/i }));
@@ -53,7 +53,7 @@ describe('Signup', () => {
 
     await user.type(screen.getByLabelText('First name'), 'John');
     await user.type(screen.getByLabelText('Last name'), 'Doe');
-    await user.type(screen.getByLabelText('Email address'), 'john@test.com');
+    await user.type(screen.getByLabelText('Email'), 'john@test.com');
     await user.type(screen.getByLabelText('Password'), 'secret123');
 
     await user.click(screen.getByRole('button', { name: /create account/i }));
@@ -70,7 +70,7 @@ describe('Signup', () => {
 
     await user.type(screen.getByLabelText('First name'), 'John');
     await user.type(screen.getByLabelText('Last name'), 'Doe');
-    await user.type(screen.getByLabelText('Email address'), 'john@test.com');
+    await user.type(screen.getByLabelText('Email'), 'john@test.com');
     await user.type(screen.getByLabelText('Password'), 'secret123');
 
     await user.click(screen.getByRole('button', { name: /create account/i }));
