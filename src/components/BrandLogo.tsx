@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-
 interface BrandLogoProps {
   className?: string;
   coinColor?: string;
@@ -29,22 +27,8 @@ export function CoinSvg({ color = 'currentColor' }: { color?: string }) {
 }
 
 export default function BrandLogo({ className = '', coinColor }: BrandLogoProps) {
-  const logoRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const el = logoRef.current;
-    if (!el) return;
-
-    const interval = setInterval(() => {
-      el.classList.add('coin-active');
-      setTimeout(() => el.classList.remove('coin-active'), 2500);
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <span ref={logoRef} className={`${className} brand-logo`}>
+    <span className={`${className} brand-logo`}>
       <span className="brand-text-left">EasyC</span>
       <span className="coin-swap">
         <span className="coin-letter">o</span>

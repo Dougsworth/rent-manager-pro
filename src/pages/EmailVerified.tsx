@@ -12,7 +12,7 @@ export default function EmailVerified() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
         <div className="flex justify-center mb-8">
           <Link to="/">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-2xl font-semibold text-slate-900" />
           </Link>
         </div>
 

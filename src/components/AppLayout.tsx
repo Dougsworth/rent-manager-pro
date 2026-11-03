@@ -101,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 overflow-hidden",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-200 overflow-hidden",
                     isActive
                       ? "bg-white/80 text-slate-900 shadow-sm border border-slate-200/60"
                       : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
@@ -110,7 +110,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <Icon className="h-4.5 w-4.5 flex-shrink-0" />
                   <span
                     className={cn(
-                      "whitespace-nowrap transition-all duration-300",
+                      "whitespace-nowrap transition-[width,max-height,margin,opacity,transform] duration-300",
                       sidebarHovered ? "opacity-100" : "opacity-0 w-0"
                     )}
                   >
@@ -140,7 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               <span
                 className={cn(
-                  "text-sm text-slate-600 truncate whitespace-nowrap transition-all duration-300",
+                  "text-sm text-slate-600 truncate whitespace-nowrap transition-[width,max-height,margin,opacity,transform] duration-300",
                   sidebarHovered ? "opacity-100" : "opacity-0 w-0"
                 )}
               >
@@ -156,7 +156,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <LogOut className="h-4 w-4 flex-shrink-0" />
                   <span
                     className={cn(
-                      "text-sm whitespace-nowrap transition-all duration-300",
+                      "text-sm whitespace-nowrap transition-[width,max-height,margin,opacity,transform] duration-300",
                       sidebarHovered ? "opacity-100" : "opacity-0 w-0"
                     )}
                   >
@@ -200,7 +200,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Drawer Overlay */}
         {mobileMenuOpen && (
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+            className="lg:hidden fixed inset-0 z-40 bg-black/30"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
@@ -234,7 +234,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   to={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-200",
                     isActive
                       ? "bg-white/80 text-slate-900 shadow-sm"
                       : "text-slate-500 hover:bg-white/50 hover:text-slate-900"

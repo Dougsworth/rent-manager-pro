@@ -184,7 +184,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             )}
           </div>
           {listening && (
-            <p className="text-xs text-red-600 mt-1 animate-pulse">
+            <p className="text-xs text-red-600 mt-1">
               Listening... Say: "John Smith email john@test.com phone 876-555-1234"
             </p>
           )}

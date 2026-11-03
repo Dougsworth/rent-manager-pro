@@ -65,7 +65,7 @@ export function AnnouncementBanner() {
 
   return (
     <div
-      className={`transition-all duration-300 overflow-hidden ${
+      className={`transition-[width,max-height,margin,opacity,transform] duration-300 overflow-hidden ${
         visible ? 'opacity-100' : 'max-h-0 opacity-0'
       }`}
     >
@@ -99,7 +99,7 @@ export function AnnouncementBanner() {
 
         {/* Expanded content */}
         <div
-          className={`transition-all duration-300 overflow-hidden ${
+          className={`transition-[width,max-height,margin,opacity,transform] duration-300 overflow-hidden ${
             expanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >

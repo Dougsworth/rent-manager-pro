@@ -349,7 +349,7 @@ export default function Loans() {
                       <div className="w-24">
                         <p className="text-xs text-slate-400 mb-1">Paid {progress}%</p>
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                          <div className="h-full bg-blue-500 rounded-full transition-[width]" style={{ width: `${progress}%` }} />
                         </div>
                       </div>
                     </div>

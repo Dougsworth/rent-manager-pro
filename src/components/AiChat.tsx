@@ -164,7 +164,7 @@ export function AiChat() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all group"
+        className="fixed bottom-5 right-5 z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-slate-200 shadow-sm hover:border-slate-300 transition-[color,background-color,border-color,opacity,transform] group"
       >
         <Sparkles className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
         <span className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors hidden sm:inline">Ask AI</span>
@@ -177,7 +177,7 @@ export function AiChat() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
           <div
-            className="absolute inset-0 bg-black/25 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/25"
             onClick={() => setOpen(false)}
           />
 

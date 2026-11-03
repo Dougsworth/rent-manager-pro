@@ -77,7 +77,7 @@ export function PWAInstallPrompt() {
       {/* Popup */}
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className={`pointer-events-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[320px] sm:max-w-sm overflow-hidden transition-all duration-300 ${
+          className={`pointer-events-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[320px] sm:max-w-sm overflow-hidden transition-[color,background-color,border-color,opacity,transform] duration-300 ${
             animating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
           }`}
         >

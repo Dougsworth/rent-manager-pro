@@ -479,13 +479,13 @@ export default function Invoices() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Invoice ID</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
-                <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Property</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Due Date</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Link</th>
+                <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-mediumr text-slate-400">Invoice ID</th>
+                <th className="text-left py-3 px-6 text-xs font-mediumr text-slate-400">Tenant</th>
+                <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-mediumr text-slate-400">Property</th>
+                <th className="text-left py-3 px-6 text-xs font-mediumr text-slate-400">Amount</th>
+                <th className="text-left py-3 px-6 text-xs font-mediumr text-slate-400">Due Date</th>
+                <th className="text-left py-3 px-6 text-xs font-mediumr text-slate-400">Status</th>
+                <th className="text-left py-3 px-6 text-xs font-mediumr text-slate-400">Link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

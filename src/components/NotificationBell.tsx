@@ -186,7 +186,7 @@ export function NotificationBell() {
                     onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
                     onMouseEnter={() => setExpandedId(n.id)}
                     onMouseLeave={() => setExpandedId(null)}
-                    className={`group w-full flex items-start gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-slate-50 ${
+                    className={`group w-full flex items-start gap-3 px-4 py-3 text-left transition-[color,background-color,border-color,opacity,transform] duration-200 hover:bg-slate-50 ${
                       !n.is_read ? "bg-blue-50/30" : ""
                     }`}
                   >
@@ -199,7 +199,7 @@ export function NotificationBell() {
                       >
                         {n.title}
                       </p>
-                      <p className={`text-xs text-slate-500 mt-0.5 transition-all duration-200 ${expandedId === n.id ? "whitespace-normal" : "truncate"}`}>
+                      <p className={`text-xs text-slate-500 mt-0.5 transition-[color,background-color,border-color,opacity,transform] duration-200 ${expandedId === n.id ? "whitespace-normal" : "truncate"}`}>
                         {n.message}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.created_at)}</p>

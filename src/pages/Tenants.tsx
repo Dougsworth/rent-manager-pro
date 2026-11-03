@@ -217,7 +217,7 @@ export default function Tenants() {
       <div className="flex gap-5">
         {/* Tenant List */}
         <div className={cn(
-          "transition-all duration-300 min-w-0",
+          "transition-[width,max-height,margin,opacity,transform] duration-300 min-w-0",
           selectedTenant ? "w-full lg:w-[340px] lg:flex-shrink-0" : "w-full"
         )}>
           {filteredTenants.length === 0 ? (
@@ -251,7 +251,7 @@ export default function Tenants() {
                   key={tenant.id}
                   onClick={() => setSelectedTenant(tenant)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3.5 transition-all duration-150 text-left",
+                    "w-full flex items-center gap-3 px-4 py-3.5 transition-[color,background-color,border-color,opacity,transform] duration-150 text-left",
                     selectedTenant?.id === tenant.id
                       ? "bg-blue-50 border-l-[3px] border-l-blue-500"
                       : "hover:bg-slate-50 border-l-[3px] border-l-transparent"

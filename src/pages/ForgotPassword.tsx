@@ -48,7 +48,7 @@ export default function ForgotPassword() {
       <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">
           <div className="mb-12">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-2xl font-semibold text-slate-900" />
           </div>
 
           {sent ? (
@@ -150,10 +150,10 @@ export default function ForgotPassword() {
 
           {/* Dashboard preview mockup — scale variant */}
           <div className="forgot-mockup relative w-full max-w-md select-none" aria-hidden="true">
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm p-4 shadow-2xl shadow-black/20 status-shimmer">
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 shadow-2xl shadow-black/20">
               {/* Mock header bar */}
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-semibold text-white/50 tracking-wide uppercase">Security</span>
+                <span className="text-xs font-medium text-white/50">Security</span>
                 <span className="text-[10px] text-white/30">Account</span>
               </div>
               {/* Mock stat cards */}
@@ -174,8 +174,8 @@ export default function ForgotPassword() {
               {/* Mock activity rows */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] px-3 pb-1 border-b border-white/[0.05]">
-                  <span className="text-white/25 uppercase tracking-wider">Recent Activity</span>
-                  <span className="text-white/25 uppercase tracking-wider">Time</span>
+                  <span className="text-white/25r">Recent Activity</span>
+                  <span className="text-white/25r">Time</span>
                 </div>
                 {[
                   { action: 'Payment received', detail: 'A. Thompson — J$45,000', time: '2m ago', color: 'text-emerald-400/70 bg-emerald-400/10' },
@@ -194,12 +194,11 @@ export default function ForgotPassword() {
               </div>
             </div>
             {/* Glow behind the card */}
-            <div className="glow-pulse absolute -inset-4 -z-10 bg-blue-500/[0.08] rounded-2xl blur-2xl" />
           </div>
         </div>
 
         <div className="relative z-10">
-          <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.5)" />
+          <BrandLogo className="text-xl font-semibold" coinColor="rgba(255,255,255,0.5)" />
         </div>
       </div>
     </div>

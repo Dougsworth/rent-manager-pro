@@ -254,11 +254,11 @@ export default function Reports() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Month</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Expected</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Collected</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Outstanding</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-slate-400">Rate</th>
+                      <th className="text-left py-3 px-4 text-xs font-mediumr text-slate-400">Month</th>
+                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Expected</th>
+                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Collected</th>
+                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Outstanding</th>
+                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Rate</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

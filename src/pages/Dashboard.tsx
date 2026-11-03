@@ -98,12 +98,12 @@ export default function Dashboard() {
         description={today}
         action={
           <div className="hidden sm:flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Collected</span>
+            <span className="text-xs font-medium text-slate-400">Collected</span>
             <div className="flex gap-0.5">
               {Array.from({ length: 20 }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-1.5 h-2.5 rounded-sm transition-all duration-500 ${
+                  className={`w-1.5 h-2.5 rounded-sm transition-[color,background-color,border-color,opacity,transform] duration-500 ${
                     i < Math.round(collectionPercentage / 5) ? 'bg-blue-500' : 'bg-slate-200'
                   }`}
                 />
@@ -117,12 +117,11 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full opacity-60" />
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-[color,background-color,border-color,opacity,transform] duration-300 hover:border-blue-200">
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Expected</p>
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <p className="text-xs font-mediumst text-slate-400">Expected</p>
+                <div className="flex items-center justify-center text-slate-400">
                   <Receipt className="h-4 w-4 text-blue-500" />
                 </div>
               </div>
@@ -133,12 +132,11 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/payments" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full opacity-60" />
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-[color,background-color,border-color,opacity,transform] duration-300 hover:border-emerald-200">
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Collected</p>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <p className="text-xs font-mediumst text-slate-400">Collected</p>
+                <div className="flex items-center justify-center text-slate-400">
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
                 </div>
               </div>
@@ -151,12 +149,11 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/invoices" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 to-transparent rounded-bl-full opacity-60" />
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-[color,background-color,border-color,opacity,transform] duration-300 hover:border-amber-200">
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Outstanding</p>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                <p className="text-xs font-mediumst text-slate-400">Outstanding</p>
+                <div className="flex items-center justify-center text-slate-400">
                   <Clock className="h-4 w-4 text-amber-500" />
                 </div>
               </div>
@@ -169,12 +166,11 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/5 hover:border-red-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-50 to-transparent rounded-bl-full opacity-60" />
+          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-[color,background-color,border-color,opacity,transform] duration-300 hover:border-red-200">
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Overdue</p>
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                <p className="text-xs font-mediumst text-slate-400">Overdue</p>
+                <div className="flex items-center justify-center text-slate-400">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                 </div>
               </div>
@@ -218,7 +214,7 @@ export default function Dashboard() {
           <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Recent Activity</h2>
             {recentPayments.length > 0 && (
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Last 5</span>
+              <span className="text-xs font-medium text-slate-400r">Last 5</span>
             )}
           </div>
           <div className="p-6">
@@ -268,8 +264,8 @@ export default function Dashboard() {
           <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Overdue Tenants</h2>
             {overdueTenants.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600 uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600r">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                 {overdueTenants.length} overdue
               </span>
             )}
@@ -286,7 +282,7 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {overdueTenants.map((tenant) => (
-                  <div key={tenant.id} className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-white transition-all duration-200">
+                  <div key={tenant.id} className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-white transition-[color,background-color,border-color,opacity,transform] duration-200">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">

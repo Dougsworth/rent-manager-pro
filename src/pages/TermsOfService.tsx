@@ -16,7 +16,7 @@ export default function TermsOfService() {
       <header className="bg-white border-b border-slate-200/60 sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <BrandLogo className="text-lg font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-lg font-semibold text-slate-900" />
           </Link>
           <Link
             to="/"

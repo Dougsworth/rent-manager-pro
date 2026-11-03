@@ -47,7 +47,7 @@ export default function Login() {
       <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
         <div className="w-full max-w-sm mx-auto">
           <div className="mb-12">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-2xl font-semibold text-slate-900" />
           </div>
 
           <div className="mb-8">
@@ -117,7 +117,7 @@ export default function Login() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
+            <div className="relative flex justify-center text-xs">
               <span className="bg-white px-2 text-slate-400">Or continue with</span>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function Login() {
         </div>
 
         <div className="relative z-10">
-          <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.5)" />
+          <BrandLogo className="text-xl font-semibold" coinColor="rgba(255,255,255,0.5)" />
         </div>
       </div>
     </div>
