@@ -102,7 +102,7 @@ export default function Properties() {
       setNewPropertyName('');
       setNewPropertyAddress('');
       setShowAddProperty(false);
-      toast('Property added successfully!', 'success');
+      toast('Property added successfully', 'success');
       await loadData();
     } catch (err) {
       console.error('Failed to add property:', err);
@@ -125,7 +125,7 @@ export default function Properties() {
       setNewUnitName('');
       setNewUnitRent('');
       setShowAddUnitFor(null);
-      toast('Unit added successfully!', 'success');
+      toast('Unit added successfully', 'success');
       await loadData();
     } catch (err) {
       console.error('Failed to add unit:', err);
@@ -144,7 +144,7 @@ export default function Properties() {
     try {
       await updateProperty(editProperty.id, { name: editPropName.trim(), address: editPropAddress.trim() });
       setEditProperty(null);
-      toast('Property updated!', 'success');
+      toast('Property updated', 'success');
       await loadData();
     } catch (err) {
       console.error('Failed to update property:', err);
@@ -163,7 +163,7 @@ export default function Properties() {
     try {
       await updateUnit(editUnit.id, { name: editUnitName.trim(), rent_amount: parseInt(editUnitRent) });
       setEditUnit(null);
-      toast('Unit updated!', 'success');
+      toast('Unit updated', 'success');
       await loadData();
     } catch (err) {
       console.error('Failed to update unit:', err);
@@ -222,7 +222,7 @@ export default function Properties() {
         action={
           <Button onClick={() => setShowAddProperty(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Property
+            Add property
           </Button>
         }
       />
@@ -236,7 +236,7 @@ export default function Properties() {
           </div>
           <div className="text-center p-3">
             <p className="text-2xl font-bold text-slate-900">{totalUnits}</p>
-            <p className="text-sm text-slate-500">Total Units</p>
+            <p className="text-sm text-slate-500">Total units</p>
           </div>
           <div className="text-center p-3">
             <p className="text-2xl font-bold text-emerald-600">{occupiedUnits}/{totalUnits}</p>
@@ -244,7 +244,7 @@ export default function Properties() {
           </div>
           <div className="text-center p-3">
             <p className="text-2xl font-bold text-slate-700">J${totalMonthlyRent.toLocaleString()}</p>
-            <p className="text-sm text-slate-500">Monthly Rent</p>
+            <p className="text-sm text-slate-500">Monthly rent</p>
           </div>
         </div>
       </div>
@@ -252,12 +252,12 @@ export default function Properties() {
       {/* Add Property Dialog */}
       <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
         <DialogContent className="max-w-md">
-          <DialogTitle>New Property</DialogTitle>
+          <DialogTitle>New property</DialogTitle>
           <DialogDescription>Add a property to start tracking units and tenants.</DialogDescription>
 
           <form onSubmit={handleAddProperty} className="mt-4 space-y-4">
             <div>
-              <Label htmlFor="propName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property Name</Label>
+              <Label htmlFor="propName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property name</Label>
               <Input
                 id="propName"
                 required
@@ -284,7 +284,7 @@ export default function Properties() {
               <Button type="button" variant="outline" onClick={() => setShowAddProperty(false)} className="flex-1 h-11">Cancel</Button>
               <Button type="submit" className="flex-1 h-11" disabled={addingProperty}>
                 {addingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Add Property
+                Add property
               </Button>
             </div>
           </form>
@@ -294,12 +294,12 @@ export default function Properties() {
       {/* Edit Property Dialog */}
       <Dialog open={!!editProperty} onOpenChange={(open) => { if (!open) setEditProperty(null); }}>
         <DialogContent className="max-w-md">
-          <DialogTitle>Edit Property</DialogTitle>
+          <DialogTitle>Edit property</DialogTitle>
           <DialogDescription>Update your property details.</DialogDescription>
 
           <div className="mt-4 space-y-4">
             <div>
-              <Label htmlFor="editPropName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property Name</Label>
+              <Label htmlFor="editPropName" className="text-sm font-medium text-slate-700 mb-1.5 block">Property name</Label>
               <Input
                 id="editPropName"
                 value={editPropName}
@@ -320,7 +320,7 @@ export default function Properties() {
               <Button variant="outline" onClick={() => setEditProperty(null)} className="flex-1 h-11">Cancel</Button>
               <Button onClick={handleEditProperty} className="flex-1 h-11" disabled={savingProperty}>
                 {savingProperty && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Save Changes
+                Save changes
               </Button>
             </div>
           </div>
@@ -330,12 +330,12 @@ export default function Properties() {
       {/* Edit Unit Dialog */}
       <Dialog open={!!editUnit} onOpenChange={(open) => { if (!open) setEditUnit(null); }}>
         <DialogContent className="max-w-md">
-          <DialogTitle>Edit Unit</DialogTitle>
+          <DialogTitle>Edit unit</DialogTitle>
           <DialogDescription>Update unit name or rent amount.</DialogDescription>
 
           <div className="mt-4 space-y-4">
             <div>
-              <Label htmlFor="editUnitName" className="text-sm font-medium text-slate-700 mb-1.5 block">Unit Name</Label>
+              <Label htmlFor="editUnitName" className="text-sm font-medium text-slate-700 mb-1.5 block">Unit name</Label>
               <Input
                 id="editUnitName"
                 value={editUnitName}
@@ -344,7 +344,7 @@ export default function Properties() {
               />
             </div>
             <div>
-              <Label htmlFor="editUnitRent" className="text-sm font-medium text-slate-700 mb-1.5 block">Monthly Rent</Label>
+              <Label htmlFor="editUnitRent" className="text-sm font-medium text-slate-700 mb-1.5 block">Monthly rent</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">J$</span>
                 <Input
@@ -360,7 +360,7 @@ export default function Properties() {
               <Button variant="outline" onClick={() => setEditUnit(null)} className="flex-1 h-11">Cancel</Button>
               <Button onClick={handleEditUnit} className="flex-1 h-11" disabled={savingUnit}>
                 {savingUnit && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Save Changes
+                Save changes
               </Button>
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function Properties() {
       {/* Delete Property Dialog */}
       <Dialog open={!!deletePropertyId} onOpenChange={(open) => { if (!open) setDeletePropertyId(null); }}>
         <DialogContent className="max-w-sm">
-          <DialogTitle>Delete Property</DialogTitle>
+          <DialogTitle>Delete property</DialogTitle>
           <DialogDescription>This action cannot be undone.</DialogDescription>
           <p className="text-sm text-slate-600 leading-relaxed mt-2">This will permanently delete the property and all its units. Any tenant assignments will be removed.</p>
           <div className="flex gap-3 mt-5">
@@ -386,7 +386,7 @@ export default function Properties() {
       {/* Delete Unit Dialog */}
       <Dialog open={!!deleteUnitId} onOpenChange={(open) => { if (!open) setDeleteUnitId(null); }}>
         <DialogContent className="max-w-sm">
-          <DialogTitle>Delete Unit</DialogTitle>
+          <DialogTitle>Delete unit</DialogTitle>
           <DialogDescription>This action cannot be undone.</DialogDescription>
           <p className="text-sm text-slate-600 leading-relaxed mt-2">This will permanently remove this unit from the property.</p>
           <div className="flex gap-3 mt-5">
@@ -461,7 +461,7 @@ export default function Properties() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
                         occupied === units.length && units.length > 0
                           ? 'bg-emerald-100 text-emerald-700'
                           : occupied > 0

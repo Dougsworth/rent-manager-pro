@@ -22,8 +22,8 @@ test.describe('Authentication', () => {
 
   test('shows validation error for short password on signup', async ({ page }) => {
     await page.goto('/signup');
-    await page.getByLabel('First Name').fill('Test');
-    await page.getByLabel('Last Name').fill('User');
+    await page.getByLabel('First name').fill('Test');
+    await page.getByLabel('Last name').fill('User');
     await page.getByLabel('Email address').fill('test@example.com');
     await page.getByLabel('Password').fill('123');
     await page.getByRole('button', { name: /create account/i }).click();

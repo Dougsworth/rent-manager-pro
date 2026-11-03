@@ -66,7 +66,7 @@ export function SetupGuide() {
       href: '/properties',
     },
     {
-      label: 'Add Units',
+      label: 'Add units',
       description: 'Add units to your property',
       done: hasUnits,
       href: '/properties',
@@ -98,11 +98,11 @@ export function SetupGuide() {
         <div className="fixed bottom-16 right-5 z-30">
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm hover:border-slate-300 transition-[color,background-color,border-color,opacity,transform] duration-200 group"
+            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-lg bg-white border border-slate-200/80 shadow-sm hover:border-slate-300 transition-[color,background-color,border-color,opacity,transform] duration-200 group"
           >
             <ProgressRing percentage={percentage} />
             <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-              Setup Guide
+              Setup guide
             </span>
             <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
               {percentage}%
@@ -119,7 +119,7 @@ export function SetupGuide() {
           <div className="fixed bottom-16 right-5 z-40 w-80 bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-1">
-              <h3 className="text-base font-semibold text-slate-900">Setup Guide</h3>
+              <h3 className="text-base font-semibold text-slate-900">Setup guide</h3>
               <button
                 onClick={() => setOpen(false)}
                 className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"

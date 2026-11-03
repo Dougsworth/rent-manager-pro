@@ -43,16 +43,15 @@ export default function Login() {
         keywords="EasyCollect login, landlord login Jamaica, lender login Jamaica, rent collection login, loan tracking login"
         path="/login"
       />
-      {/* Left — Form */}
-      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
+            <div className="flex-1 flex flex-col justify-center px-4 py-12 bg-white">
         <div className="w-full max-w-sm mx-auto">
-          <div className="mb-12">
-            <BrandLogo className="text-2xl font-semibold text-slate-900" />
+          <div className="mb-8">
+            <BrandLogo className="text-2xl font-medium text-slate-900" />
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Welcome back</h1>
-            <p className="mt-2 text-slate-500">Sign in to your account</p>
+            <h1 className="text-2xl font-medium text-slate-900">Sign in</h1>
+            <p className="mt-2 text-slate-500">Your rent, loans and invoices are where you left them</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -74,7 +73,7 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
+                <Link to="/forgot-password" className="text-sm text-slate-500 hover:text-slate-900">
                   Forgot password?
                 </Link>
               </div>
@@ -148,58 +147,13 @@ export default function Login() {
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Don't have an account?{' '}
-            <Link to="/signup" className="font-semibold text-slate-900 hover:text-slate-700">
+            <Link to="/signup" className="font-medium text-slate-900 underline underline-offset-4 hover:text-slate-700">
               Get started free
             </Link>
           </p>
         </div>
       </div>
 
-      {/* Right — Brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background image — fills entire panel */}
-        <img
-          src="/buildingggimage.png"
-          alt=""
-          className="login-mockup absolute inset-0 w-full h-full object-cover object-center"
-        />
-        {/* Dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-slate-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/70" />
-
-        <p className="relative z-10 text-sm text-slate-300/70">
-          Getting paid made simple — for landlords and lenders who value their time.
-        </p>
-
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-6xl font-bold leading-tight drop-shadow-lg">
-            Welcome
-            <br />
-            <span className="text-blue-400">back</span>
-          </h2>
-
-          <div className="flex items-center gap-8 pt-4">
-            <div>
-              <p className="text-2xl font-bold">500+</p>
-              <p className="text-sm text-slate-300/60">Collectors</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">10hrs</p>
-              <p className="text-sm text-slate-300/60">Saved monthly</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">J$2M+</p>
-              <p className="text-sm text-slate-300/60">Money collected</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <BrandLogo className="text-xl font-semibold" coinColor="rgba(255,255,255,0.5)" />
-        </div>
-      </div>
     </div>
   );
 }

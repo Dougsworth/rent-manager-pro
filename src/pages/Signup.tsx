@@ -6,7 +6,6 @@ import { signupSchema } from '@/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff, Loader2, ArrowRight, Mail } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import SEO from '@/components/SEO';
@@ -48,22 +47,20 @@ export default function Signup() {
     return (
       <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-8 text-center">
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-7 w-7 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Check your email</h2>
+          <div>
+            <div className="px-4 text-center">
+              <div className="flex justify-center mb-4"><Mail className="h-7 w-7 text-slate-400" /></div>
+              <h2 className="text-xl font-medium text-slate-900 mb-2">Check your email</h2>
               <p className="text-slate-500 mb-6">
                 We've sent a confirmation link to <strong className="text-slate-900">{email}</strong>. Click the link to activate your account.
               </p>
               <Link to="/login">
                 <Button variant="outline" className="w-full">
-                  Back to Login
+                  Back to login
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -77,15 +74,14 @@ export default function Signup() {
         keywords="sign up EasyCollect, free landlord software Jamaica, free lender software Jamaica, rent collection registration, loan tracking registration, create account"
         path="/signup"
       />
-      {/* Left — Form */}
-      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
+            <div className="flex-1 flex flex-col justify-center px-4 py-12 bg-white">
         <div className="w-full max-w-sm mx-auto">
-          <div className="mb-12">
-            <BrandLogo className="text-2xl font-semibold text-slate-900" />
+          <div className="mb-8">
+            <BrandLogo className="text-2xl font-medium text-slate-900" />
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create your account</h1>
+            <h1 className="text-2xl font-medium text-slate-900">Create your account</h1>
             <p className="mt-2 text-slate-500">Free to start. Takes less than a minute.</p>
           </div>
 
@@ -222,58 +218,13 @@ export default function Signup() {
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-slate-900 hover:text-slate-700">
+            <Link to="/login" className="font-medium text-slate-900 underline underline-offset-4 hover:text-slate-700">
               Sign in
             </Link>
           </p>
         </div>
       </div>
 
-      {/* Right — Brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background image — fills entire panel */}
-        <img
-          src="/buildingggimage.png"
-          alt=""
-          className="signup-mockup absolute inset-0 w-full h-full object-cover object-center"
-        />
-        {/* Dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-slate-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/70" />
-
-        <p className="relative z-10 text-sm text-slate-300/70">
-          Built for landlords and lenders who want to spend less time chasing payments.
-        </p>
-
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-6xl font-bold leading-tight drop-shadow-lg">
-            Getting paid,
-            <br />
-            <span className="text-blue-400">simplified</span>
-          </h2>
-
-          <div className="flex items-center gap-8 pt-4">
-            <div>
-              <p className="text-2xl font-bold">2 min</p>
-              <p className="text-sm text-slate-300/60">Setup time</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">Free</p>
-              <p className="text-sm text-slate-300/60">To get started</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">100%</p>
-              <p className="text-sm text-slate-300/60">Online</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <BrandLogo className="text-xl font-semibold" coinColor="rgba(255,255,255,0.5)" />
-        </div>
-      </div>
     </div>
   );
 }

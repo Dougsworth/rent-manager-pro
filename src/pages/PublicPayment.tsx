@@ -128,7 +128,7 @@ export default function PublicPayment() {
         <Card className="max-w-md mx-4">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment Link Error</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment link error</h2>
             <p className="text-gray-600">{error}</p>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ export default function PublicPayment() {
 
       <div className="bg-white border-b">
         <div className="max-w-2xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-gray-900">Payment Invoice</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Payment invoice</h1>
           <p className="text-gray-600">for {invoice.tenant_name}</p>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function PublicPayment() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
                 <CreditCard className="h-5 w-5 text-gray-900" />
-                <h2 className="font-semibold text-gray-900">Pay Online</h2>
+                <h2 className="font-semibold text-gray-900">Pay online</h2>
               </div>
               <p className="text-sm text-gray-600 mb-4">Pay securely via HandyPay</p>
               <Button
@@ -209,7 +209,7 @@ export default function PublicPayment() {
         {hasBankDetails && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">{invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank Transfer Details'}</h2>
+              <h2 className="font-semibold text-gray-900 mb-3">{invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank transfer details'}</h2>
               <p className="text-sm text-gray-600 mb-4">
                 Transfer your rent to the account below, then upload a screenshot of your confirmation.
               </p>
@@ -264,7 +264,7 @@ export default function PublicPayment() {
         {submitted && (
           <div className="bg-green-50 text-green-800 p-4 rounded-lg text-sm flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
-            <span className="font-medium">Proof submitted successfully! Your landlord will review it shortly.</span>
+            <span className="font-medium">Proof submitted. Your landlord will review it shortly.</span>
           </div>
         )}
 
@@ -287,7 +287,7 @@ export default function PublicPayment() {
                       className="flex-1"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      Change Image
+                      Change image
                     </Button>
                     <Button
                       className="flex-1"
@@ -295,7 +295,7 @@ export default function PublicPayment() {
                       disabled={submitting}
                     >
                       {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Submit Proof
+                      Submit proof
                     </Button>
                   </div>
                 </div>

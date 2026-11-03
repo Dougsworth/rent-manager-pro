@@ -103,7 +103,7 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{step === 1 ? 'Add Property' : 'Add Units'}</DialogTitle>
+          <DialogTitle>{step === 1 ? 'Add property' : 'Add units'}</DialogTitle>
           <DialogDescription>
             {step === 1
               ? 'Create a new property to start managing units and tenants.'
@@ -159,7 +159,7 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
               </Button>
               <Button type="submit" className="flex-1" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create Property
+                Create property
               </Button>
             </div>
           </form>
@@ -181,7 +181,7 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
             <form onSubmit={handleAddUnit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="unitName">Unit Name</Label>
+                  <Label htmlFor="unitName">Unit name</Label>
                   <Input
                     id="unitName"
                     required
@@ -208,12 +208,12 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
                 ) : (
                   <Plus className="h-4 w-4 mr-2" />
                 )}
-                Add Unit
+                Add unit
               </Button>
             </form>
 
             <Button onClick={handleDone} className="w-full">
-              {addedUnits.length === 0 ? 'Skip for Now' : 'Done'}
+              {addedUnits.length === 0 ? 'Skip for now' : 'Done'}
             </Button>
           </div>
         )}

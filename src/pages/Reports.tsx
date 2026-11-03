@@ -101,7 +101,7 @@ export default function Reports() {
       { key: 'expected', header: 'Expected' },
       { key: 'collected', header: 'Collected' },
       { key: 'outstanding', header: 'Outstanding' },
-      { key: 'rate', header: 'Collection Rate' },
+      { key: 'rate', header: 'Collection rate' },
     ]);
   };
 
@@ -139,7 +139,7 @@ export default function Reports() {
       <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6 no-print">
         <div className="flex flex-col sm:flex-row items-end gap-3">
           <div>
-            <Label htmlFor="start-date" className="text-xs text-slate-500">Start Date</Label>
+            <Label htmlFor="start-date" className="text-xs text-slate-500">Start date</Label>
             <Input
               id="start-date"
               type="date"
@@ -149,7 +149,7 @@ export default function Reports() {
             />
           </div>
           <div>
-            <Label htmlFor="end-date" className="text-xs text-slate-500">End Date</Label>
+            <Label htmlFor="end-date" className="text-xs text-slate-500">End date</Label>
             <Input
               id="end-date"
               type="date"
@@ -159,10 +159,10 @@ export default function Reports() {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => applyPreset('this-month')}>This Month</Button>
+            <Button variant="outline" size="sm" onClick={() => applyPreset('this-month')}>This month</Button>
             <Button variant="outline" size="sm" onClick={() => applyPreset('last-3')}>Last 3 Months</Button>
             <Button variant="outline" size="sm" onClick={() => applyPreset('last-6')}>Last 6 Months</Button>
-            <Button variant="outline" size="sm" onClick={() => applyPreset('this-year')}>This Year</Button>
+            <Button variant="outline" size="sm" onClick={() => applyPreset('this-year')}>This year</Button>
           </div>
         </div>
       </div>
@@ -175,11 +175,11 @@ export default function Reports() {
           <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
-                label="Total Expected"
+                label="Total expected"
                 value={formatCurrency(report.totalExpected)}
               />
               <StatCard
-                label="Total Collected"
+                label="Total collected"
                 value={formatCurrency(report.totalCollected)}
                 valueColor="text-emerald-600"
               />
@@ -189,7 +189,7 @@ export default function Reports() {
                 valueColor={report.totalOutstanding > 0 ? 'text-amber-600' : 'text-slate-900'}
               />
               <StatCard
-                label="Collection Rate"
+                label="Collection rate"
                 value={`${report.collectionRate.toFixed(1)}%`}
                 valueColor={report.collectionRate >= 90 ? 'text-emerald-600' : report.collectionRate >= 70 ? 'text-amber-600' : 'text-red-500'}
               />
@@ -200,7 +200,7 @@ export default function Reports() {
           {report.byMonth.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="text-base">Collection Trend</CardTitle>
+                <CardTitle className="text-base">Collection trend</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
@@ -224,7 +224,7 @@ export default function Reports() {
           {report.byProperty.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="text-base">Property Breakdown</CardTitle>
+                <CardTitle className="text-base">Property breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
@@ -254,11 +254,11 @@ export default function Reports() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      <th className="text-left py-3 px-4 text-xs font-mediumr text-slate-400">Month</th>
-                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Expected</th>
-                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Collected</th>
-                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Outstanding</th>
-                      <th className="text-right py-3 px-4 text-xs font-mediumr text-slate-400">Rate</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-slate-400">Month</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-400">Expected</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-400">Collected</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-400">Outstanding</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-400">Rate</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

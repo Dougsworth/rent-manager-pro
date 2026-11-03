@@ -36,7 +36,7 @@ function statusVariant(status: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === 'paid_off') return 'Paid Off';
+  if (status === 'paid_off') return 'Paid off';
   if (status === 'defaulted') return 'Defaulted';
   if (status === 'active') return 'Active';
   return status.charAt(0).toUpperCase() + status.slice(1);
@@ -106,7 +106,7 @@ export default function Loans() {
   const tabs = [
     { value: 'all' as LoanStatus, label: 'All', count: loans.length },
     { value: 'active' as LoanStatus, label: 'Active', count: loans.filter(l => l.status === 'active').length },
-    { value: 'paid_off' as LoanStatus, label: 'Paid Off', count: loans.filter(l => l.status === 'paid_off').length },
+    { value: 'paid_off' as LoanStatus, label: 'Paid off', count: loans.filter(l => l.status === 'paid_off').length },
     { value: 'defaulted' as LoanStatus, label: 'Defaulted', count: loans.filter(l => l.status === 'defaulted').length },
   ];
 
@@ -127,7 +127,7 @@ export default function Loans() {
         start_date: loanForm.start_date,
         notes: loanForm.notes || undefined,
       });
-      toast('Loan created successfully!');
+      toast('Loan created successfully');
       setShowCreate(false);
       setLoanForm({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' });
       await loadData();
@@ -182,7 +182,7 @@ export default function Loans() {
         payment_date: paymentForm.payment_date || undefined,
         notes: paymentForm.notes || undefined,
       });
-      toast('Payment recorded!');
+      toast('Payment recorded');
       setShowPayment(false);
       // Refresh detail if expanded
       if (expandedLoanId === paymentLoanId) {
@@ -206,13 +206,13 @@ export default function Loans() {
       { key: 'loan_number', header: 'Loan #' },
       { key: 'borrower', header: 'Borrower' },
       { key: 'principal', header: 'Principal' },
-      { key: 'interest_rate', header: 'Interest Rate' },
+      { key: 'interest_rate', header: 'Interest rate' },
       { key: 'term_months', header: 'Term (months)' },
       { key: 'monthly_installment', header: 'Monthly' },
-      { key: 'total_paid', header: 'Total Paid' },
+      { key: 'total_paid', header: 'Total paid' },
       { key: 'status', header: 'Status' },
-      { key: 'start_date', header: 'Start Date' },
-      { key: 'end_date', header: 'End Date' },
+      { key: 'start_date', header: 'Start date' },
+      { key: 'end_date', header: 'End date' },
     ];
     const rows = filtered.map(l => ({
       loan_number: l.loan_number,
@@ -277,7 +277,7 @@ export default function Loans() {
             )}
             <Button size="sm" onClick={() => { setLoanForm({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' }); setFormError(''); setShowCreate(true); }}>
               <Plus className="h-4 w-4 mr-1.5" />
-              New Loan
+              New loan
             </Button>
           </div>
         }
@@ -285,10 +285,10 @@ export default function Loans() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-        <StatCard label="Total Lent" value={formatCurrency(stats.totalLent)} icon={Landmark} />
+        <StatCard label="Total lent" value={formatCurrency(stats.totalLent)} icon={Landmark} />
         <StatCard label="Collected" value={formatCurrency(stats.totalCollected)} icon={DollarSign} />
         <StatCard label="Outstanding" value={formatCurrency(stats.totalOutstanding)} icon={TrendingUp} />
-        <StatCard label="Active Loans" value={String(stats.activeLoanCount)} icon={Landmark} />
+        <StatCard label="Active loans" value={String(stats.activeLoanCount)} icon={Landmark} />
         <StatCard label="Overdue" value={String(stats.overdueInstallments)} icon={AlertTriangle} />
       </div>
 
@@ -307,7 +307,7 @@ export default function Loans() {
           icon={Landmark}
           message="No loans yet"
           description="Create a loan to start tracking repayments"
-          action={<Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1.5" />New Loan</Button>}
+          action={<Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1.5" />New loan</Button>}
         />
       ) : (
         <>
@@ -377,7 +377,7 @@ export default function Loans() {
                         <div className="space-y-4">
                           {/* Loan Info */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                            <div><span className="text-slate-400">Interest Rate</span><p className="font-medium">{loan.interest_rate}%</p></div>
+                            <div><span className="text-slate-400">Interest rate</span><p className="font-medium">{loan.interest_rate}%</p></div>
                             <div><span className="text-slate-400">Term</span><p className="font-medium">{loan.term_months} months</p></div>
                             <div><span className="text-slate-400">Start</span><p className="font-medium">{formatDate(loan.start_date)}</p></div>
                             <div><span className="text-slate-400">End</span><p className="font-medium">{formatDate(loan.end_date)}</p></div>
@@ -388,10 +388,10 @@ export default function Loans() {
                             {loan.status === 'active' && (
                               <>
                                 <Button size="sm" onClick={() => openPaymentModal(loan.id, loan.monthly_installment)}>
-                                  <DollarSign className="h-4 w-4 mr-1" />Record Payment
+                                  <DollarSign className="h-4 w-4 mr-1" />Record payment
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => handleMarkDefaulted(loan.id)}>
-                                  Mark Defaulted
+                                  Mark defaulted
                                 </Button>
                               </>
                             )}
@@ -399,13 +399,13 @@ export default function Loans() {
 
                           {/* Installment Schedule */}
                           <div>
-                            <h4 className="text-sm font-medium text-slate-900 mb-2">Installment Schedule</h4>
+                            <h4 className="text-sm font-medium text-slate-900 mb-2">Installment schedule</h4>
                             <div className="overflow-x-auto">
                               <table className="w-full text-sm">
                                 <thead>
                                   <tr className="text-left text-xs text-slate-400 border-b border-slate-200/60">
                                     <th className="pb-2 font-medium">#</th>
-                                    <th className="pb-2 font-medium">Due Date</th>
+                                    <th className="pb-2 font-medium">Due date</th>
                                     <th className="pb-2 font-medium text-right">Amount</th>
                                     <th className="pb-2 font-medium text-right">Status</th>
                                   </tr>
@@ -434,7 +434,7 @@ export default function Loans() {
                           {/* Payment History */}
                           {loanPayments.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-medium text-slate-900 mb-2">Payment History</h4>
+                              <h4 className="text-sm font-medium text-slate-900 mb-2">Payment history</h4>
                               <div className="space-y-1.5">
                                 {loanPayments.map(p => (
                                   <div key={p.id} className="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2 border border-slate-100">
@@ -470,7 +470,7 @@ export default function Loans() {
       {/* Create Loan Modal */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
-          <DialogHeader><DialogTitle>New Loan</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>New loan</DialogTitle></DialogHeader>
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
           <div className="space-y-4">
             <div>
@@ -523,7 +523,7 @@ export default function Loans() {
               <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
               <Button onClick={handleCreateLoan} disabled={creating}>
                 {creating && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Create Loan
+                Create loan
               </Button>
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function Loans() {
       {/* Record Payment Modal */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Record Loan Payment</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Record loan payment</DialogTitle></DialogHeader>
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
           <div className="space-y-4">
             <div>
@@ -547,7 +547,7 @@ export default function Loans() {
                   value={paymentForm.method}
                   onValueChange={(v: string) => setPaymentForm(f => ({ ...f, method: v }))}
                   options={[
-                    { value: 'bank_transfer', label: 'Bank Transfer' },
+                    { value: 'bank_transfer', label: 'Bank transfer' },
                     { value: 'cash', label: 'Cash' },
                     { value: 'card', label: 'Card' },
                     { value: 'other', label: 'Other' },
@@ -555,7 +555,7 @@ export default function Loans() {
                 />
               </div>
               <div>
-                <Label>Payment Date</Label>
+                <Label>Payment date</Label>
                 <Input type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm(f => ({ ...f, payment_date: e.target.value }))} />
               </div>
             </div>
@@ -567,7 +567,7 @@ export default function Loans() {
               <Button variant="outline" onClick={() => setShowPayment(false)}>Cancel</Button>
               <Button onClick={handleRecordPayment} disabled={recording}>
                 {recording && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Record Payment
+                Record payment
               </Button>
             </div>
           </div>

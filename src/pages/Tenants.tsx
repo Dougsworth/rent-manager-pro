@@ -99,7 +99,7 @@ export default function Tenants() {
       } else {
         await sendReminder(selectedTenant.id, overdueInvoice.id);
       }
-      toast('Reminder sent successfully!', 'success');
+      toast('Reminder sent successfully', 'success');
     } catch (err) {
       console.error('Failed to send reminder:', err);
       toast('Failed to send reminder. Please try again.', 'error');
@@ -161,7 +161,7 @@ export default function Tenants() {
           tenants.length > 0 ? (
             <Button type="button" onClick={() => setShowAddModal(true)}>
               <Plus className="h-4 w-4" />
-              Add Tenant
+              Add tenant
             </Button>
           ) : undefined
         }
@@ -171,7 +171,7 @@ export default function Tenants() {
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
-          label="Total Tenants"
+          label="Total tenants"
           value={String(counts.all)}
           subtext={unassignedCount > 0 ? `${unassignedCount} archived` : "Active tenants"}
           subtextColor={unassignedCount > 0 ? "text-slate-400" : undefined}
@@ -239,7 +239,7 @@ export default function Tenants() {
                 !searchQuery && activeTab === "all" ? (
                   <Button type="button" onClick={() => setShowAddModal(true)}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Add Tenant
+                    Add tenant
                   </Button>
                 ) : undefined
               }
@@ -277,7 +277,7 @@ export default function Tenants() {
                           <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
                         </>
                       ) : (
-                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">Archived</span>
+                        <span className="text-xs font-medium text-slate-500">Archived</span>
                       )}
                     </div>
                   ) : (

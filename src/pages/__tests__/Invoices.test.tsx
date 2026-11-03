@@ -49,10 +49,10 @@ describe('Invoices', () => {
     const user = userEvent.setup();
 
     await waitFor(() => {
-      expect(screen.getByText('Create Invoice')).toBeInTheDocument();
+      expect(screen.getByText('Create invoice')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Create Invoice'));
+    await user.click(screen.getByText('Create invoice'));
 
     await waitFor(() => {
       expect(screen.getByText('Amount (JMD)')).toBeInTheDocument();

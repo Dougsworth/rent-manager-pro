@@ -98,7 +98,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Tenant</DialogTitle>
+          <DialogTitle>Edit tenant</DialogTitle>
         </DialogHeader>
 
         {error && (
@@ -110,7 +110,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-firstName">First Name</Label>
+              <Label htmlFor="edit-firstName">First name</Label>
               <Input
                 id="edit-firstName"
                 required
@@ -119,7 +119,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-lastName">Last Name</Label>
+              <Label htmlFor="edit-lastName">Last name</Label>
               <Input
                 id="edit-lastName"
                 required
@@ -165,7 +165,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-leaseStart">Lease Start</Label>
+              <Label htmlFor="edit-leaseStart">Lease start</Label>
               <Input
                 id="edit-leaseStart"
                 type="date"
@@ -174,7 +174,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-leaseEnd">Lease End</Label>
+              <Label htmlFor="edit-leaseEnd">Lease end</Label>
               <Input
                 id="edit-leaseEnd"
                 type="date"
@@ -190,7 +190,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
             </Button>
             <Button type="submit" className="flex-1" disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+              Save changes
             </Button>
           </div>
         </form>

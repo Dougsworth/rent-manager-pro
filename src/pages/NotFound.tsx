@@ -40,7 +40,7 @@ export default function NotFound() {
               className="h-11 px-5"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
+              Go back
             </Button>
             <Link to="/dashboard" className={buttonVariants({ className: "h-11 px-5" })}>
               <Home className="h-4 w-4 mr-2" />

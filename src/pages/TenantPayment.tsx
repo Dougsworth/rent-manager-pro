@@ -183,7 +183,7 @@ export default function TenantPayment() {
         <div className="max-w-4xl mx-auto p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Payments</h1>
+              <h1 className="text-2xl font-bold text-gray-900">My payments</h1>
               <p className="text-gray-600">{tenantRecord.first_name} {tenantRecord.last_name}</p>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -199,7 +199,7 @@ export default function TenantPayment() {
         {hasBankDetails && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">Bank Transfer Details</h2>
+              <h2 className="font-semibold text-gray-900 mb-3">Bank transfer details</h2>
               <p className="text-sm text-gray-600 mb-4">
                 Transfer your rent to the account below, then upload a screenshot of your confirmation.
               </p>
@@ -224,7 +224,7 @@ export default function TenantPayment() {
         {/* Unpaid Invoices */}
         {unpaidInvoices.length > 0 && (
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Outstanding Invoices</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Outstanding invoices</h2>
             <div className="space-y-4">
               {unpaidInvoices.map((invoice) => {
                 const latestProof = getLatestProof(invoice.id);
@@ -300,7 +300,7 @@ export default function TenantPayment() {
                               className="flex-1"
                               onClick={() => handleFileSelect(invoice.id)}
                             >
-                              Change Image
+                              Change image
                             </Button>
                             <Button
                               className="flex-1"
@@ -308,7 +308,7 @@ export default function TenantPayment() {
                               disabled={submitting}
                             >
                               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                              Submit Proof
+                              Submit proof
                             </Button>
                           </div>
                         </div>
@@ -336,7 +336,7 @@ export default function TenantPayment() {
         {/* Paid Invoices */}
         {paidInvoices.length > 0 && (
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Paid Invoices</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Paid invoices</h2>
             <div className="space-y-3">
               {paidInvoices.map((invoice) => (
                 <Card key={invoice.id} className="bg-gray-50">

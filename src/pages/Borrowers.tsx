@@ -84,7 +84,7 @@ export default function Borrowers() {
         phone: form.phone || undefined,
         notes: form.notes || undefined,
       });
-      toast('Borrower added!');
+      toast('Borrower added');
       setShowAddModal(false);
       setForm({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
       await loadBorrowers();
@@ -101,7 +101,7 @@ export default function Borrowers() {
     setAdding(true);
     try {
       await updateBorrower(editingBorrower.id, editForm);
-      toast('Borrower updated!');
+      toast('Borrower updated');
       setEditingBorrower(null);
       await loadBorrowers();
     } catch (err) {
@@ -148,14 +148,14 @@ export default function Borrowers() {
         action={
           <Button size="sm" onClick={() => { setForm({ firstName: '', lastName: '', email: '', phone: '', notes: '' }); setFormError(''); setShowAddModal(true); }}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Add Borrower
+            Add borrower
           </Button>
         }
       />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <StatCard label="Total Borrowers" value={String(borrowers.length)} icon={Users} />
+        <StatCard label="Total borrowers" value={String(borrowers.length)} icon={Users} />
         <StatCard label="Active" value={String(borrowers.filter(b => b.status === 'active').length)} icon={UserCheck} />
         <StatCard label="Inactive" value={String(borrowers.filter(b => b.status === 'inactive').length)} icon={Users} />
       </div>
@@ -180,7 +180,7 @@ export default function Borrowers() {
           icon={Users}
           message="No borrowers yet"
           description="Add a borrower to start tracking loans"
-          action={<Button size="sm" onClick={() => setShowAddModal(true)}><Plus className="h-4 w-4 mr-1.5" />Add Borrower</Button>}
+          action={<Button size="sm" onClick={() => setShowAddModal(true)}><Plus className="h-4 w-4 mr-1.5" />Add borrower</Button>}
         />
       ) : (
         <>
@@ -218,7 +218,7 @@ export default function Borrowers() {
       {/* Add Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Borrower</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add borrower</DialogTitle></DialogHeader>
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -232,7 +232,7 @@ export default function Borrowers() {
               <Button variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
               <Button onClick={handleAdd} disabled={adding}>
                 {adding && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Add Borrower
+                Add borrower
               </Button>
             </div>
           </div>
@@ -242,12 +242,12 @@ export default function Borrowers() {
       {/* Edit Modal */}
       <Dialog open={!!editingBorrower} onOpenChange={() => setEditingBorrower(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Borrower</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit borrower</DialogTitle></DialogHeader>
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>First Name</Label><Input value={editForm.first_name} onChange={e => setEditForm(f => ({ ...f, first_name: e.target.value }))} /></div>
-              <div><Label>Last Name</Label><Input value={editForm.last_name} onChange={e => setEditForm(f => ({ ...f, last_name: e.target.value }))} /></div>
+              <div><Label>First name</Label><Input value={editForm.first_name} onChange={e => setEditForm(f => ({ ...f, first_name: e.target.value }))} /></div>
+              <div><Label>Last name</Label><Input value={editForm.last_name} onChange={e => setEditForm(f => ({ ...f, last_name: e.target.value }))} /></div>
             </div>
             <div><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} /></div>
             <div><Label>Phone</Label><Input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} /></div>
@@ -256,7 +256,7 @@ export default function Borrowers() {
               <Button variant="outline" onClick={() => setEditingBorrower(null)}>Cancel</Button>
               <Button onClick={handleUpdate} disabled={adding}>
                 {adding && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Save Changes
+                Save changes
               </Button>
             </div>
           </div>

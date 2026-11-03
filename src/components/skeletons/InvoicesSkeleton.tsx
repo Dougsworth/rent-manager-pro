@@ -39,7 +39,7 @@ export function InvoicesSkeleton() {
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded" />
           </div>
         ))}
       </div>

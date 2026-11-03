@@ -72,7 +72,7 @@ export default function Dashboard() {
       if (result?.skipped) {
         toast('Reminders are disabled in notification settings.', 'error');
       } else {
-        toast('Reminder sent successfully!', 'success');
+        toast('Reminder sent successfully', 'success');
       }
     } catch (err) {
       console.error('Failed to send reminder:', err);
@@ -188,21 +188,21 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
         <Link to="/invoices">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+          <Button variant="outline" size="sm" className="px-4 text-xs font-medium">
             <Receipt className="h-3.5 w-3.5 mr-1.5" />
-            Create Invoice
+            Create invoice
           </Button>
         </Link>
         <Link to="/tenants">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+          <Button variant="outline" size="sm" className="px-4 text-xs font-medium">
             <Users className="h-3.5 w-3.5 mr-1.5" />
-            Add Tenant
+            Add tenant
           </Button>
         </Link>
         <Link to="/payments">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
+          <Button variant="outline" size="sm" className="px-4 text-xs font-medium">
             <DollarSign className="h-3.5 w-3.5 mr-1.5" />
-            Record Payment
+            Record payment
           </Button>
         </Link>
       </div>
@@ -212,9 +212,9 @@ export default function Dashboard() {
         {/* Recent Activity Feed */}
         <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Recent activity</h2>
             {recentPayments.length > 0 && (
-              <span className="text-xs font-medium text-slate-400r">Last 5</span>
+              <span className="text-xs font-medium text-slate-400">Last 5</span>
             )}
           </div>
           <div className="p-6">
@@ -262,9 +262,9 @@ export default function Dashboard() {
         {/* Overdue Tenants */}
         <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Overdue Tenants</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Overdue tenants</h2>
             {overdueTenants.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600r">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                 {overdueTenants.length} overdue
               </span>
