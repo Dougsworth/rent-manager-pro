@@ -12,7 +12,7 @@ export default function EmailVerified() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
         <div className="flex justify-center mb-8">
           <Link to="/">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-2xl font-semibold text-slate-900" />
           </Link>
         </div>
 
@@ -21,13 +21,13 @@ export default function EmailVerified() {
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Email Verified</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Email verified</h2>
             <p className="text-slate-500 mb-6">
               Your email has been verified successfully. You can now sign in to your account.
             </p>
             <Link to="/login">
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Continue to Login
+                Continue to login
               </Button>
             </Link>
           </CardContent>

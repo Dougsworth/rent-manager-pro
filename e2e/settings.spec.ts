@@ -5,13 +5,13 @@ test.describe('Settings', () => {
     // Requires authentication
     await page.goto('/settings');
     await expect(page.getByText('Profile')).toBeVisible();
-    await expect(page.getByLabel('First Name')).toBeVisible();
+    await expect(page.getByLabel('First name')).toBeVisible();
   });
 
   test.skip('update bank details', async ({ page }) => {
     // Requires authentication
     await page.goto('/settings');
-    await page.getByText('Bank Details').click();
-    await expect(page.getByLabel('Bank Name')).toBeVisible();
+    await page.getByText('Bank details').click();
+    await expect(page.getByLabel('Bank name')).toBeVisible();
   });
 });

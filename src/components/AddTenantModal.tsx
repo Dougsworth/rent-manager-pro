@@ -167,7 +167,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       <DialogContent>
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Add Tenant</DialogTitle>
+            <DialogTitle>Add tenant</DialogTitle>
             {voiceSupported && (
               <button
                 type="button"
@@ -184,7 +184,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             )}
           </div>
           {listening && (
-            <p className="text-xs text-red-600 mt-1 animate-pulse">
+            <p className="text-xs text-red-600 mt-1">
               Listening... Say: "John Smith email john@test.com phone 876-555-1234"
             </p>
           )}
@@ -199,7 +199,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">First name</Label>
               <Input
                 id="firstName"
                 required
@@ -208,7 +208,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">Last name</Label>
               <Input
                 id="lastName"
                 required
@@ -259,7 +259,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="leaseStart">Lease Start</Label>
+              <Label htmlFor="leaseStart">Lease start</Label>
               <Input
                 id="leaseStart"
                 type="date"
@@ -268,7 +268,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="leaseEnd">Lease End</Label>
+              <Label htmlFor="leaseEnd">Lease end</Label>
               <Input
                 id="leaseEnd"
                 type="date"
@@ -284,7 +284,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             </Button>
             <Button type="submit" className="flex-1" disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Tenant
+              Add tenant
             </Button>
           </div>
         </form>

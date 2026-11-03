@@ -32,7 +32,7 @@ interface TenantDetailProps {
 }
 
 const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
+  bank_transfer: 'Bank transfer',
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
@@ -115,7 +115,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
     setUploading(true);
     try {
       await uploadLeaseDocument(file, id, landlordId, docType);
-      toast('Document uploaded successfully!', 'success');
+      toast('Document uploaded successfully', 'success');
       await loadDocuments();
     } catch (err: any) {
       toast(err.message || 'Failed to upload document.', 'error');
@@ -149,7 +149,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
     <div className="space-y-6">
       {/* Contact Information */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Information</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact information</h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <Mail className="h-4 w-4 text-gray-400" />
@@ -164,26 +164,26 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
 
       {/* Lease Information */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Lease Information</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Lease information</h3>
         <div className="space-y-3">
           <div className="flex justify-between">
             <span className="text-sm text-gray-500">Unit</span>
             <span className="text-sm text-gray-900">{tenant.unit}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Monthly Rent</span>
+            <span className="text-sm text-gray-500">Monthly rent</span>
             <span className="text-sm font-medium text-gray-900">
               J${tenant.rent.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Lease Period</span>
+            <span className="text-sm text-gray-500">Lease period</span>
             <span className="text-sm text-gray-900">
               {tenant.leaseStart ? formatDate(tenant.leaseStart) : '—'} - {tenant.leaseEnd ? formatDate(tenant.leaseEnd) : '—'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Payment Status</span>
+            <span className="text-sm text-gray-500">Payment status</span>
             <StatusBadge variant={tenant.status}>{tenant.status}</StatusBadge>
           </div>
         </div>
@@ -194,7 +194,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
         <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-red-500" />
-            Late Fees Applied
+            Late fees applied
           </h3>
           <div className="space-y-2">
             {invoicesWithFees.map((inv: any) => (
@@ -346,7 +346,7 @@ export function TenantDetail({ tenant, tenantId, landlordId, onSendReminder, sen
       {/* Payment History */}
       {showHistory && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment History</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment history</h3>
           {payments.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-4">No payments recorded</p>
           ) : (

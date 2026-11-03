@@ -16,7 +16,7 @@ export default function TermsOfService() {
       <header className="bg-white border-b border-slate-200/60 sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <BrandLogo className="text-lg font-extrabold tracking-tight text-slate-900" />
+            <BrandLogo className="text-lg font-semibold text-slate-900" />
           </Link>
           <Link
             to="/"
@@ -33,7 +33,7 @@ export default function TermsOfService() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-8 sm:p-12 space-y-10">
             <div className="border-b border-slate-100 pb-6">
-              <h1 className="text-3xl font-bold text-slate-900 mb-1">Terms of Service</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-1">Terms of service</h1>
               <p className="text-sm text-slate-400">Last updated: February 28, 2026</p>
             </div>
 
@@ -132,8 +132,8 @@ export default function TermsOfService() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
           <p>&copy; {new Date().getFullYear()} EasyCollect. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link to="/terms" className="text-slate-600 font-medium">Terms of Service</Link>
-            <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="text-slate-600 font-medium">Terms of service</Link>
+            <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy policy</Link>
           </div>
         </div>
       </footer>

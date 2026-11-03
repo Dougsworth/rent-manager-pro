@@ -40,7 +40,7 @@ export function SetupBanner() {
             className="mt-3"
             onClick={() => navigate(nextHref)}
           >
-            Get Started
+            Get started
           </Button>
         </div>
       </div>

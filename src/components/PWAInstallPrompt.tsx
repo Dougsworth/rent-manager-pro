@@ -77,7 +77,7 @@ export function PWAInstallPrompt() {
       {/* Popup */}
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className={`pointer-events-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[320px] sm:max-w-sm overflow-hidden transition-all duration-300 ${
+          className={`pointer-events-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[320px] sm:max-w-sm overflow-hidden transition-[color,background-color,border-color,opacity,transform] duration-300 ${
             animating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
           }`}
         >
@@ -104,7 +104,7 @@ export function PWAInstallPrompt() {
             <div className="flex flex-col gap-2">
               <Button onClick={handleInstall} className="w-full h-10 sm:h-11 text-sm">
                 <Download className="h-4 w-4 mr-2" />
-                Install App
+                Install app
               </Button>
               <button
                 onClick={handleSoftDismiss}
@@ -163,7 +163,7 @@ export function PWAInstallPrompt() {
                 <div>
                   <p className="text-sm font-medium text-slate-900">Tap "Add to Home Screen"</p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Scroll down if needed — look for <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700"><Plus className="h-3 w-3" /> Add to Home Screen</span>
+                    Scroll down if needed — look for <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700"><Plus className="h-3 w-3" /> Add to home screen</span>
                   </p>
                 </div>
               </div>

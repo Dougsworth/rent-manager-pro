@@ -51,7 +51,7 @@ export function Select({
         <SelectPrimitive.Trigger
           id={required ? undefined : id}
           className={cn(
-            "flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all duration-150",
+            "flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-[color,background-color,border-color,opacity,transform] duration-150",
             "hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400/40 focus:border-slate-400",
             "data-[placeholder]:text-slate-500",
             "disabled:cursor-not-allowed disabled:opacity-50"

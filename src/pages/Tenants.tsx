@@ -99,7 +99,7 @@ export default function Tenants() {
       } else {
         await sendReminder(selectedTenant.id, overdueInvoice.id);
       }
-      toast('Reminder sent successfully!', 'success');
+      toast('Reminder sent successfully', 'success');
     } catch (err) {
       console.error('Failed to send reminder:', err);
       toast('Failed to send reminder. Please try again.', 'error');
@@ -161,7 +161,7 @@ export default function Tenants() {
           tenants.length > 0 ? (
             <Button type="button" onClick={() => setShowAddModal(true)}>
               <Plus className="h-4 w-4" />
-              Add Tenant
+              Add tenant
             </Button>
           ) : undefined
         }
@@ -171,7 +171,7 @@ export default function Tenants() {
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
-          label="Total Tenants"
+          label="Total tenants"
           value={String(counts.all)}
           subtext={unassignedCount > 0 ? `${unassignedCount} archived` : "Active tenants"}
           subtextColor={unassignedCount > 0 ? "text-slate-400" : undefined}
@@ -217,7 +217,7 @@ export default function Tenants() {
       <div className="flex gap-5">
         {/* Tenant List */}
         <div className={cn(
-          "transition-all duration-300 min-w-0",
+          "transition-[width,max-height,margin,opacity,transform] duration-300 min-w-0",
           selectedTenant ? "w-full lg:w-[340px] lg:flex-shrink-0" : "w-full"
         )}>
           {filteredTenants.length === 0 ? (
@@ -239,7 +239,7 @@ export default function Tenants() {
                 !searchQuery && activeTab === "all" ? (
                   <Button type="button" onClick={() => setShowAddModal(true)}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Add Tenant
+                    Add tenant
                   </Button>
                 ) : undefined
               }
@@ -251,7 +251,7 @@ export default function Tenants() {
                   key={tenant.id}
                   onClick={() => setSelectedTenant(tenant)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3.5 transition-all duration-150 text-left",
+                    "w-full flex items-center gap-3 px-4 py-3.5 transition-[color,background-color,border-color,opacity,transform] duration-150 text-left",
                     selectedTenant?.id === tenant.id
                       ? "bg-blue-50 border-l-[3px] border-l-blue-500"
                       : "hover:bg-slate-50 border-l-[3px] border-l-transparent"
@@ -277,7 +277,7 @@ export default function Tenants() {
                           <StatusBadge variant={tenant.payment_status}>{tenant.payment_status}</StatusBadge>
                         </>
                       ) : (
-                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">Archived</span>
+                        <span className="text-xs font-medium text-slate-500">Archived</span>
                       )}
                     </div>
                   ) : (

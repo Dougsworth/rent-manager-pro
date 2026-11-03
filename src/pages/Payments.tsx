@@ -27,7 +27,7 @@ function formatCurrency(amount: number): string {
 }
 
 const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
+  bank_transfer: 'Bank transfer',
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
@@ -194,7 +194,7 @@ export default function Payments() {
         action={
           <Button onClick={() => setShowRecord(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Record Payment
+            Record payment
           </Button>
         }
       />
@@ -209,7 +209,7 @@ export default function Payments() {
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
-          All Payments
+          All payments
         </button>
         <button
           onClick={() => setActiveTab('proofs')}
@@ -219,9 +219,9 @@ export default function Payments() {
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
-          Pending Proofs
+          Pending proofs
           {pendingProofs.length > 0 && (
-            <span className="bg-slate-900 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+            <span className="text-slate-500 text-xs font-medium tabular-nums">
               {pendingProofs.length}
             </span>
           )}
@@ -232,7 +232,7 @@ export default function Payments() {
       <Dialog open={showRecord} onOpenChange={setShowRecord}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record Payment</DialogTitle>
+            <DialogTitle>Record payment</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleRecord} className="space-y-4">
             {recordError && (
@@ -301,7 +301,7 @@ export default function Payments() {
                 onValueChange={(val) => setNewPayment({ ...newPayment, method: val })}
                 className="mt-1"
                 options={[
-                  { value: 'bank_transfer', label: 'Bank Transfer' },
+                  { value: 'bank_transfer', label: 'Bank transfer' },
                   { value: 'card', label: 'Card' },
                   { value: 'cash', label: 'Cash' },
                   { value: 'other', label: 'Other' },
@@ -309,7 +309,7 @@ export default function Payments() {
               />
             </div>
             <div>
-              <Label htmlFor="pay-date">Payment Date</Label>
+              <Label htmlFor="pay-date">Payment date</Label>
               <Input
                 id="pay-date"
                 type="date"
@@ -352,12 +352,12 @@ export default function Payments() {
           <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             <StatCard
-              label="Total Collected"
+              label="Total collected"
               value={formatCurrency(totalCollected)}
               valueColor="text-emerald-600"
             />
             <StatCard
-              label="Unpaid Invoices"
+              label="Unpaid invoices"
               value={formatCurrency(totalPending)}
               valueColor="text-amber-600"
             />
@@ -367,7 +367,7 @@ export default function Payments() {
               valueColor={totalFailed > 0 ? "text-red-500" : "text-slate-900"}
             />
             <StatCard
-              label="This Month"
+              label="This month"
               value={formatCurrency(thisMonth)}
             />
             </div>
@@ -391,7 +391,7 @@ export default function Payments() {
                   onValueChange={setStatusFilter}
                   className="w-40"
                   options={[
-                    { value: 'all', label: 'All Status' },
+                    { value: 'all', label: 'All status' },
                     { value: 'completed', label: 'Completed' },
                     { value: 'pending', label: 'Pending' },
                     { value: 'failed', label: 'Failed' },
@@ -430,14 +430,14 @@ export default function Payments() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Payment ID</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
-                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Property</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
-                    <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Date</th>
-                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Method</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Actions</th>
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Payment ID</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Tenant</th>
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Property</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Amount</th>
+                    <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Date</th>
+                    <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Method</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Status</th>
+                    <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -553,7 +553,7 @@ export default function Payments() {
                             disabled={actionLoading === proof.id}
                           >
                             {actionLoading === proof.id && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                            Confirm Reject
+                            Confirm reject
                           </Button>
                         </div>
                       </div>

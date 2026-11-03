@@ -129,12 +129,12 @@ export default function Settings() {
   const sections = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'company', label: 'Company', icon: Building },
-    { id: 'bank', label: 'Bank Details', icon: Landmark },
-    { id: 'payment', label: 'Payment Gateway', icon: Wallet },
+    { id: 'bank', label: 'Bank details', icon: Landmark },
+    { id: 'payment', label: 'Payment gateway', icon: Wallet },
     { id: 'properties', label: 'Properties', icon: Home },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'late-fees', label: 'Late Fees', icon: Clock },
-    { id: 'recurring', label: 'Recurring Invoices', icon: RefreshCw },
+    { id: 'late-fees', label: 'Late fees', icon: Clock },
+    { id: 'recurring', label: 'Recurring invoices', icon: RefreshCw },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
   ];
@@ -233,22 +233,22 @@ export default function Settings() {
   const renderProfileSection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">First name</Label>
             <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">Last name</Label>
             <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">Email address</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone">Phone number</Label>
             <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
         </div>
@@ -259,10 +259,10 @@ export default function Settings() {
   const renderCompanySection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Company Details</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Company details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label htmlFor="companyName">Company Name</Label>
+            <Label htmlFor="companyName">Company name</Label>
             <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
           <div className="md:col-span-2">
@@ -293,19 +293,19 @@ export default function Settings() {
   const renderBankSection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Details</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank details</h3>
         <p className="text-sm text-gray-500 mb-4">These details will be included in payment reminder emails sent to your tenants.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label htmlFor="bankName">Bank Name</Label>
+            <Label htmlFor="bankName">Bank name</Label>
             <Input id="bankName" placeholder="e.g. National Commercial Bank" value={bankName} onChange={(e) => setBankName(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="bankAccountName">Account Name</Label>
+            <Label htmlFor="bankAccountName">Account name</Label>
             <Input id="bankAccountName" placeholder="e.g. John Smith Properties" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="bankAccountNumber">Account Number</Label>
+            <Label htmlFor="bankAccountNumber">Account number</Label>
             <Input id="bankAccountNumber" placeholder="e.g. 1234567890" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
           </div>
           <div>
@@ -320,7 +320,7 @@ export default function Settings() {
   const renderPaymentGatewaySection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Payment Gateway</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">Payment gateway</h3>
         <p className="text-sm text-gray-500 mb-4">
           Accept online payments from tenants via HandyPay. When tenants view their invoices, they'll see a "Pay Online" button with the exact amount pre-filled.
         </p>
@@ -343,7 +343,7 @@ export default function Settings() {
       <Link to="/properties">
         <Button className="w-full py-6 text-base">
           <Home className="h-5 w-5 mr-2" />
-          Go to Properties
+          Go to properties
         </Button>
       </Link>
     </div>
@@ -368,13 +368,13 @@ export default function Settings() {
   const renderNotificationsSection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Email Notifications</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Email notifications</h3>
         <div className="space-y-4">
           {[
-            { id: 'payments' as const, label: 'Payment Received', description: 'Get notified when tenants make payments' },
-            { id: 'overdue' as const, label: 'Overdue Payments', description: 'Get alerts for overdue rent payments' },
-            { id: 'invoices' as const, label: 'Invoice Sent', description: 'Confirmation when invoices are sent to tenants' },
-            { id: 'auto_remind' as const, label: 'Automatic Reminders', description: 'Automatically email tenants daily when their invoices are overdue' },
+            { id: 'payments' as const, label: 'Payment received', description: 'Get notified when tenants make payments' },
+            { id: 'overdue' as const, label: 'Overdue payments', description: 'Get alerts for overdue rent payments' },
+            { id: 'invoices' as const, label: 'Invoice sent', description: 'Confirmation when invoices are sent to tenants' },
+            { id: 'auto_remind' as const, label: 'Automatic reminders', description: 'Automatically email tenants daily when their invoices are overdue' },
           ].map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
               <div>
@@ -397,7 +397,7 @@ export default function Settings() {
             ) : (
               <Save className="h-4 w-4 mr-2" />
             )}
-            {savedNotifs ? 'Saved!' : 'Save Preferences'}
+            {savedNotifs ? 'Saved' : 'Save preferences'}
           </Button>
           <Button
             variant="outline"
@@ -407,7 +407,7 @@ export default function Settings() {
               setSeeding(true);
               try {
                 const count = await seedTestNotifications(user.id);
-                toast(`${count} test notifications created!`, 'success');
+                toast(`${count} test notifications created`, 'success');
               } catch (err) {
                 console.error('Failed to seed notifications:', err);
                 toast('Failed to seed notifications.', 'error');
@@ -417,7 +417,7 @@ export default function Settings() {
             }}
           >
             {seeding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
-            Seed Test Notifications
+            Seed test notifications
           </Button>
         </div>
       </div>
@@ -449,7 +449,7 @@ export default function Settings() {
         auto_apply: lfAutoApply,
       });
       setSavedLateFees(true);
-      toast('Late fee settings saved!', 'success');
+      toast('Late fee settings saved', 'success');
       setTimeout(() => setSavedLateFees(false), 2000);
     } catch (err) {
       console.error('Failed to save late fee settings:', err);
@@ -471,13 +471,13 @@ export default function Settings() {
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">Late Fee Configuration</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Late fee configuration</h3>
           <p className="text-sm text-gray-500 mb-4">
             Configure automatic late fees for overdue invoices. Fees are applied once per invoice after the grace period.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="lf-type">Fee Type</Label>
+              <Label htmlFor="lf-type">Fee type</Label>
               <Select
                 id="lf-type"
                 value={lfFeeType}
@@ -539,7 +539,7 @@ export default function Settings() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              {savedLateFees ? 'Saved!' : 'Save Late Fee Settings'}
+              {savedLateFees ? 'Saved' : 'Save late fee settings'}
             </Button>
           </div>
         </div>
@@ -572,7 +572,7 @@ export default function Settings() {
         description_template: riDescTemplate,
       });
       setSavedRecurring(true);
-      toast('Recurring invoice settings saved!', 'success');
+      toast('Recurring invoice settings saved', 'success');
       setTimeout(() => setSavedRecurring(false), 2000);
     } catch (err: any) {
       console.error('Failed to save recurring invoice settings:', err);
@@ -596,7 +596,7 @@ export default function Settings() {
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">Recurring Invoice Automation</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">Recurring invoice automation</h3>
           <p className="text-sm text-gray-500 mb-4">
             Automatically generate invoices for all active tenants on a specific day each month, using each tenant's unit rent amount.
           </p>
@@ -614,7 +614,7 @@ export default function Settings() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="ri-day">Day of Month</Label>
+              <Label htmlFor="ri-day">Day of month</Label>
               <Input
                 id="ri-day"
                 type="number"
@@ -629,7 +629,7 @@ export default function Settings() {
 
           <div className="mt-4 flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
             <div>
-              <p className="font-medium text-gray-900">Send Invoice Emails</p>
+              <p className="font-medium text-gray-900">Send invoice emails</p>
               <p className="text-sm text-gray-500">Email tenants when invoices are auto-generated</p>
             </div>
             <Switch
@@ -639,7 +639,7 @@ export default function Settings() {
           </div>
 
           <div className="mt-4">
-            <Label htmlFor="ri-desc">Description Template</Label>
+            <Label htmlFor="ri-desc">Description template</Label>
             <Input
               id="ri-desc"
               value={riDescTemplate}
@@ -662,7 +662,7 @@ export default function Settings() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              {savedRecurring ? 'Saved!' : 'Save Recurring Settings'}
+              {savedRecurring ? 'Saved' : 'Save recurring settings'}
             </Button>
           </div>
         </div>
@@ -673,9 +673,9 @@ export default function Settings() {
   const renderBillingSection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Current Plan</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Current plan</h3>
         <div className="p-4 border rounded-lg bg-blue-50">
-          <p className="font-medium text-gray-900">Free Plan</p>
+          <p className="font-medium text-gray-900">Free plan</p>
           <p className="text-2xl font-bold text-gray-900 mt-2">J$0<span className="text-sm font-normal">/month</span></p>
           <ul className="mt-3 space-y-2 text-sm text-gray-600">
             <li className="flex items-center gap-2">
@@ -718,7 +718,7 @@ export default function Settings() {
                 }}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Get Notified
+                Get notified
               </Button>
             </div>
           )}
@@ -756,10 +756,10 @@ export default function Settings() {
   const renderSecuritySection = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Change password</h3>
         <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
           <div>
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label htmlFor="newPassword">New password</Label>
             <div className="relative">
               <Input
                 id="newPassword"
@@ -781,7 +781,7 @@ export default function Settings() {
             </div>
           </div>
           <div>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">Confirm password</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
@@ -815,7 +815,7 @@ export default function Settings() {
             ) : (
               <Shield className="h-4 w-4 mr-2" />
             )}
-            Update Password
+            Update password
           </Button>
         </form>
       </div>
@@ -853,7 +853,7 @@ export default function Settings() {
             ) : (
               <Save className="h-4 w-4 mr-2" />
             )}
-            {saved ? 'Saved!' : 'Save Changes'}
+            {saved ? 'Saved' : 'Save changes'}
           </Button>
           </div>
         )}

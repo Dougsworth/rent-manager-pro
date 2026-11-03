@@ -24,7 +24,7 @@ function ErrorFallback({
           {error.message || "An unexpected error occurred."}
         </p>
         <Button variant="outline" onClick={resetError}>
-          Try Again
+          Try again
         </Button>
       </div>
     </div>

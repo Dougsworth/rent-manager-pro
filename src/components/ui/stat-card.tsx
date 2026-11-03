@@ -22,12 +22,12 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div className={cn(
-      "rounded-xl bg-slate-50/60 border border-slate-100 p-5 transition-all duration-200 hover:bg-slate-50",
+      "rounded-xl bg-slate-50/60 border border-slate-100 p-5 transition-[color,background-color,border-color,opacity,transform] duration-200 hover:bg-slate-50",
       className
     )}>
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-3">
+          <p className="text-xs font-mediumst text-slate-400 mb-3">
             {label}
           </p>
           <p className={cn("text-2xl font-bold tracking-tight mb-1", valueColor)}>{value}</p>

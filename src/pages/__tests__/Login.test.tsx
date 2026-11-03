@@ -22,8 +22,8 @@ beforeEach(() => {
 describe('Login', () => {
   it('renders the login form', () => {
     renderWithProviders(<Login />);
-    expect(screen.getByText('Sign in to your account')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email address')).toBeInTheDocument();
+    expect(screen.getByText('Your rent, loans and invoices are where you left them')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 
@@ -34,7 +34,7 @@ describe('Login', () => {
     // The form has required fields so we need to bypass HTML validation
     const submitBtn = screen.getByRole('button', { name: /sign in/i });
     // Directly call the form submit by filling in invalid data
-    const emailInput = screen.getByLabelText('Email address');
+    const emailInput = screen.getByLabelText('Email');
     await user.type(emailInput, 'notanemail');
     const passwordInput = screen.getByLabelText('Password');
     await user.type(passwordInput, 'pass');
@@ -53,7 +53,7 @@ describe('Login', () => {
     renderWithProviders(<Login />);
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText('Email address'), 'test@test.com');
+    await user.type(screen.getByLabelText('Email'), 'test@test.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
@@ -68,6 +68,6 @@ describe('Login', () => {
 
   it('has a link to signup', () => {
     renderWithProviders(<Login />);
-    expect(screen.getByText('Sign up')).toBeInTheDocument();
+    expect(screen.getByText('Get started free')).toBeInTheDocument();
   });
 });

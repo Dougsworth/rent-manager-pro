@@ -31,7 +31,7 @@ function ProgressRing({ percentage, size = 28 }: { percentage: number; size?: nu
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        className="transition-all duration-700 ease-out"
+        className="transition-[stroke-dashoffset] duration-700 ease-out"
       />
     </svg>
   );
@@ -66,7 +66,7 @@ export function SetupGuide() {
       href: '/properties',
     },
     {
-      label: 'Add Units',
+      label: 'Add units',
       description: 'Add units to your property',
       done: hasUnits,
       href: '/properties',
@@ -98,11 +98,11 @@ export function SetupGuide() {
         <div className="fixed bottom-16 right-5 z-30">
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-lg bg-white border border-slate-200/80 shadow-sm hover:border-slate-300 transition-[color,background-color,border-color,opacity,transform] duration-200 group"
           >
             <ProgressRing percentage={percentage} />
             <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-              Setup Guide
+              Setup guide
             </span>
             <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
               {percentage}%
@@ -119,7 +119,7 @@ export function SetupGuide() {
           <div className="fixed bottom-16 right-5 z-40 w-80 bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-1">
-              <h3 className="text-base font-semibold text-slate-900">Setup Guide</h3>
+              <h3 className="text-base font-semibold text-slate-900">Setup guide</h3>
               <button
                 onClick={() => setOpen(false)}
                 className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
@@ -146,7 +146,7 @@ export function SetupGuide() {
               <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-700 ease-out",
+                    "h-full rounded-full transition-[width] duration-700 ease-out",
                     percentage === 100 ? "bg-emerald-500" : "bg-blue-500"
                   )}
                   style={{ width: `${percentage}%` }}
@@ -162,7 +162,7 @@ export function SetupGuide() {
                   onClick={step.done ? undefined : () => handleStepClick(step.href)}
                   disabled={step.done}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200",
+                    "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-[color,background-color,border-color,opacity,transform] duration-200",
                     step.done
                       ? "opacity-50 cursor-default"
                       : "hover:bg-slate-50 cursor-pointer group"

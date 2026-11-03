@@ -9,7 +9,7 @@ export default function NotFound() {
       {/* Header */}
       <div className="border-b border-slate-100 px-6 py-4">
         <Link to="/dashboard">
-          <BrandLogo className="text-xl font-extrabold tracking-tight text-slate-900" />
+          <BrandLogo className="text-xl font-semibold text-slate-900" />
         </Link>
       </div>
 
@@ -40,7 +40,7 @@ export default function NotFound() {
               className="h-11 px-5"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
+              Go back
             </Button>
             <Link to="/dashboard" className={buttonVariants({ className: "h-11 px-5" })}>
               <Home className="h-4 w-4 mr-2" />

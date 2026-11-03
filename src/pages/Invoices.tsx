@@ -146,7 +146,7 @@ export default function Invoices() {
       if (created > 0 && skipped > 0) {
         toast(`${created} invoices created, ${skipped} skipped (already invoiced).`);
       } else if (created > 0) {
-        toast(`${created} invoices created successfully!`, 'success');
+        toast(`${created} invoices created successfully`, 'success');
       } else {
         toast('All tenants already have invoices for this period.', 'warning');
       }
@@ -213,12 +213,12 @@ export default function Invoices() {
                 setShowBulk(true);
               }}>
                 <Users className="h-4 w-4 mr-2" />
-                Invoice All
+                Invoice all
               </Button>
             )}
             <Button onClick={() => setShowCreate(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Invoice
+              Create invoice
             </Button>
           </div>
         }
@@ -228,7 +228,7 @@ export default function Invoices() {
       <div className="bg-white rounded-2xl border border-slate-200/60 p-4 mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
-          label="Total Invoiced"
+          label="Total invoiced"
           value={formatCurrency(totalAmount)}
           subtext={`${invoiceCounts.total} invoices`}
         />
@@ -259,7 +259,7 @@ export default function Invoices() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Invoice</DialogTitle>
+            <DialogTitle>Create invoice</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             {createError && (
@@ -294,7 +294,7 @@ export default function Invoices() {
               />
             </div>
             <div>
-              <Label htmlFor="inv-due">Due Date</Label>
+              <Label htmlFor="inv-due">Due date</Label>
               <Input
                 id="inv-due"
                 type="date"
@@ -327,7 +327,7 @@ export default function Invoices() {
       <Dialog open={showBulk} onOpenChange={setShowBulk}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Invoice All Tenants</DialogTitle>
+            <DialogTitle>Invoice all tenants</DialogTitle>
             <DialogDescription>
               Select tenants and customize amounts. Tenants who already have
               a pending or overdue invoice for the same month will be skipped.
@@ -343,7 +343,7 @@ export default function Invoices() {
                     setBulkTenants(bulkTenants.map(t => ({ ...t, selected: !!checked })));
                   }}
                 />
-                Select All
+                Select all
               </label>
               <span className="text-xs text-slate-500">
                 {bulkTenants.filter(t => t.selected).length} of {bulkTenants.length} selected
@@ -381,7 +381,7 @@ export default function Invoices() {
             </div>
 
             <div>
-              <Label htmlFor="bulk-due">Due Date</Label>
+              <Label htmlFor="bulk-due">Due date</Label>
               <Input
                 id="bulk-due"
                 type="date"
@@ -438,7 +438,7 @@ export default function Invoices() {
               onValueChange={setStatusFilter}
               className="w-40"
               options={[
-                { value: 'all', label: 'All Status' },
+                { value: 'all', label: 'All status' },
                 { value: 'paid', label: 'Paid' },
                 { value: 'pending', label: 'Pending' },
                 { value: 'overdue', label: 'Overdue' },
@@ -459,11 +459,11 @@ export default function Invoices() {
                 }));
                 exportToCsv('invoices.csv', rows, [
                   { key: 'invoice_number', header: 'Invoice ID' },
-                  { key: 'tenant', header: 'Tenant Name' },
+                  { key: 'tenant', header: 'Tenant name' },
                   { key: 'property', header: 'Property' },
                   { key: 'unit', header: 'Unit' },
                   { key: 'amount', header: 'Amount' },
-                  { key: 'due_date', header: 'Due Date' },
+                  { key: 'due_date', header: 'Due date' },
                   { key: 'status', header: 'Status' },
                 ]);
               }}
@@ -479,13 +479,13 @@ export default function Invoices() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Invoice ID</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Tenant</th>
-                <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Property</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Amount</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Due Date</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Status</th>
-                <th className="text-left py-3 px-6 text-xs font-medium uppercase tracking-wider text-slate-400">Link</th>
+                <th className="hidden sm:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Invoice ID</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Tenant</th>
+                <th className="hidden md:table-cell text-left py-3 px-6 text-xs font-medium text-slate-400">Property</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Amount</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Due date</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Status</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-slate-400">Link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

@@ -182,7 +182,7 @@ export default function ActivityLogPage() {
   return (
     <>
       <PageHeader
-        title="Activity Log"
+        title="Activity log"
         description="Audit trail of all actions — who did what and when"
         count={logs.length}
       />
@@ -241,7 +241,7 @@ export default function ActivityLogPage() {
                       {log.description}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getEntityBadgeColor(log.entity_type)}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEntityBadgeColor(log.entity_type)}`}>
                         {log.entity_type}
                       </span>
                     </div>

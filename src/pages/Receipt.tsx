@@ -14,7 +14,7 @@ function formatCurrency(amount: number): string {
 }
 
 const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
+  bank_transfer: 'Bank transfer',
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
@@ -85,7 +85,7 @@ export default function Receipt() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payment Receipt</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Payment receipt</h1>
             <p className="text-gray-600">Receipt #{payment.payment_number}</p>
           </div>
           <div className="flex gap-3 print:hidden">
@@ -111,14 +111,14 @@ export default function Receipt() {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
-            <CardTitle className="text-xl text-green-600">Payment Received</CardTitle>
+            <CardTitle className="text-xl text-green-600">Payment received</CardTitle>
             <p className="text-gray-600">Your payment has been successfully processed</p>
           </CardHeader>
 
           <CardContent className="p-4 sm:p-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Payment Details</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Payment details</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Amount Paid:</span>
@@ -152,7 +152,7 @@ export default function Receipt() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Property Information</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Property information</h3>
                 <div className="space-y-3">
                   <div>
                     <span className="text-gray-600 block">Property:</span>
@@ -173,7 +173,7 @@ export default function Receipt() {
             <div className="mt-8 pt-8 border-t">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Tenant Information</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4">Tenant information</h3>
                   <div className="space-y-2">
                     <p className="font-medium">{tenant?.first_name} {tenant?.last_name}</p>
                     {tenant?.email && <p className="text-gray-600">{tenant.email}</p>}
@@ -182,7 +182,7 @@ export default function Receipt() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Landlord Information</h3>
+                  <h3 className="font-semibold text-gray-900 mb-4">Landlord information</h3>
                   <div className="space-y-2">
                     <p className="font-medium">
                       {profile?.company_name || `${profile?.first_name} ${profile?.last_name}`}

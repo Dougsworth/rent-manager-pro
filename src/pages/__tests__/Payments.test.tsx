@@ -59,10 +59,10 @@ describe('Payments', () => {
     const user = userEvent.setup();
 
     await waitFor(() => {
-      expect(screen.getByText('Record Payment')).toBeInTheDocument();
+      expect(screen.getByText('Record payment')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Record Payment'));
+    await user.click(screen.getByText('Record payment'));
 
     await waitFor(() => {
       expect(screen.getByText('Amount (JMD)')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('Payments', () => {
     renderWithProviders(<Payments />);
 
     await waitFor(() => {
-      expect(screen.getByText('Pending Proofs')).toBeInTheDocument();
+      expect(screen.getByText('Pending proofs')).toBeInTheDocument();
     });
   });
 });

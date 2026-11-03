@@ -24,7 +24,7 @@ export function Pagination({ currentPage, totalItems, pageSize, onPageChange }: 
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-all duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-[color,background-color,border-color,opacity,transform] duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -49,7 +49,7 @@ export function Pagination({ currentPage, totalItems, pageSize, onPageChange }: 
               <button
                 key={item}
                 onClick={() => onPageChange(item)}
-                className={`h-8 min-w-[2rem] inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`h-8 min-w-[2rem] inline-flex items-center justify-center rounded-lg text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-150 ${
                   item === currentPage
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -62,7 +62,7 @@ export function Pagination({ currentPage, totalItems, pageSize, onPageChange }: 
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-all duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-[color,background-color,border-color,opacity,transform] duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

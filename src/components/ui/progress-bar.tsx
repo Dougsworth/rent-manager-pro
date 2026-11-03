@@ -20,10 +20,10 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
     const total = segments.reduce((sum, s) => sum + s.value, 0);
 
     return (
-      <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
+      <div className={cn("rounded-2xl bg-white border border-slate-200 p-6", className)}>
         {label && (
           <div className="flex justify-between items-center mb-4">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">{label}</p>
+            <p className="text-xs font-mediumst text-slate-400">{label}</p>
             <p className="text-2xl font-bold text-blue-600">{clampedValue}%</p>
           </div>
         )}
@@ -36,7 +36,7 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
             return Array.from({ length: count }).map((_, j) => (
               <div
                 key={`${i}-${j}`}
-                className={cn("h-3 flex-1 rounded-sm transition-all duration-500", seg.color)}
+                className={cn("h-3 flex-1 rounded-sm transition-[width,max-height,margin,opacity,transform] duration-500", seg.color)}
               />
             ));
           })}
@@ -54,7 +54,7 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
   }
 
   return (
-    <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
+    <div className={cn("rounded-2xl bg-white border border-slate-200 p-6", className)}>
       {label && (
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm font-medium text-slate-900">{label}</p>
@@ -63,7 +63,7 @@ export function ProgressBar({ value, label, segments, className }: ProgressBarPr
       )}
       <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden">
         <div
-          className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
+          className="h-full bg-blue-600 transition-[width,max-height,margin,opacity,transform] duration-500 ease-out rounded-full"
           style={{ width: `${clampedValue}%` }}
         />
       </div>
