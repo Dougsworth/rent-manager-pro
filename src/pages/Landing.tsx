@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import BrandLogo from '@/components/BrandLogo';
 import { RotatingWord } from '@/components/RotatingWord';
-import { ArrowRight, Check, CheckCircle, Minus, Plus } from 'lucide-react';
+import { Check, CheckCircle, Minus, Plus } from 'lucide-react';
 
 const landingStyles = `
 .reveal {
@@ -45,38 +45,6 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
       {children}
     </div>
   );
-}
-
-/* Animated counter */
-function Counter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const counted = useRef(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !counted.current) {
-          counted.current = true;
-          let start = 0;
-          const duration = 1200;
-          const startTime = performance.now();
-          const animate = (now: number) => {
-            const progress = Math.min((now - startTime) / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            start = Math.round(eased * value);
-            el.textContent = `${start}${suffix}`;
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [value, suffix]);
-  return <span ref={ref}>0{suffix}</span>;
 }
 
 /* One ledger line: label on the left, figure on the right, a hairline underneath */
@@ -199,7 +167,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
       <SEO
         title="Rent Collection & Loan Tracking Made Easy for Jamaicans"
-        description="Jamaica's #1 collection platform. Track rent and personal loans, send invoices, automate reminders, and manage borrowers — all in one place. Start free today."
+        description="Collect rent and loans in Jamaica. Track rent and personal loans, send invoices, automate reminders, and manage borrowers, all in one place. Start free today."
         keywords="rent collection Jamaica, collect rent online, Jamaican landlord software, rent management, tenant management, invoice tenants, rent payment app, property management Jamaica, EasyCollect, easy rent collect, easycollectja, landlord app Jamaica, rental property management, rent tracker, online rent payment Jamaica, loan tracking Jamaica, personal loan management, track money lent"
         path="/"
       />
@@ -216,7 +184,6 @@ export default function Landing() {
             <a href="#features" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">How it works</a>
             <a href="#pricing" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">Plans</a>
-            <a href="#testimonials" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">Testimonials</a>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -275,31 +242,6 @@ export default function Landing() {
                 </Reveal>
               </div>
             </div>
-
-            {/* Landlord story */}
-            <Reveal delay={60} className="hidden md:block">
-              <div className="grid grid-cols-12 gap-8 items-end mt-20 pt-8 border-t border-neutral-200">
-                <div className="col-span-7">
-                  <img
-                    src="/leroy_skalstad-man-4333898_1280.jpg"
-                    alt="Landlord collecting rent"
-                    className="w-full h-96 object-cover rounded-xl"
-                  />
-                </div>
-                <div className="col-span-5">
-                  <p className="text-sm text-neutral-500 mb-4">Getting paid since 2024</p>
-                  <p className="text-3xl font-medium text-neutral-900 leading-tight tracking-tight mb-4">
-                    &ldquo;No more chasing tenants for payment.&rdquo;
-                  </p>
-                  <p className="text-sm text-neutral-900 mb-6">
-                    Marcus R. <span className="text-neutral-500">Kingston, JA</span>
-                  </p>
-                  <LedgerRow label="Units" value="12" />
-                  <LedgerRow label="Collection rate" value="95%" />
-                  <LedgerRow label="Per month" value="J$1.2M" />
-                </div>
-              </div>
-            </Reveal>
           </div>
         </section>
 
@@ -494,7 +436,7 @@ export default function Landing() {
 
               {/* What is included, set as plain text */}
               <ul className="grid grid-cols-2 md:grid-cols-6 gap-x-8 gap-y-3 mt-8 text-sm text-neutral-400">
-                {['Real-time dashboard', 'Multi-property', 'Auto receipts', 'Bank-grade security', 'Auto reminders', 'Payment links'].map((label) => (
+                {['Real-time dashboard', 'Multi-property', 'Auto receipts', 'Auto reminders', 'Payment links'].map((label) => (
                   <li key={label}>{label}</li>
                 ))}
               </ul>
@@ -535,10 +477,7 @@ export default function Landing() {
 
                 {/* Pro plan */}
                 <div className="bg-white p-6 md:p-8 flex flex-col">
-                  <p className="flex items-baseline justify-between gap-4 text-sm">
-                    <span className="text-neutral-900">Pro</span>
-                    <span className="text-neutral-500">Most popular</span>
-                  </p>
+                  <p className="text-sm text-neutral-900">Pro</p>
                   <p className="mt-2 mb-3 flex items-baseline gap-1">
                     <span className="text-4xl font-medium tabular-nums">J$3,500</span>
                     <span className="text-sm text-neutral-500">/month</span>
@@ -557,106 +496,6 @@ export default function Landing() {
                   </ul>
                   <Link to="/signup" className={btnAccent}>Upgrade to Pro</Link>
                 </div>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section id="testimonials" className="py-20 md:py-28 bg-neutral-50 border-y border-neutral-200">
-          <div className={container}>
-            <Reveal>
-              <div className="max-w-2xl mb-12 md:mb-16">
-                <p className="text-sm text-neutral-500 mb-4">Testimonials</p>
-                <h2 className={`${sectionTitle} mb-4`}>Results that speak for themselves</h2>
-                <p className="text-lg text-neutral-500">
-                  Join landlords and lenders across Jamaica who are getting paid faster and easier with EasyCollect
-                </p>
-              </div>
-            </Reveal>
-
-            <Reveal delay={60}>
-              <div className="grid grid-cols-3 gap-4 md:gap-8 mb-12 md:mb-16">
-                {[
-                  { val: 95, suf: '%', label: 'faster payments' },
-                  { val: 3, suf: 'x', label: 'less time spent' },
-                  { val: 100, suf: '%', label: 'documented proof' },
-                ].map((s) => (
-                  <div key={s.label} className="border-t border-neutral-900 pt-4">
-                    <div className="text-3xl md:text-5xl font-medium tabular-nums tracking-tight mb-1"><Counter value={s.val} suffix={s.suf} /></div>
-                    <div className="text-sm text-neutral-500">{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <figure className="max-w-3xl mb-12 md:mb-16">
-                <blockquote className="text-xl md:text-3xl font-medium leading-snug tracking-tight text-neutral-900">
-                  &ldquo;I used to chase tenants for weeks. Now I send a link and they pay within minutes. The payment proof feature means no more arguments about who paid what.&rdquo;
-                </blockquote>
-                <figcaption className="flex items-center gap-3 mt-8">
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&h=96&fit=crop&crop=face&auto=format&q=80"
-                    alt="Marcus Robinson"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <span className="block text-sm font-medium text-neutral-900">Marcus Robinson</span>
-                    <span className="block text-sm text-neutral-500">Property Owner, Kingston</span>
-                  </div>
-                </figcaption>
-              </figure>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
-                {[
-                  {
-                    name: 'Shelly-Ann Palmer',
-                    role: 'Landlord, Montego Bay',
-                    photo: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=96&h=96&fit=crop&crop=face&auto=format&q=80',
-                    quote: 'The payment proof feature is brilliant. No more "I already sent it" back and forth — everything is documented.',
-                  },
-                  {
-                    name: 'Andre Williams',
-                    role: 'Property Manager, Portmore',
-                    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&crop=face&auto=format&q=80',
-                    quote: 'Managing 12 units used to be a nightmare of spreadsheets. Now I see exactly who paid and who didn\'t.',
-                  },
-                  {
-                    name: 'Keisha Thompson',
-                    role: 'Landlord, Spanish Town',
-                    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&h=96&fit=crop&crop=face&auto=format&q=80',
-                    quote: 'The automatic reminders are a lifesaver. I don\'t have to send awkward messages anymore.',
-                  },
-                  {
-                    name: 'Tyrone Mitchell',
-                    role: 'Property Owner, Half Way Tree',
-                    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&h=96&fit=crop&crop=face&auto=format&q=80',
-                    quote: 'My tenants love the payment links. They just click, see my bank details, pay, and upload the proof. No app needed.',
-                  },
-                  {
-                    name: 'Davina Richards',
-                    role: 'Property Manager, Mandeville',
-                    photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=96&h=96&fit=crop&crop=face&auto=format&q=80',
-                    quote: 'I can see my expected income vs collected at a glance. Best decision I made for my rental business.',
-                  },
-                ].map((t) => (
-                  <figure key={t.name} className="border-t border-neutral-200 pt-4 flex flex-col justify-between gap-4">
-                    <blockquote className="text-sm text-neutral-700 leading-relaxed">&ldquo;{t.quote}&rdquo;</blockquote>
-                    <figcaption className="flex items-center gap-3">
-                      <img src={t.photo} alt={t.name} className="w-8 h-8 rounded-full object-cover" />
-                      <div>
-                        <span className="block text-sm text-neutral-900">{t.name}</span>
-                        <span className="block text-xs text-neutral-500">{t.role}</span>
-                      </div>
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-
-              <div className="mt-12">
-                <Link to="/signup" className={btnInk}>
-                  Start collecting rent
-                  <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
-                </Link>
               </div>
             </Reveal>
           </div>
@@ -714,24 +553,11 @@ export default function Landing() {
               <div className="max-w-2xl">
                 <h2 className={`${sectionTitle} mb-4`}>Ready to get started?</h2>
                 <p className="text-lg text-neutral-500 mb-8 leading-relaxed">
-                  Join landlords and lenders across Jamaica who use EasyCollect to send invoices, collect proof of payment and track their income, all for free.
+                  Use EasyCollect to send invoices, collect proof of payment and track your income, all for free.
                 </p>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <Link to="/signup" className={btnAccent}>Create free account</Link>
                   <Link to="/login" className={btnQuiet}>Log in</Link>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2 flex-shrink-0">
-                    {[
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face&auto=format&q=80',
-                      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=64&h=64&fit=crop&crop=face&auto=format&q=80',
-                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=64&h=64&fit=crop&crop=face&auto=format&q=80',
-                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=face&auto=format&q=80',
-                    ].map((src, i) => (
-                      <img key={i} src={src} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-white" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-neutral-500">Trusted by landlords and lenders across Jamaica</span>
                 </div>
               </div>
             </Reveal>

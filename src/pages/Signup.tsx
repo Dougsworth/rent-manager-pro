@@ -70,7 +70,7 @@ export default function Signup() {
     <div className="min-h-screen flex">
       <SEO
         title="Sign Up Free"
-        description="Create your free EasyCollect account and start collecting what you're owed — rent, loans, and more. Built for Jamaican landlords and lenders — manage tenants and borrowers, send invoices, and track payments."
+        description="Create your free EasyCollect account and start collecting what you're owed: rent, loans, and more. Built for Jamaican landlords and lenders. Manage tenants and borrowers, send invoices, and track payments."
         keywords="sign up EasyCollect, free landlord software Jamaica, free lender software Jamaica, rent collection registration, loan tracking registration, create account"
         path="/signup"
       />
