@@ -37,6 +37,41 @@ interface KingstonSceneProps {
   flats: Record<number, FlatState>;
   onReady?: () => void;
   className?: string;
+  /** 'object' floats the block on the page; 'hero' sets it in a Kingston morning with the Blue Mountains behind. */
+  variant?: 'object' | 'hero';
+}
+
+/** Morning sky over three hazy ridges of the Blue Mountains, drawn once into a texture. */
+function skyTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  const g = c.getContext('2d')!;
+  const sky = g.createLinearGradient(0, 0, 0, 512);
+  sky.addColorStop(0, '#86a8bb');
+  sky.addColorStop(0.45, '#c5d3d3');
+  sky.addColorStop(0.62, '#e6e1d2');
+  g.fillStyle = sky;
+  g.fillRect(0, 0, 1024, 512);
+  const ridge = (base: number, amp: number, color: string, seed: number) => {
+    g.fillStyle = color;
+    g.beginPath();
+    g.moveTo(0, 512);
+    for (let x = 0; x <= 1024; x += 8) {
+      const y = base
+        - amp * (0.55 * Math.sin(x / 140 + seed) + 0.3 * Math.sin(x / 61 + seed * 2.1) + 0.15 * Math.sin(x / 23 + seed * 3.7));
+      g.lineTo(x, y);
+    }
+    g.lineTo(1024, 512);
+    g.closePath();
+    g.fill();
+  };
+  ridge(205, 46, '#a7b8b4', 1.3);
+  ridge(238, 36, '#8aa195', 4.1);
+  ridge(266, 24, '#6c8670', 2.6);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 function breezeBlockTexture() {
@@ -59,7 +94,8 @@ function breezeBlockTexture() {
   return t;
 }
 
-export default function KingstonScene({ flats, onReady, className }: KingstonSceneProps) {
+export default function KingstonScene({ flats, onReady, className, variant = 'object' }: KingstonSceneProps) {
+  const hero = variant === 'hero';
   const host = useRef<HTMLDivElement>(null);
   const latest = useRef(flats);
   latest.current = flats;
@@ -259,16 +295,49 @@ export default function KingstonScene({ flats, onReady, className }: KingstonSce
 
     // Ground: paved apron, two low hedges, and a shadow catcher that lets the green show through
     building.add(box(W + 4, 0.24, D + 5.5, pave, 0, -0.12, 0.9, false));
-    const catcher = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.ShadowMaterial({ opacity: 0.32 }));
-    catcher.rotation.x = -Math.PI / 2;
-    catcher.position.y = -0.24;
-    catcher.receiveShadow = true;
-    scene.add(catcher);
+    let sky: THREE.Texture | null = null;
+    if (hero) {
+      // A lawn running back into morning haze, the mountains painted behind
+      sky = skyTexture();
+      scene.background = sky;
+      scene.fog = new THREE.Fog(0x6c8670, 50, 220);
+      // The street in front of the block
+      building.add(box(90, 0.04, 6, mat(0x55595a, 0.95), 0, -0.21, D / 2 + 13, false));
+      // Grass with soft patches so it does not read as a flat colour
+      const gc = document.createElement('canvas');
+      gc.width = gc.height = 256;
+      const gx = gc.getContext('2d')!;
+      gx.fillStyle = '#7a8d68';
+      gx.fillRect(0, 0, 256, 256);
+      for (let k = 0; k < 140; k++) {
+        gx.fillStyle = k % 2 ? 'rgba(96,116,82,0.16)' : 'rgba(150,160,112,0.14)';
+        gx.beginPath();
+        gx.arc(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 22, 0, Math.PI * 2);
+        gx.fill();
+      }
+      const grass = new THREE.CanvasTexture(gc);
+      grass.wrapS = grass.wrapT = THREE.RepeatWrapping;
+      grass.repeat.set(90, 90);
+      grass.colorSpace = THREE.SRGBColorSpace;
+      const lawnMat = new THREE.MeshStandardMaterial({ map: grass, roughness: 1, envMapIntensity: 0.12 });
+      const lawn = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), lawnMat);
+      lawn.rotation.x = -Math.PI / 2;
+      lawn.position.y = -0.25;
+      lawn.receiveShadow = true;
+      scene.add(lawn);
+      building.add(box(3.2, 0.05, 14, pave, 0, -0.2, D / 2 + 9, false));
+    } else {
+      const catcher = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.ShadowMaterial({ opacity: 0.32 }));
+      catcher.rotation.x = -Math.PI / 2;
+      catcher.position.y = -0.24;
+      catcher.receiveShadow = true;
+      scene.add(catcher);
+    }
 
     // Camera: a three quarter view from the right, framed to the container
     const target = new THREE.Vector3(0.4, 4.9, 0.6);
-    const baseAz = 0.52;
-    const el0 = 0.2;
+    const baseAz = hero ? 0.62 : 0.52;
+    const el0 = hero ? 0.07 : 0.2;
     let az = baseAz;
     let azTarget = baseAz;
     const frameCamera = () => {
@@ -276,13 +345,25 @@ export default function KingstonScene({ flats, onReady, className }: KingstonSce
       const h = el.clientHeight || 1;
       camera.aspect = w / h;
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const r = Math.max(8.2 / t, 9.6 / (t * camera.aspect)) * 1.04;
+      const wideHero = hero && camera.aspect > 1.15;
+      const fit = hero ? (wideHero ? 1.45 : 1.25) : 1.04;
+      const r = Math.max(8.2 / t, 9.6 / (t * camera.aspect)) * fit;
       camera.position.set(
         target.x + r * Math.sin(az) * Math.cos(el0),
         target.y + r * Math.sin(el0),
         target.z + r * Math.cos(az) * Math.cos(el0),
       );
-      camera.lookAt(target);
+      if (hero) {
+        // Push the block toward the right on wide screens (the headline sits left), and down on phones
+        const right = new THREE.Vector3(Math.cos(az), 0, -Math.sin(az));
+        const look = target.clone();
+        if (wideHero) {
+          look.addScaledVector(right, -r * t * camera.aspect * 0.36);
+          look.y += r * t * 0.14;
+        }
+        else look.y += r * t * 0.42;
+        camera.lookAt(look);
+      } else camera.lookAt(target);
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
     };
@@ -398,12 +479,13 @@ export default function KingstonScene({ flats, onReady, className }: KingstonSce
         mats.forEach((mm) => mm.dispose());
       });
       bb.dispose();
+      sky?.dispose();
       envTex.dispose();
       pmrem.dispose();
       renderer.dispose();
       canvas.remove();
     };
-  }, []);
+  }, [hero]);
 
   const first = useRef(true);
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import SEO from '@/components/SEO';
@@ -51,7 +51,24 @@ const faqs: [string, string][] = [
   ['What happens when Pro arrives?', 'We will tell you what it costs before anything changes. Your records stay yours either way, and you can export them.'],
 ];
 
+/** Fades each .m-pop in as it scrolls into view, staggered by --d. */
+function useReveal() {
+  useEffect(() => {
+    const stages = document.querySelectorAll('.m-pop');
+    if (!('IntersectionObserver' in window)) {
+      stages.forEach((el) => el.classList.add('m-in'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('m-in'); io.unobserve(e.target); }
+    }, { rootMargin: '0px 0px -10% 0px' });
+    stages.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
 export default function Landing() {
+  useReveal();
   const [status, setStatus] = useState<Record<string, DemoStatus>>({});
   const [sceneReady, setSceneReady] = useState(false);
   const flats = useMemo(() => {
@@ -65,58 +82,50 @@ export default function Landing() {
       <SEO path="/" />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-popover focus:p-2">Skip to content</a>
 
-      {/* The green field: the app's rail colour, opened out to carry the offer */}
-      <div className={onShell}>
-        <header className={cn(wrap, 'flex h-16 items-center justify-between gap-4')}>
+      {/* Full screen scene: the block in a Kingston morning, the offer over it */}
+      <div className="relative isolate flex min-h-[640px] flex-col overflow-hidden bg-[#c5d3d3] text-white h-[100svh] max-h-[900px] [&_:focus-visible]:outline-white">
+        <div className="absolute inset-0 -z-10" aria-hidden="true">
+          <img
+            src="/screens/kingston-hero.webp"
+            alt=""
+            decoding="async"
+            fetchPriority="high"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+            className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-700', sceneReady && 'opacity-0')}
+          />
+          <Suspense fallback={null}>
+            <KingstonScene variant="hero" flats={flats} onReady={() => setSceneReady(true)} className="absolute inset-0" />
+          </Suspense>
+          {/* Shade under the words so they read on any part of the sky */}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,32,26,.55)_0%,rgba(9,32,26,.1)_45%,rgba(9,32,26,.35)_100%)] lg:bg-[linear-gradient(90deg,rgba(9,32,26,.62)_0%,rgba(9,32,26,.25)_40%,rgba(9,32,26,0)_65%)]" />
+        </div>
+
+        <header className="flex h-20 items-center justify-between gap-4 px-4 sm:px-[clamp(24px,5vw,72px)]">
           <Link to="/" className="text-[22px] text-white"><BrandLogo /></Link>
-          <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2 text-sm">
-            <a href="#how" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">How it works</a>
-            <a href="#facts" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">Price</a>
-            <a href="#questions" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">Questions</a>
-            <Link to="/login" className="px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline">Log in</Link>
-            <Link to="/signup" className="ml-1 inline-flex h-9 items-center rounded-[3px] bg-[#ECEFEA] px-4 font-medium text-shell transition-colors duration-150 hover:bg-white">
+          <nav aria-label="Main" className="flex items-center gap-1 text-sm sm:gap-2">
+            <a href="#how" className="hidden px-3 py-2 text-white/80 transition-opacity hover:opacity-60 md:block">How it works</a>
+            <a href="#facts" className="hidden px-3 py-2 text-white/80 transition-opacity hover:opacity-60 md:block">Price</a>
+            <a href="#questions" className="hidden px-3 py-2 text-white/80 transition-opacity hover:opacity-60 md:block">Questions</a>
+            <Link to="/login" className="px-3 py-2 text-white/80 transition-opacity hover:opacity-60">Log in</Link>
+            <Link to="/signup" className="ml-1 inline-flex h-10 items-center rounded-[3px] border border-white/45 px-4 font-medium text-white transition-colors duration-150 hover:bg-white hover:text-shell">
               <span className="sm:hidden">Sign up</span>
               <span className="hidden sm:inline">Create a free account</span>
             </Link>
           </nav>
         </header>
 
-        <section className={cn(wrap, 'grid items-center gap-8 pb-10 pt-10 sm:pt-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-4 lg:pb-12 lg:pt-8')}>
-          <div className="lg:pb-8">
-            <h1 className="display text-[48px] font-medium leading-[1] tracking-[-0.02em] sm:text-[72px] sm:tracking-[-0.03em] lg:text-[76px]">
-              <span className="block">Stop chasing</span>
-              <span className="block text-shell-ink">Start collecting</span>
-            </h1>
-            <p className="mt-6 max-w-[30ch] text-[18px] leading-snug text-shell-ink sm:mt-8 sm:text-[20px]">
-              Rent and loans in Jamaica, tracked and chased for you.
-            </p>
-            <div className="mt-8 flex flex-col gap-x-5 gap-y-3 sm:flex-row sm:items-center">
-              <Link to="/signup" className={onGreenPrimary}>Create a free account</Link>
-              <p className="text-[14px] text-shell-ink">Free for now</p>
-            </div>
+        <section className="m-stage flex flex-1 flex-col px-4 pb-10 pt-6 sm:px-[clamp(24px,6vw,90px)] lg:justify-center lg:pb-24">
+          <h1 className="m-pop max-w-[11ch] text-[clamp(44px,6vw,84px)] font-normal leading-[0.98] tracking-[-0.035em] [text-shadow:0_1px_24px_rgba(9,32,26,.25)]">
+            Stop chasing. Start collecting.
+          </h1>
+          <p className="m-pop mt-5 max-w-[30ch] text-[17px] leading-relaxed text-white/85 sm:text-[19px]" style={{ '--d': '80ms' } as CSSProperties}>
+            Rent and loans in Jamaica, tracked and chased for you.
+          </p>
+          <div className="m-pop mt-8 flex flex-wrap gap-3" style={{ '--d': '160ms' } as CSSProperties}>
+            <Link to="/signup" className="inline-flex h-12 items-center rounded-[3px] bg-white px-5 text-[15px] font-medium text-shell transition-transform duration-150 hover:-translate-y-0.5">Create a free account</Link>
+            <a href="#today" className="inline-flex h-12 items-center rounded-[3px] border border-white/45 px-5 text-[15px] text-white transition-colors duration-150 hover:bg-white/10">Try it below</a>
           </div>
-
-          <figure className="lg:-mr-11">
-            <div className="relative h-[320px] sm:h-[460px] lg:h-[600px]">
-              <img
-                src="/screens/kingston-poster.webp"
-                alt=""
-                aria-hidden="true"
-                width={1344}
-                height={1200}
-                decoding="async"
-                fetchPriority="high"
-                onError={(e) => (e.currentTarget.style.display = 'none')}
-                className={cn('absolute inset-0 h-full w-full object-contain transition-opacity duration-500', sceneReady && 'opacity-0')}
-              />
-              <Suspense fallback={null}>
-                <KingstonScene flats={flats} onReady={() => setSceneReady(true)} className="absolute inset-0" />
-              </Suspense>
-            </div>
-            <figcaption className="mt-2 flex justify-center text-shell-ink lg:justify-end lg:pr-11">
-              <LouvreLegend />
-            </figcaption>
-          </figure>
+          <LouvreLegend className="mt-auto pt-10 text-white/85 lg:absolute lg:bottom-8 lg:right-[clamp(24px,5vw,72px)] lg:mt-0 lg:pt-0" />
         </section>
       </div>
 
@@ -127,14 +136,18 @@ export default function Landing() {
           <LedgerDemo status={status} setStatus={setStatus} />
         </section>
 
-        <section id="how" aria-labelledby="how-h" className="scroll-mt-4 border-t border-rule">
-          <div className={cn(wrap, 'py-16 lg:py-24')}>
-            <h2 id="how-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">Rent, collected in three steps</h2>
-            <div className="mt-10"><RentFlow /></div>
-            <div className="mt-20 grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-11">
-              <h3 className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">Loans, month by month</h3>
-              <LoanStrip />
-            </div>
+        {/* Inset green panel, the way ignitionsync.com frames its how it works scene */}
+        <section id="how" aria-labelledby="how-h" className="scroll-mt-4 p-2 sm:p-3 lg:p-4">
+          <div className="m-stage rounded-[20px] bg-shell px-5 pb-16 pt-16 text-white sm:rounded-[28px] sm:px-[clamp(24px,6vw,90px)] lg:pb-24 lg:pt-24">
+            <h2 id="how-h" className="m-pop max-w-[16ch] text-[clamp(32px,3.8vw,54px)] font-normal leading-[1.04] tracking-[-0.03em]">Rent, collected in three steps</h2>
+            <div className="m-pop mt-12 text-ink [&_li>p]:text-white [&_li>p_span]:text-shell-ink" style={{ '--d': '120ms' } as CSSProperties}><RentFlow /></div>
+          </div>
+        </section>
+
+        <section aria-labelledby="loan-h">
+          <div className={cn(wrap, 'm-stage grid gap-8 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-11 lg:py-24')}>
+            <h2 id="loan-h" className="m-pop max-w-[14ch] text-[clamp(32px,3.6vw,50px)] font-normal leading-[1.05] tracking-[-0.03em]">Loans, month by month</h2>
+            <div className="m-pop" style={{ '--d': '120ms' } as CSSProperties}><LoanStrip /></div>
           </div>
         </section>
 
@@ -142,7 +155,7 @@ export default function Landing() {
         <section aria-labelledby="tenant-h" className={onShell}>
           <div className={cn(wrap, 'grid items-center gap-12 py-16 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-24 lg:py-24')}>
             <div>
-              <h2 id="tenant-h" className="display max-w-[14ch] text-[40px] font-medium leading-[1] sm:text-[48px]">No account, no app, any phone</h2>
+              <h2 id="tenant-h" className="m-pop max-w-[14ch] text-[clamp(32px,3.8vw,54px)] font-normal leading-[1.04] tracking-[-0.03em]">No account, no app, any phone</h2>
               <p className="mt-5 max-w-[34ch] text-[17px] text-shell-ink">They open the link, pay, and send the screenshot.</p>
             </div>
             <Shot
@@ -156,9 +169,9 @@ export default function Landing() {
         </section>
 
         <section aria-labelledby="else-h">
-          <div className={cn(wrap, 'py-16 lg:py-24')}>
-            <h2 id="else-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">And it keeps going without you</h2>
-            <div className="mt-10"><FeatureShowcase /></div>
+          <div className={cn(wrap, 'm-stage py-16 lg:py-24')}>
+            <h2 id="else-h" className="m-pop text-[clamp(32px,3.6vw,50px)] font-normal leading-[1.05] tracking-[-0.03em]">And it keeps going without you</h2>
+            <div className="m-pop mt-10" style={{ '--d': '120ms' } as CSSProperties}><FeatureShowcase /></div>
           </div>
         </section>
 
@@ -183,7 +196,7 @@ export default function Landing() {
         <section id="questions" aria-labelledby="q-h" className="scroll-mt-4 border-t border-rule">
           <div className={cn(wrap, 'grid gap-8 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-11 lg:py-24')}>
             <div>
-              <h2 id="q-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">Questions</h2>
+              <h2 id="q-h" className="m-pop text-[clamp(32px,3.6vw,50px)] font-normal leading-[1.05] tracking-[-0.03em]">Questions</h2>
 
             </div>
             <div className="border-b border-rule">
@@ -203,8 +216,8 @@ export default function Landing() {
 
       {/* Ends on the green it started on */}
       <footer className={onShell}>
-        <div className={cn(wrap, 'py-16 lg:py-24')}>
-          <p className="display max-w-[16ch] text-[40px] font-medium leading-[1] sm:text-[56px]">Start with one tenant or one loan</p>
+        <div className={cn(wrap, 'm-stage py-16 lg:py-24')}>
+          <p className="max-w-[16ch] text-[clamp(36px,4.4vw,60px)] font-normal leading-[1.02] tracking-[-0.035em]">Start with one tenant or one loan</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
             <Link to="/signup" className={onGreenPrimary}>Create a free account</Link>
             <Link to="/login" className="text-[15px] font-medium text-white underline underline-offset-4">Log in</Link>

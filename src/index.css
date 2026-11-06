@@ -118,6 +118,11 @@
   .page-enter { animation: pageEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) both; }
   @keyframes pageEnter { from { opacity: 0; } to { opacity: 1; } }
 
+  /* Landing reveal: each .m-pop rises in when its .m-stage enters the viewport, staggered by --d */
+  .m-pop { opacity: 0; transform: translateY(14px); transition: opacity .7s cubic-bezier(.22,1,.36,1) var(--d, 0ms), transform .7s cubic-bezier(.22,1,.36,1) var(--d, 0ms); }
+  .m-in .m-pop, .m-pop.m-in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .m-pop { opacity: 1; transform: none; transition: none; } }
+
   /* Logo: the coin is the "o" in EasyCollect. One turn on load, one on hover, never looping. */
   .brand-logo { display: inline-flex; align-items: baseline; white-space: nowrap; }
   .brand-coin {
