@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { loginSchema } from '@/schemas';
@@ -8,12 +8,27 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import SEO from '@/components/SEO';
+import type { FlatState } from '@/components/landing/KingstonScene';
+
+const KingstonScene = lazy(() => import('@/components/landing/KingstonScene'));
+const AUTH_FLATS: Record<number, FlatState> = { 1: 'paid', 2: 'paid', 3: 'due', 4: 'late', 5: 'paid', 6: 'late' };
 
 /**
  * Shared frame for the sign in, sign up and password screens: one calm column on
- * the ground colour, and on wide screens a solid green field with the promise.
+ * the ground colour, and on wide screens the green field with the Kingston block
+ * from the landing page and the promise under it.
  */
 export function AuthShell({ children }: { children: React.ReactNode }) {
+  const [sceneReady, setSceneReady] = useState(false);
+  // Only load the 3D building where the panel shows, so phones never download it
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.('(min-width: 1024px)');
+    if (!mq) return;
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   return (
     <div className="min-h-screen bg-ground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,42%)]">
       <div className="flex min-h-screen flex-col px-4 pb-10 pt-5 sm:px-8 lg:px-11">
@@ -24,11 +39,25 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-[380px]">{children}</div>
         </main>
       </div>
-      <aside className="hidden bg-shell px-11 pb-14 pt-6 text-white lg:flex lg:flex-col lg:justify-end">
-        <p className="display text-[52px] font-bold leading-[0.98] xl:text-[64px]"><span className="block">Know what's owed.</span> <span className="block">Know what to do.</span></p>
-        <p className="mt-5 max-w-[34ch] text-[17px] text-shell-ink">
-          Rent and loans in one place, for landlords and lenders in Jamaica.
-        </p>
+      <aside className="hidden h-screen bg-shell text-white lg:sticky lg:top-0 lg:flex lg:flex-col">
+        <div className="relative min-h-0 flex-1" aria-hidden="true">
+          <img
+            src="/screens/kingston-poster.webp"
+            alt=""
+            decoding="async"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ${sceneReady ? 'opacity-0' : ''}`}
+          />
+          {wide && <Suspense fallback={null}>
+            <KingstonScene flats={AUTH_FLATS} onReady={() => setSceneReady(true)} className="absolute inset-0" />
+          </Suspense>}
+        </div>
+        <div className="px-11 pb-14">
+          <p className="display text-[52px] font-medium leading-[1] tracking-[-0.03em] xl:text-[64px]"><span className="block">Stop chasing</span><span className="block text-shell-ink">Start collecting</span></p>
+          <p className="mt-5 max-w-[36ch] text-[17px] text-shell-ink">
+            Rent and personal loans, tracked, reminded and receipted. Built for landlords and lenders in Jamaica.
+          </p>
+        </div>
       </aside>
     </div>
   );
