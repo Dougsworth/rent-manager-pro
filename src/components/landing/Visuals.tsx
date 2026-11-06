@@ -111,12 +111,13 @@ export function LoanStrip() {
           <li key={i} className="flex flex-col items-center gap-1.5">
             <span
               className={cn(
-                'h-14 w-full',
+                'bar-grow h-14 w-full',
                 s === 'p' && 'bg-paid',
                 s === 'l' && 'bg-paid/45',
                 s === 'x' && 'hatch-late border border-late',
                 s === 'd' && 'border border-dashed border-quiet/60',
               )}
+              style={{ '--i': i } as React.CSSProperties}
               aria-label={`${months[i]}: ${{ p: 'paid', l: 'paid late', x: 'late', d: 'to come' }[s]}`}
             />
             <span className="text-[11px] text-quiet">{months[i]}</span>
@@ -154,7 +155,7 @@ function ReportMock() {
       </div>
       <div className="mt-3 flex h-[92px] items-end gap-[5px]" aria-hidden="true">
         {v.map((h, i) => (
-          <span key={i} className={cn('flex-1', i === v.length - 1 ? 'bg-shell' : 'bg-paid/40')} style={{ height: `${h}%` }} />
+          <span key={i} className={cn('bar-grow flex-1', i === v.length - 1 ? 'bg-shell' : 'bg-paid/40')} style={{ height: `${h}%`, '--i': i } as React.CSSProperties} />
         ))}
       </div>
       <div className="mt-1.5 flex justify-between text-[11px] text-quiet"><span>Dec</span><span>Nov</span></div>

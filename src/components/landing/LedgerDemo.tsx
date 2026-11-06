@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
+import { CoinMark } from '@/components/BrandLogo';
 import { PaymentLouvre, LouvreKey } from '@/components/collect/PaymentLouvre';
 import { formatMoney } from '@/lib/money';
 import { cn } from '@/lib/utils';
@@ -159,10 +160,13 @@ export function LedgerDemo({ status, setStatus }: LedgerDemoProps) {
                   <div className={cn('truncate text-base', isLate ? 'font-medium' : 'font-normal', paid && 'text-quiet')}>{r.name}</div>
                   <div className="truncate text-[13.5px] text-quiet">{r.what}</div>
                 </div>
-                <div className={cn('num text-right text-base font-medium lg:order-4', paid && 'text-quiet line-through decoration-1')}>{formatMoney(r.amount)}</div>
+                <div className={cn('num relative text-right text-base font-medium lg:order-4', paid && 'text-quiet')}>
+                  <span className={cn(paid && 'line-through decoration-1')}>{formatMoney(r.amount)}</span>
+                  {paid && <span className="money-pop" aria-hidden="true">+{formatMoney(r.amount)}</span>}
+                </div>
                 <div className="col-span-2 text-sm lg:order-3 lg:col-span-1">
                   {paid
-                    ? <span className="font-medium text-paid">Paid just now</span>
+                    ? <span className="inline-flex items-center gap-1 font-medium text-paid"><CoinMark />Paid just now</span>
                     : <span className={isLate ? 'font-medium text-late' : ''}>{timing(r.days)}</span>}
                 </div>
                 <PaymentLouvre months={months(pattern, now)} className="col-span-2 lg:order-2 lg:col-span-1" />

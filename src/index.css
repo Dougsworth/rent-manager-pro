@@ -123,6 +123,13 @@
   .m-in .m-pop, .m-pop.m-in { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { .m-pop { opacity: 1; transform: none; transition: none; } }
 
+  /* Money motion on the landing page: bars grow in, paid amounts float up */
+  .bar-grow { transform-origin: bottom; transform: scaleY(0); transition: transform .8s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 60ms + 250ms); }
+  .m-in .bar-grow, .m-pop.m-in .bar-grow { transform: none; }
+  .money-pop { position: absolute; right: 0; top: -6px; color: var(--color-paid); font-weight: 500; white-space: nowrap; pointer-events: none; text-decoration: none; animation: moneyPop 1.6s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes moneyPop { 0% { opacity: 0; transform: translateY(6px); } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-30px); } }
+  @media (prefers-reduced-motion: reduce) { .bar-grow { transform: none; transition: none; } .money-pop { display: none; } }
+
   /* Logo: the coin is the "o" in EasyCollect. One turn on load, one on hover, never looping. */
   .brand-logo { display: inline-flex; align-items: baseline; white-space: nowrap; }
   .brand-coin {

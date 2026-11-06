@@ -27,6 +27,7 @@ const WALL = 0.3; // front wall thickness
 
 interface Flat {
   id: number;
+  pos: THREE.Vector3;
   slats: THREE.Object3D[];
   room: THREE.MeshStandardMaterial;
   cur: number;
@@ -257,7 +258,7 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
       building.add(l);
       building.add(box(o.w + 0.3, 0.09, 0.34, trim, o.x, o.y - o.h / 2 - 0.045, fz + 0.1));
       slats.forEach((p) => (p.rotation.x = OPEN.late));
-      flatList.push({ id: o.flat!, slats, room, cur: OPEN.late, target: OPEN.late });
+      flatList.push({ id: o.flat!, pos: new THREE.Vector3(o.x, o.y - o.h / 2, D / 2 + WALL + 0.25), slats, room, cur: OPEN.late, target: OPEN.late });
     }
 
     // Side windows, half open, so the block reads as lived in from the corner
@@ -378,6 +379,73 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
     let slowTime = 0;
     let degraded = false;
 
+    const timers: number[] = [];
+    // Money: when rent comes in, coins tumble out of that flat's window and settle on the ground
+    const coinFace = (() => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const g = c.getContext('2d')!;
+      g.fillStyle = '#d8dbd4';
+      g.fillRect(0, 0, 128, 128);
+      g.strokeStyle = '#0e3b30';
+      g.lineWidth = 7;
+      g.beginPath();
+      g.arc(64, 64, 52, 0, Math.PI * 2);
+      g.stroke();
+      g.fillStyle = '#0e3b30';
+      g.font = 'bold 58px Archivo, Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('J$', 64, 68);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    })();
+    const coinGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.07, 36);
+    const coinRim = new THREE.MeshStandardMaterial({ color: 0xc9ccc4, metalness: 0.85, roughness: 0.32, envMapIntensity: 1 });
+    const coinCap = new THREE.MeshStandardMaterial({ map: coinFace, metalness: 0.6, roughness: 0.38, envMapIntensity: 1 });
+    interface Coin { mesh: THREE.Mesh; v: THREE.Vector3; spin: number; age: number; landed: boolean }
+    const coins: Coin[] = [];
+    const spawnCoins = (fl: Flat, n = 3) => {
+      if (reduce) return;
+      for (let k = 0; k < n; k++) {
+        timers.push(window.setTimeout(() => {
+          const mesh = new THREE.Mesh(coinGeo, [coinRim, coinCap, coinCap]);
+          mesh.castShadow = true;
+          mesh.position.copy(fl.pos).add(new THREE.Vector3((Math.random() - 0.5) * 1.6, 0.2, 0));
+          mesh.rotation.set(Math.PI / 2, 0, Math.random() * Math.PI);
+          scene.add(mesh);
+          coins.push({ mesh, v: new THREE.Vector3((Math.random() - 0.5) * 1.6, 3.2 + Math.random() * 1.4, 2.2 + Math.random() * 1.2), spin: 9 + Math.random() * 6, age: 0, landed: false });
+          kick();
+        }, k * 110));
+      }
+    };
+    const stepCoins = (dt: number) => {
+      for (let i = coins.length - 1; i >= 0; i--) {
+        const c = coins[i];
+        c.age += dt;
+        if (!c.landed) {
+          c.v.y -= 9.8 * dt;
+          c.mesh.position.addScaledVector(c.v, dt);
+          c.mesh.rotation.x += c.spin * dt;
+          if (c.mesh.position.y <= 0.04) {
+            c.mesh.position.y = 0.04;
+            c.mesh.rotation.set(0, c.mesh.rotation.y, 0); // lies flat, face up
+            c.landed = true;
+            c.age = 0;
+          }
+        } else if (c.age > 1.4) {
+          // Sink away after resting a moment
+          c.mesh.position.y -= dt * 0.4;
+          if (c.age > 1.9) {
+            scene.remove(c.mesh);
+            coins.splice(i, 1);
+          }
+        }
+      }
+      return coins.length > 0;
+    };
+
     const tick = (t: number) => {
       raf = 0;
       const dt = Math.min(0.05, (t - last) / 1000);
@@ -400,6 +468,7 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
         moving = true;
       }
 
+      if (stepCoins(dt)) moving = true;
       renderer.render(scene, camera);
 
       if (!ready) {
@@ -427,7 +496,9 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
 
     const apply = (f: Record<number, FlatState>, instant = false) => {
       for (const fl of flatList) {
-        fl.target = OPEN[f[fl.id] ?? 'paid'];
+        const next = OPEN[f[fl.id] ?? 'paid'];
+        if (!instant && next === OPEN.paid && fl.target !== OPEN.paid) spawnCoins(fl, 5);
+        fl.target = next;
         if (instant) fl.cur = fl.target;
       }
       kick();
@@ -435,13 +506,13 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
     setFlatsRef.current = (f) => apply(f);
 
     // Entrance: the block starts shut and paid flats open one after another
-    const timers: number[] = [];
     if (reduce) apply(latest.current, true);
     else {
       kick();
       flatList.forEach((fl, i) => {
         timers.push(window.setTimeout(() => {
           fl.target = OPEN[latest.current[fl.id] ?? 'paid'];
+          if (fl.target === OPEN.paid) spawnCoins(fl, 2);
           kick();
         }, 500 + i * 140));
       });
@@ -479,6 +550,10 @@ export default function KingstonScene({ flats, onReady, className, variant = 'ob
         mats.forEach((mm) => mm.dispose());
       });
       bb.dispose();
+      coinFace.dispose();
+      coinGeo.dispose();
+      coinRim.dispose();
+      coinCap.dispose();
       sky?.dispose();
       envTex.dispose();
       pmrem.dispose();
