@@ -1,279 +1,132 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { signupSchema } from '@/schemas';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { Eye, EyeOff, Loader2, ArrowRight, Mail } from 'lucide-react';
-import BrandLogo from '@/components/BrandLogo';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { AuthShell, FormError, GoogleButton, PasswordInput, TextField } from './Login';
 
 export default function Signup() {
-  const { signUp, signInWithGoogle } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
+  const { signUp } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const role = 'landlord' as const;
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
     const result = signupSchema.safeParse({ firstName, lastName, email, password, confirmPassword });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      setError(result.error.issues[0].message);
       return;
     }
 
     setLoading(true);
     const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, role });
-    if (error) {
-      toast.error(error);
-    } else {
-      setSuccess(true);
-    }
+    if (error) setError(error);
+    else setSuccess(true);
     setLoading(false);
   };
 
   if (success) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-8 text-center">
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-7 w-7 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Check your email</h2>
-              <p className="text-slate-500 mb-6">
-                We've sent a confirmation link to <strong className="text-slate-900">{email}</strong>. Click the link to activate your account.
-              </p>
-              <Link to="/login">
-                <Button variant="outline" className="w-full">
-                  Back to Login
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthShell>
+        <SEO title="Check your email" path="/signup" />
+        <h1 className="display text-[40px] font-bold leading-[1.05]">Check your email</h1>
+        <p className="mt-3 text-[17px]">
+          We sent a link to <strong className="font-semibold">{email}</strong>. Open it to confirm your account.
+        </p>
+        <ul className="mt-7 text-[15px]">
+          <li className="border-t border-rule py-3">
+            <span className="font-semibold">Confirm your email.</span>{' '}
+            <span className="text-quiet">It can take a minute. If it is not in your inbox, look in spam.</span>
+          </li>
+          <li className="border-t border-rule py-3">
+            <span className="font-semibold">Log in and add who owes you.</span>{' '}
+            <span className="text-quiet">A property and its tenants, or a borrower and their loan.</span>
+          </li>
+          <li className="border-y border-rule py-3">
+            <span className="font-semibold">Check Today.</span>{' '}
+            <span className="text-quiet">It shows who owes you, how much, and who to chase first.</span>
+          </li>
+        </ul>
+        <Link to="/login" className={buttonVariants({ size: 'lg', className: 'mt-7 w-full text-[15px]' })}>
+          Go to log in
+        </Link>
+        <p className="mt-4 text-[13.5px] text-quiet">
+          Wrong email? <button type="button" onClick={() => setSuccess(false)} className="cursor-pointer font-medium text-shell underline">Go back and fix it</button>
+        </p>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex">
+    <AuthShell>
       <SEO
-        title="Sign Up Free"
-        description="Create your free EasyCollect account and start collecting what you're owed — rent, loans, and more. Built for Jamaican landlords and lenders — manage tenants and borrowers, send invoices, and track payments."
-        keywords="sign up EasyCollect, free landlord software Jamaica, free lender software Jamaica, rent collection registration, loan tracking registration, create account"
+        title="Create a free account"
+        description="Create a free EasyCollect account. Track rent and personal loans, send pay links and keep proof of every payment."
         path="/signup"
       />
-      {/* Left — Form */}
-      <div className="flex-1 flex flex-col justify-center px-5 sm:px-12 lg:px-24 bg-white">
-        <div className="w-full max-w-sm mx-auto">
-          <div className="mb-12">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
-          </div>
+      <h1 className="display text-[40px] font-bold leading-[1.05]">Create your account</h1>
+      <p className="mt-2 text-[15px] text-quiet">EasyCollect is free for now. No card needed.</p>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create your account</h1>
-            <p className="mt-2 text-slate-500">Free to start. Takes less than a minute.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">First name</Label>
-                <Input
-                  id="firstName"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-                  placeholder="John"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">Last name</Label>
-                <Input
-                  id="lastName"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-                  placeholder="Smith"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 h-11 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-                placeholder="john@example.com"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
-              <div className="mt-1.5 relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-                  placeholder="Min. 6 characters"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">Confirm password</Label>
-              <div className="mt-1.5 relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-11 pr-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-                  placeholder="Re-enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium mt-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Create account
-              {!loading && <ArrowRight className="h-4 w-4 ml-2" />}
-            </Button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-400">Or continue with</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={async () => {
-              setGoogleLoading(true);
-              const { error } = await signInWithGoogle();
-              if (error) toast.error(error);
-              setGoogleLoading(false);
-            }}
-            disabled={googleLoading}
-            className="w-full h-11 flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
-          >
-            {googleLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-            )}
-            Sign up with Google
-          </button>
-
-          <p className="mt-8 text-center text-sm text-slate-500">
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-slate-900 hover:text-slate-700">
-              Sign in
-            </Link>
-          </p>
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
+        <div className="grid grid-cols-2 gap-3">
+          <TextField id="firstName" label="First name" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <TextField id="lastName" label="Last name" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
-      </div>
-
-      {/* Right — Brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background image — fills entire panel */}
-        <img
-          src="/buildingggimage.png"
-          alt=""
-          className="signup-mockup absolute inset-0 w-full h-full object-cover object-center"
+        <TextField
+          id="email"
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
-        {/* Dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-slate-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/70" />
-
-        <p className="relative z-10 text-sm text-slate-300/70">
-          Built for landlords and lenders who want to spend less time chasing payments.
+        <div>
+          <PasswordInput
+            id="password"
+            label="Password"
+            autoComplete="new-password"
+            aria-describedby="password-hint"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <p id="password-hint" className="mt-1.5 text-[13.5px] text-quiet">At least 6 characters.</p>
+        </div>
+        <PasswordInput
+          id="confirmPassword"
+          label="Confirm password"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+        <FormError message={error} />
+        <Button type="submit" size="lg" className="w-full text-[15px]" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+          Create account
+        </Button>
+        <p className="text-[13.5px] text-quiet">
+          By creating an account you agree to the <Link to="/terms" className="text-shell underline">Terms</Link> and{' '}
+          <Link to="/privacy" className="text-shell underline">Privacy Policy</Link>.
         </p>
+      </form>
 
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-6xl font-bold leading-tight drop-shadow-lg">
-            Getting paid,
-            <br />
-            <span className="text-blue-400">simplified</span>
-          </h2>
+      <GoogleButton />
 
-          <div className="flex items-center gap-8 pt-4">
-            <div>
-              <p className="text-2xl font-bold">2 min</p>
-              <p className="text-sm text-slate-300/60">Setup time</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">Free</p>
-              <p className="text-sm text-slate-300/60">To get started</p>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div>
-              <p className="text-2xl font-bold">100%</p>
-              <p className="text-sm text-slate-300/60">Online</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <BrandLogo className="text-xl font-extrabold tracking-tight" coinColor="rgba(255,255,255,0.5)" />
-        </div>
-      </div>
-    </div>
+      <p className="mt-8 border-t border-rule pt-5 text-[15px] text-quiet">
+        Already have an account?{' '}
+        <Link to="/login" className="font-semibold text-shell underline">Log in</Link>
+      </p>
+    </AuthShell>
   );
 }

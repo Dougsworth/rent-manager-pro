@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Mic, MicOff } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProperties } from "@/services/properties";
 import { addTenant } from "@/services/tenants";
 import { addTenantSchema } from "@/schemas";
 import type { PropertyWithUnits } from "@/types/app.types";
+import { formatMoney } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,7 +90,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
   const allUnits = properties.flatMap(p =>
     (p.units ?? []).map(u => ({
       id: u.id,
-      label: `${p.name} — ${u.name} (J$${u.rent_amount.toLocaleString()}/mo)`,
+      label: `${p.name}, ${u.name}, ${formatMoney(u.rent_amount)} a month`,
     }))
   );
 
@@ -156,7 +157,7 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
       setFormData({ firstName: "", lastName: "", email: "", phone: "", unit_id: NO_UNIT, leaseStart: "", leaseEnd: "" });
       onSuccess?.();
     } catch (err: any) {
-      setError(err.message || 'Failed to add tenant');
+      setError(err.message || 'That tenant was not added. Check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -166,51 +167,46 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Add Tenant</DialogTitle>
-            {voiceSupported && (
-              <button
+          <DialogTitle>Add tenant</DialogTitle>
+          {voiceSupported && (
+            <div className="mt-2">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
+                className={listening ? "-ml-3 text-late" : "-ml-3"}
                 onClick={listening ? stopVoice : startVoice}
-                className={`p-2 rounded-lg transition-colors mr-6 ${
-                  listening
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-                title={listening ? "Stop listening" : "Add by voice — say name, email, phone"}
+                aria-pressed={listening}
               >
-                {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
-            )}
-          </div>
-          {listening && (
-            <p className="text-xs text-red-600 mt-1 animate-pulse">
-              Listening... Say: "John Smith email john@test.com phone 876-555-1234"
-            </p>
+                {listening ? <MicOff aria-hidden="true" className="h-4 w-4" /> : <Mic aria-hidden="true" className="h-4 w-4" />}
+                {listening ? "Stop listening" : "Fill in by voice"}
+              </Button>
+              {listening && (
+                <p role="status" className="mt-1 text-[13.5px] text-quiet">
+                  Listening. Say the name, email and phone, like "John Smith email john@test.com phone 876 555 1234".
+                </p>
+              )}
+            </div>
           )}
         </DialogHeader>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="firstName">First name</Label>
               <Input
                 id="firstName"
+                className="mt-1.5"
                 required
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+            <div>
+              <Label htmlFor="lastName">Last name</Label>
               <Input
                 id="lastName"
+                className="mt-1.5"
                 required
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -218,59 +214,65 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <div>
+            <Label htmlFor="email">Email (optional)</Label>
             <Input
               id="email"
+              className="mt-1.5"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
+            <p className="mt-1 text-[13.5px] text-quiet">Reminders and receipts go to this address.</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+          <div>
+            <Label htmlFor="phone">Phone (optional)</Label>
             <Input
               id="phone"
+              className="mt-1.5"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="unit">Unit</Label>
             <Select
               id="unit"
+              className="mt-1.5"
               value={formData.unit_id}
               onValueChange={(val) => setFormData({ ...formData, unit_id: val })}
-              placeholder="No unit assigned"
+              placeholder="No unit yet"
               options={[
-                { value: NO_UNIT, label: 'No unit assigned' },
+                { value: NO_UNIT, label: 'No unit yet' },
                 ...allUnits.map(u => ({ value: u.id, label: u.label })),
               ]}
             />
             {allUnits.length === 0 && (
-              <p className="text-xs text-gray-500">
-                No properties/units found. Add properties in Settings first.
+              <p className="mt-1 text-[13.5px] text-quiet">
+                You have no units yet. Add them on the Properties page, or save this tenant without one.
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="leaseStart">Lease Start</Label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="leaseStart">Lease starts</Label>
               <Input
                 id="leaseStart"
+                className="mt-1.5"
                 type="date"
                 value={formData.leaseStart}
                 onChange={(e) => setFormData({ ...formData, leaseStart: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="leaseEnd">Lease End</Label>
+            <div>
+              <Label htmlFor="leaseEnd">Lease ends</Label>
               <Input
                 id="leaseEnd"
+                className="mt-1.5"
                 type="date"
                 value={formData.leaseEnd}
                 onChange={(e) => setFormData({ ...formData, leaseEnd: e.target.value })}
@@ -278,13 +280,14 @@ export function AddTenantModal({ open, onClose, onSuccess }: AddTenantModalProps
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+          {error && <p role="alert" className="text-sm font-medium text-late">{error}</p>}
+
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={onClose} className="max-sm:h-12">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Tenant
+            <Button type="submit" disabled={submitting} className="max-sm:h-12">
+              {submitting ? "Adding" : "Add tenant"}
             </Button>
           </div>
         </form>

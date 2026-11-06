@@ -1,47 +1,26 @@
-import { Skeleton, SkeletonStatCard } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ReportsSkeleton() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
+    <div aria-busy="true" aria-label="Loading report">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-4 w-56" />
+          <Skeleton className="h-10 w-40" />
+          <Skeleton className="h-4 w-64" />
         </div>
         <div className="flex gap-2">
-          <Skeleton className="h-10 w-28 rounded-lg" />
-          <Skeleton className="h-10 w-28 rounded-lg" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
         </div>
       </div>
-
-      {/* Date Range */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-4">
-        <div className="flex gap-3 items-end">
-          <Skeleton className="h-10 w-40 rounded-lg" />
-          <Skeleton className="h-10 w-40 rounded-lg" />
-          <div className="flex gap-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-24 rounded-lg" />
-            ))}
-          </div>
-        </div>
+      <div className="flex flex-wrap items-end gap-3 border-b border-rule pb-5">
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-4 w-72" />
       </div>
-
-      {/* Stat Cards */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonStatCard key={i} />
-          ))}
-        </div>
-      </div>
-
-      {/* Chart placeholder */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-6">
-        <Skeleton className="h-5 w-36 mb-4" />
-        <Skeleton className="h-72 w-full rounded-lg" />
-      </div>
+      <Skeleton className="mt-6 h-8 w-full max-w-2xl" />
+      <Skeleton className="mt-8 h-4 w-40" />
+      <Skeleton className="mt-4 h-64 w-full" />
     </div>
   );
 }

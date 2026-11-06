@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
 
 function ErrorFallback({
   error,
@@ -12,21 +11,13 @@ function ErrorFallback({
   title?: string;
 }) {
   return (
-    <div className="flex items-center justify-center py-16">
-      <div className="text-center max-w-sm">
-        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle className="h-6 w-6 text-red-500" />
-        </div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-1">
-          {title || "Something went wrong"}
-        </h2>
-        <p className="text-sm text-slate-500 mb-4">
-          {error.message || "An unexpected error occurred."}
-        </p>
-        <Button variant="outline" onClick={resetError}>
-          Try Again
-        </Button>
-      </div>
+    <div role="alert" className="max-w-xl border-t border-rule py-10">
+      <h2 className="text-xl font-semibold text-ink">{title || "This page ran into a problem"}</h2>
+      <p className="mt-1 text-[15px] text-quiet">
+        Your records are safe. Try again, and if it keeps happening, reload the page.
+      </p>
+      {error?.message && <p className="mt-3 text-[13.5px] text-quiet">What went wrong: {error.message}</p>}
+      <Button className="mt-5" onClick={resetError}>Try again</Button>
     </div>
   );
 }

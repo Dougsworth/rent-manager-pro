@@ -22,7 +22,7 @@ beforeEach(() => {
 describe('Login', () => {
   it('renders the login form', () => {
     renderWithProviders(<Login />);
-    expect(screen.getByText('Sign in to your account')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email address')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
@@ -31,9 +31,7 @@ describe('Login', () => {
     renderWithProviders(<Login />);
     const user = userEvent.setup();
 
-    // The form has required fields so we need to bypass HTML validation
-    const submitBtn = screen.getByRole('button', { name: /sign in/i });
-    // Directly call the form submit by filling in invalid data
+    const submitBtn = screen.getByRole('button', { name: /^log in$/i });
     const emailInput = screen.getByLabelText('Email address');
     await user.type(emailInput, 'notanemail');
     const passwordInput = screen.getByLabelText('Password');
@@ -43,8 +41,8 @@ describe('Login', () => {
     await user.clear(emailInput);
     await user.click(submitBtn);
 
-    // HTML5 validation will prevent submit when required fields are empty
-    // So we test the Zod path by checking the signIn wasn't called
+    // Zod catches the empty email and says so inline
+    expect(await screen.findByText('Email is required')).toBeInTheDocument();
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
@@ -55,7 +53,7 @@ describe('Login', () => {
 
     await user.type(screen.getByLabelText('Email address'), 'test@test.com');
     await user.type(screen.getByLabelText('Password'), 'password123');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.click(screen.getByRole('button', { name: /^log in$/i }));
 
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalledWith('test@test.com', 'password123');
@@ -68,6 +66,6 @@ describe('Login', () => {
 
   it('has a link to signup', () => {
     renderWithProviders(<Login />);
-    expect(screen.getByText('Sign up')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create one free' })).toHaveAttribute('href', '/signup');
   });
 });

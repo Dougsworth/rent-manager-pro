@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Loader2, Plus, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createProperty, createUnit } from "@/services/properties";
 import { createPropertySchema, createUnitSchema } from "@/schemas";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { formatMoney } from "@/lib/money";
 
 interface AddPropertyModalProps {
   open: boolean;
@@ -64,7 +64,7 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
       setCreatedPropertyId(property.id);
       setStep(2);
     } catch (err: any) {
-      setError(err.message || 'Failed to create property');
+      setError(err.message || 'That property was not added. Try again.');
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +88,7 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
       setUnitName('');
       setUnitRent('');
     } catch (err: any) {
-      setError(err.message || 'Failed to add unit');
+      setError(err.message || 'That unit was not added. Try again.');
     } finally {
       setAddingUnit(false);
     }
@@ -103,117 +103,95 @@ export function AddPropertyModal({ open, onClose, onSuccess }: AddPropertyModalP
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{step === 1 ? 'Add Property' : 'Add Units'}</DialogTitle>
+          <DialogTitle>{step === 1 ? 'Add property' : `Add units to ${propertyName}`}</DialogTitle>
           <DialogDescription>
             {step === 1
-              ? 'Create a new property to start managing units and tenants.'
-              : `Add units to ${propertyName}. You can add more later in Settings.`}
+              ? 'Step 1 of 2. A building or house. You add its units next.'
+              : 'Step 2 of 2. Add each unit you rent out. You can add more later on the Properties page.'}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-            step >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
-          }`}>
-            {step > 1 ? <Check className="h-3.5 w-3.5" /> : '1'}
-          </div>
-          <div className={`h-0.5 flex-1 ${step > 1 ? 'bg-blue-600' : 'bg-slate-200'}`} />
-          <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-            step === 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
-          }`}>
-            2
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
         {step === 1 ? (
           <form onSubmit={handleCreateProperty} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="propName">Property Name *</Label>
+            <div>
+              <Label htmlFor="propName">Property name</Label>
               <Input
                 id="propName"
+                className="mt-1.5"
                 required
-                placeholder="e.g. Sunset Apartments"
+                placeholder="Sunset Apartments"
                 value={propertyName}
                 onChange={(e) => setPropertyName(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="propAddress">Address</Label>
+            <div>
+              <Label htmlFor="propAddress">Address (optional)</Label>
               <Input
                 id="propAddress"
-                placeholder="e.g. 12 Harbour St, Kingston"
+                className="mt-1.5"
+                placeholder="12 Harbour St, Kingston"
                 value={propertyAddress}
                 onChange={(e) => setPropertyAddress(e.target.value)}
               />
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+            {error && <p role="alert" className="text-sm font-medium text-late">{error}</p>}
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="ghost" onClick={handleClose} className="max-sm:h-12">
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create Property
+              <Button type="submit" disabled={submitting} className="max-sm:h-12">
+                {submitting ? 'Adding' : 'Add property'}
               </Button>
             </div>
           </form>
         ) : (
-          <div className="space-y-4">
-            {/* Added units list */}
+          <div className="space-y-5">
             {addedUnits.length > 0 && (
-              <div className="space-y-2">
+              <ul>
                 {addedUnits.map((unit, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <span className="text-sm font-medium text-slate-900">{unit.name}</span>
-                    <span className="text-sm font-bold text-blue-600">J${unit.rent.toLocaleString()}/mo</span>
-                  </div>
+                  <li key={i} className="flex items-baseline justify-between gap-4 border-t border-rule py-2.5 text-[15px]">
+                    <span className="truncate font-medium">{unit.name}</span>
+                    <span><span className="num font-semibold">{formatMoney(unit.rent)}</span><span className="text-[13.5px] text-quiet"> a month</span></span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
 
-            {/* Add unit form */}
             <form onSubmit={handleAddUnit} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="unitName">Unit Name</Label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="unitName">Unit name</Label>
                   <Input
                     id="unitName"
+                    className="mt-1.5"
                     required
-                    placeholder="e.g. Unit 1A"
+                    placeholder="Unit 1A"
                     value={unitName}
                     onChange={(e) => setUnitName(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unitRent">Rent (J$)</Label>
+                <div>
+                  <Label htmlFor="unitRent">Rent a month (J$)</Label>
                   <Input
                     id="unitRent"
+                    className="num mt-1.5"
                     type="number"
+                    inputMode="numeric"
                     required
-                    placeholder="e.g. 25000"
+                    placeholder="45000"
                     value={unitRent}
                     onChange={(e) => setUnitRent(e.target.value)}
                   />
                 </div>
               </div>
-              <Button type="submit" variant="outline" className="w-full" disabled={addingUnit}>
-                {addingUnit ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )}
-                Add Unit
+              {error && <p role="alert" className="text-sm font-medium text-late">{error}</p>}
+              <Button type="submit" variant="outline" className="w-full max-sm:h-12" disabled={addingUnit}>
+                {addingUnit ? 'Adding' : 'Add this unit'}
               </Button>
             </form>
 
-            <Button onClick={handleDone} className="w-full">
-              {addedUnits.length === 0 ? 'Skip for Now' : 'Done'}
+            <Button onClick={handleDone} className="w-full max-sm:h-12">
+              {addedUnits.length === 0 ? 'Skip for now' : 'Done'}
             </Button>
           </div>
         )}

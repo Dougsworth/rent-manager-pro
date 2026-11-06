@@ -26,6 +26,9 @@ import ActivityLog from './pages/ActivityLog';
 import Calendar from './pages/Calendar';
 import Loans from './pages/Loans';
 import Borrowers from './pages/Borrowers';
+import TenantProfile from './pages/TenantProfile';
+import BorrowerProfile from './pages/BorrowerProfile';
+import Reminders from './pages/Reminders';
 
 function App() {
   // Public payment route — no auth required
@@ -44,10 +47,10 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-ground flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-6 h-6 border-2 border-shell border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-quiet">Loading</p>
         </div>
       </div>
     );
@@ -93,6 +96,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/tenants" element={<Tenants />} />
+        <Route path="/tenants/:id" element={<TenantProfile />} />
+        <Route path="/borrowers/:id" element={<BorrowerProfile />} />
+        <Route path="/reminders" element={<Reminders />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/reports" element={<Reports />} />

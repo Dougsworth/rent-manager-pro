@@ -1,6 +1,5 @@
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Inbox } from "lucide-react";
 
 interface EmptyStateProps {
   message: string;
@@ -9,16 +8,12 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-export function EmptyState({ message, description, icon: Icon = Inbox, action }: EmptyStateProps) {
+export function EmptyState({ message, description, icon: Icon, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="rounded-2xl glass border border-white/60 p-4 mb-4">
-        <Icon className="h-6 w-6 text-slate-400" />
-      </div>
-      <h3 className="text-sm font-medium text-slate-900">{message}</h3>
-      {description && (
-        <p className="mt-1 text-sm text-slate-500 text-center max-w-sm">{description}</p>
-      )}
+    <div className="border-t border-rule py-10">
+      {Icon && <Icon aria-hidden="true" className="mb-3 h-5 w-5 text-quiet" />}
+      <h3 className="text-lg font-semibold text-ink">{message}</h3>
+      {description && <p className="mt-1 max-w-md text-[15px] text-quiet">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

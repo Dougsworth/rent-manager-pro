@@ -3,27 +3,24 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[3px] border font-semibold transition-colors duration-100 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paid disabled:pointer-events-none disabled:opacity-45",
   {
     variants: {
       variant: {
-        default: "bg-slate-900 text-white shadow-sm hover:bg-slate-800 hover:shadow-md",
-        outline: "border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900",
-        ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-        destructive: "bg-red-600 text-white shadow-sm hover:bg-red-700",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
+        default: "border-shell bg-shell text-white hover:bg-blue-800 hover:border-blue-800",
+        outline: "border-[#b6beb3] bg-transparent text-shell hover:bg-secondary",
+        ghost: "border-transparent bg-transparent text-shell hover:bg-secondary",
+        destructive: "border-late bg-late text-white hover:bg-red-700 hover:border-red-700",
+        secondary: "border-secondary bg-secondary text-ink hover:bg-rule hover:border-rule",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-11 px-6 text-base",
-        icon: "h-9 w-9",
+        default: "h-10 px-3.5 text-sm",
+        sm: "h-9 px-3 text-sm",
+        lg: "h-12 px-5 text-base",
+        icon: "h-10 w-10",
       },
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+    defaultVariants: { variant: "default", size: "default" },
   }
 );
 
@@ -32,15 +29,9 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {}
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
-    return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
+  ({ className, variant, size, ...props }, ref) => (
+    <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+  )
 );
 Button.displayName = "Button";
 

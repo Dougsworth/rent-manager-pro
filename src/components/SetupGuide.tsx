@@ -1,50 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronUp, X, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Check, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
+import { getLoans } from '@/services/loans';
+import { cn } from '@/lib/utils';
 
-function ProgressRing({ percentage, size = 28 }: { percentage: number; size?: number }) {
-  const strokeWidth = 2.5;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-  const color = percentage === 100 ? '#10b981' : percentage >= 50 ? '#3b82f6' : '#94a3b8';
-
-  return (
-    <svg width={size} height={size} className="-rotate-90">
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="#e2e8f0"
-        strokeWidth={strokeWidth}
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        className="transition-all duration-700 ease-out"
-      />
-    </svg>
-  );
-}
-
+/**
+ * A quiet onboarding checklist. A small text button opens it as a popover.
+ * It sits above the phone tab bar and to the right of the desktop rail.
+ */
 export function SetupGuide() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     hasProperties, hasUnits, hasTenants,
-    completedSteps, totalSteps, percentage,
+    completedSteps, totalSteps,
     isComplete, isDismissed, loading, dismiss,
   } = useSetupStatus();
   const [open, setOpen] = useState(false);
+  const [hasLoan, setHasLoan] = useState<boolean | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Auto-dismiss after 3 seconds once all steps are complete
   useEffect(() => {
@@ -56,160 +32,107 @@ export function SetupGuide() {
     }
   }, [isComplete, isDismissed, dismiss]);
 
+  // The loan step is optional, so only look it up when the list is opened
+  useEffect(() => {
+    if (!open || !user || hasLoan !== null) return;
+    getLoans(user.id).then((l) => setHasLoan(l.length > 0)).catch(() => setHasLoan(false));
+  }, [open, user, hasLoan]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
   if (loading || isDismissed) return null;
 
   const steps = [
-    {
-      label: 'Add a Property',
-      description: 'Create your first rental property',
-      done: hasProperties,
-      href: '/properties',
-    },
-    {
-      label: 'Add Units',
-      description: 'Add units to your property',
-      done: hasUnits,
-      href: '/properties',
-    },
-    {
-      label: 'Add a Tenant',
-      description: 'Assign a tenant to a unit',
-      done: hasTenants,
-      href: '/tenants',
-    },
+    { label: 'Add a property', done: hasProperties, href: '/properties' },
+    { label: 'Add units', done: hasUnits, href: '/properties' },
+    { label: 'Add a tenant', done: hasTenants, href: '/tenants' },
   ];
-
-  const nextStep = steps.find(s => !s.done);
 
   const handleDismiss = async () => {
     setOpen(false);
     await dismiss();
   };
 
-  const handleStepClick = (href: string) => {
+  const go = (href: string) => {
     setOpen(false);
     navigate(href);
   };
 
+  const position = 'fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-4 sm:left-8 lg:bottom-6 lg:left-[calc(216px+44px)]';
+
+  const row = (label: string, done: boolean, href: string, note?: string) => (
+    <li key={label} className="border-t border-rule">
+      {done ? (
+        <div className="flex min-h-11 items-center gap-3 py-2 text-[15px] text-quiet">
+          <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-paid" strokeWidth={2.5} />
+          <span>{label}</span>
+          <span className="sr-only">, done</span>
+        </div>
+      ) : (
+        <button type="button" onClick={() => go(href)} className="flex min-h-11 w-full cursor-pointer items-center gap-3 py-2 text-left text-[15px] text-ink hover:underline">
+          <span aria-hidden="true" className="h-4 w-4 shrink-0 border border-input" />
+          <span>{label}</span>
+          {note && <span className="text-[13.5px] text-quiet">{note}</span>}
+        </button>
+      )}
+    </li>
+  );
+
   return (
     <>
-      {/* Pill trigger */}
-      {!open && (
-        <div className="fixed bottom-16 right-5 z-30">
-          <button
-            onClick={() => setOpen(true)}
-            className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
-          >
-            <ProgressRing percentage={percentage} />
-            <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-              Setup Guide
-            </span>
-            <span className="text-[11px] font-semibold text-slate-400 tabular-nums">
-              {percentage}%
-            </span>
-            <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
-          </button>
-        </div>
+      {!open && !isComplete && (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          className={cn(position, 'z-30 flex h-10 cursor-pointer items-center gap-2 rounded-[3px] border border-input bg-popover px-3 text-sm font-semibold text-shell transition-colors duration-100 hover:bg-secondary')}
+        >
+          Finish setup
+          <span className="num font-normal text-quiet">{completedSteps} of {totalSteps}</span>
+        </button>
       )}
 
-      {/* Panel */}
       {open && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="fixed bottom-16 right-5 z-40 w-80 bg-white rounded-2xl border border-slate-200/60 shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-1">
-              <h3 className="text-base font-semibold text-slate-900">Setup Guide</h3>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-label="Setup checklist"
+            className={cn(position, 'z-50 w-[300px] max-w-[calc(100vw-32px)] border border-rule bg-popover px-4 pb-3 pt-3 text-ink shadow-lg')}
+          >
+            <div className="flex items-start justify-between gap-3 pb-2">
+              <div>
+                <h2 className="text-[15px] font-semibold">{isComplete ? 'You are set up' : 'Get set up'}</h2>
+                <p className="num text-[13.5px] text-quiet">{completedSteps} of {totalSteps} done</p>
+              </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label="Close"
+                className="-mr-2 -mt-1 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-quiet hover:bg-secondary hover:text-ink"
               >
-                <X className="h-4 w-4" />
+                <X aria-hidden="true" className="h-4 w-4" />
               </button>
             </div>
-
-            {/* Progress */}
-            <div className="px-5 pb-4 pt-1">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-slate-500">
-                  {isComplete
-                    ? 'All set! You\'re ready to go.'
-                    : `${completedSteps} of ${totalSteps} complete`}
-                </p>
-                <span className={cn(
-                  "text-xs font-semibold tabular-nums",
-                  percentage === 100 ? "text-emerald-600" : "text-blue-600"
-                )}>
-                  {percentage}%
-                </span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-700 ease-out",
-                    percentage === 100 ? "bg-emerald-500" : "bg-blue-500"
-                  )}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Steps */}
-            <div className="px-3 pb-3 space-y-0.5">
-              {steps.map((step, i) => (
-                <button
-                  key={i}
-                  onClick={step.done ? undefined : () => handleStepClick(step.href)}
-                  disabled={step.done}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200",
-                    step.done
-                      ? "opacity-50 cursor-default"
-                      : "hover:bg-slate-50 cursor-pointer group"
-                  )}
-                >
-                  {step.done ? (
-                    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                      <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0 group-hover:border-blue-400 transition-colors" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <span className={cn(
-                      "text-sm block",
-                      step.done ? "text-slate-400 line-through" : "text-slate-800 font-medium"
-                    )}>
-                      {step.label}
-                    </span>
-                    {!step.done && (
-                      <span className="text-[11px] text-slate-400">{step.description}</span>
-                    )}
-                  </div>
-                  {!step.done && (
-                    <ArrowRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-blue-500 transition-colors" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
-              <button
-                onClick={handleDismiss}
-                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                Dismiss guide
+            <ul>
+              {steps.map((s) => row(s.label, s.done, s.href))}
+              {row('Add a loan', hasLoan === true, '/loans', 'if you lend money')}
+            </ul>
+            <div className="border-t border-rule pt-2">
+              <button type="button" onClick={handleDismiss} className="min-h-10 cursor-pointer text-sm text-quiet underline hover:text-ink">
+                Hide this checklist
               </button>
-              {nextStep && (
-                <button
-                  onClick={() => handleStepClick(nextStep.href)}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
-                >
-                  Next step
-                  <ArrowRight className="h-3 w-3" />
-                </button>
-              )}
             </div>
           </div>
         </>

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProperties } from "@/services/properties";
 import { updateTenant } from "@/services/tenants";
 import { addTenantSchema } from "@/schemas";
 import type { PropertyWithUnits, TenantWithDetails } from "@/types/app.types";
+import { formatMoney } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +60,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
   const allUnits = properties.flatMap(p =>
     (p.units ?? []).map(u => ({
       id: u.id,
-      label: `${p.name} — ${u.name} (J$${u.rent_amount.toLocaleString()}/mo)`,
+      label: `${p.name}, ${u.name}, ${formatMoney(u.rent_amount)} a month`,
     }))
   );
 
@@ -88,7 +88,7 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
       });
       onSuccess?.();
     } catch (err: any) {
-      setError(err.message || 'Failed to update tenant');
+      setError(err.message || 'Your changes were not saved. Check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -98,30 +98,26 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Tenant</DialogTitle>
+          <DialogTitle>Edit tenant</DialogTitle>
         </DialogHeader>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-firstName">First Name</Label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="edit-firstName">First name</Label>
               <Input
                 id="edit-firstName"
+                className="mt-1.5"
                 required
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-lastName">Last Name</Label>
+            <div>
+              <Label htmlFor="edit-lastName">Last name</Label>
               <Input
                 id="edit-lastName"
+                className="mt-1.5"
                 required
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -129,54 +125,59 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="edit-email">Email</Label>
             <Input
               id="edit-email"
+              className="mt-1.5"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="edit-phone">Phone</Label>
             <Input
               id="edit-phone"
+              className="mt-1.5"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="edit-unit">Unit</Label>
             <Select
               id="edit-unit"
+              className="mt-1.5"
               value={formData.unit_id}
               onValueChange={(val) => setFormData({ ...formData, unit_id: val })}
-              placeholder="No unit assigned"
+              placeholder="No unit"
               options={[
-                { value: NO_UNIT, label: 'No unit assigned' },
+                { value: NO_UNIT, label: 'No unit' },
                 ...allUnits.map(u => ({ value: u.id, label: u.label })),
               ]}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-leaseStart">Lease Start</Label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="edit-leaseStart">Lease starts</Label>
               <Input
                 id="edit-leaseStart"
+                className="mt-1.5"
                 type="date"
                 value={formData.leaseStart}
                 onChange={(e) => setFormData({ ...formData, leaseStart: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-leaseEnd">Lease End</Label>
+            <div>
+              <Label htmlFor="edit-leaseEnd">Lease ends</Label>
               <Input
                 id="edit-leaseEnd"
+                className="mt-1.5"
                 type="date"
                 value={formData.leaseEnd}
                 onChange={(e) => setFormData({ ...formData, leaseEnd: e.target.value })}
@@ -184,13 +185,14 @@ export function EditTenantModal({ open, tenant, onClose, onSuccess }: EditTenant
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+          {error && <p role="alert" className="text-sm font-medium text-late">{error}</p>}
+
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={onClose} className="max-sm:h-12">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+            <Button type="submit" disabled={submitting} className="max-sm:h-12">
+              {submitting ? "Saving" : "Save changes"}
             </Button>
           </div>
         </form>

@@ -1,49 +1,33 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { cva, type VariantProps } from "class-variance-authority";
 
-const statusBadgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
-  {
-    variants: {
-      variant: {
-        paid: "bg-slate-100 text-slate-700",
-        pending: "bg-blue-50 text-blue-700",
-        overdue: "bg-slate-900 text-white",
-        default: "bg-slate-100 text-slate-600",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-);
+type Variant = "paid" | "pending" | "overdue" | "default";
 
-const dotVariants: Record<string, string> = {
-  paid: "bg-slate-500",
-  pending: "bg-blue-500",
-  overdue: "bg-white",
-  default: "bg-slate-400",
+const textStyles: Record<Variant, string> = {
+  paid: "text-paid",
+  pending: "text-ink",
+  overdue: "text-late font-semibold",
+  default: "text-quiet",
 };
 
-export interface StatusBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof statusBadgeVariants> {}
+const markStyles: Record<Variant, string> = {
+  paid: "bg-paid",
+  pending: "border border-ink",
+  overdue: "border border-late hatch-late",
+  default: "bg-rule",
+};
 
-function StatusBadge({
-  className,
-  variant,
-  children,
-  ...props
-}: StatusBadgeProps) {
-  const dotColor = dotVariants[variant ?? "default"] ?? dotVariants.default;
+export interface StatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: Variant | null;
+}
+
+/** Status as a small drawn mark plus words, so it never depends on colour alone. */
+function StatusBadge({ className, variant, children, ...props }: StatusBadgeProps) {
+  const v = variant ?? "default";
   return (
-    <div
-      className={cn(statusBadgeVariants({ variant }), className)}
-      {...props}
-    >
-      <span className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
-      {children}
+    <div className={cn("inline-flex items-center gap-1.5 text-[13.5px] whitespace-nowrap first-letter:uppercase", textStyles[v], className)} {...props}>
+      <span aria-hidden="true" className={cn("h-3 w-1.5 shrink-0", markStyles[v])} />
+      <span className="first-letter:uppercase">{children}</span>
     </div>
   );
 }

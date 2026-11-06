@@ -1,339 +1,110 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDashboardStats, getRecentPayments, getOverdueTenants } from '@/services/dashboard';
-import { sendReminder } from '@/services/reminders';
-import type { DashboardStats, PaymentWithDetails } from '@/types/app.types';
-import { PageHeader } from "@/components/PageHeader";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, DollarSign, AlertTriangle, TrendingUp, Users, Receipt, Clock } from "lucide-react";
-import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
-import { useToast } from "@/components/ui/toast";
+import { getCollections, type CollectionItem, type CollectionsSummary } from '@/services/collections';
+import { CollectionRow } from '@/components/collect/CollectionRow';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
+import { Button } from '@/components/ui/button';
+import { formatMoney } from '@/lib/money';
+import { formatDate } from '@/utils/formatDate';
 
-function formatCurrency(amount: number): string {
-  return `J$${amount.toLocaleString()}`;
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+function Group({ title, items, landlordId, onChanged }: { title: string; items: CollectionItem[]; landlordId: string; onChanged: () => void }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="mt-6 first:mt-0">
+      <h2 className="pb-2 text-[15px] font-semibold">{title}</h2>
+      <ul>{items.map((item) => <CollectionRow key={item.key} item={item} landlordId={landlordId} onChanged={onChanged} />)}</ul>
+    </section>
+  );
 }
 
 export default function Dashboard() {
-  const { user, profile } = useAuth();
-  const { toast } = useToast();
-  const [stats, setStats] = useState<DashboardStats>({ expected: 0, collected: 0, outstanding: 0, overdue: 0, tenantCount: 0 });
-  const [recentPayments, setRecentPayments] = useState<PaymentWithDetails[]>([]);
-  const [overdueTenants, setOverdueTenants] = useState<{ id: string; tenant_id: string; invoice_id: string; name: string; unit: string; amount: number; daysOverdue: number }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [data, setData] = useState<CollectionsSummary | null>(null);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!user) return;
-    const load = async () => {
-      try {
-        const [s, p, o] = await Promise.all([
-          getDashboardStats(user.id),
-          getRecentPayments(user.id),
-          getOverdueTenants(user.id),
-        ]);
-        setStats(s);
-        setRecentPayments(p);
-        setOverdueTenants(o);
-      } catch (err) {
-        console.error('Failed to load dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    setError(false);
+    try {
+      setData(await getCollections(user.id));
+    } catch (err) {
+      console.error('Failed to load dashboard:', err);
+      setError(true);
+    }
   }, [user]);
 
-  const handleSendReminder = async (tenantId: string, invoiceId: string) => {
-    setSendingReminder(invoiceId);
-    try {
-      const result = await sendReminder(tenantId, invoiceId);
-      if (result?.skipped) {
-        toast('Reminders are disabled in notification settings.', 'error');
-      } else {
-        toast('Reminder sent successfully!', 'success');
-      }
-    } catch (err) {
-      console.error('Failed to send reminder:', err);
-      toast('Failed to send reminder. Please try again.', 'error');
-    } finally {
-      setSendingReminder(null);
-    }
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const collectionPercentage = stats.expected > 0
-    ? Math.round((stats.collected / stats.expected) * 100)
-    : 0;
+  if (error) {
+    return (
+      <div className="border-t border-rule py-10">
+        <h1 className="text-xl font-semibold">We could not load what's owed</h1>
+        <p className="mt-1 text-quiet">Your data is safe. Check your connection and try again.</p>
+        <Button className="mt-4" onClick={load}>Try again</Button>
+      </div>
+    );
+  }
+  if (!data || !user) return <DashboardSkeleton />;
 
-  if (loading) return <DashboardSkeleton />;
+  const now = new Date();
+  const month = now.toLocaleDateString('en-US', { month: 'long' });
+  const asOf = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const late = data.items.filter((i) => i.daysLate > 0).sort((a, b) => b.daysLate - a.daysLate);
+  const coming = data.items.filter((i) => i.daysLate === 0);
 
-  const firstName = profile?.first_name || 'there';
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  if (data.isEmpty) {
+    return (
+      <div className="max-w-xl pt-6">
+        <h1 className="display text-[40px] font-bold leading-[1.05]">Nothing owed yet</h1>
+        <p className="mt-3 text-[17px] text-quiet">Add someone who owes you. Once they are here, this page tells you who to chase each day.</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Link to="/properties"><Button>Add a property and tenants</Button></Link>
+          <Link to="/loans"><Button variant="outline">Add a loan</Button></Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      <PageHeader
-        title={`${getGreeting()}, ${firstName}`}
-        description={today}
-        action={
-          <div className="hidden sm:flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Collected</span>
-            <div className="flex gap-0.5">
-              {Array.from({ length: 20 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-1.5 h-2.5 rounded-sm transition-all duration-500 ${
-                    i < Math.round(collectionPercentage / 5) ? 'bg-blue-500' : 'bg-slate-200'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-sm font-bold text-blue-600">{collectionPercentage}%</span>
-          </div>
-        }
-      />
+      <p className="text-[15px] text-quiet">{asOf}</p>
+      <h1 className="display num mt-0.5 text-[42px] font-bold leading-none sm:text-[68px]">
+        {formatMoney(data.owed)} <span className="block text-[26px] font-semibold sm:inline sm:text-[68px] sm:font-bold">still owed</span>
+      </h1>
+      <p className="num mt-3 flex flex-wrap gap-x-9 gap-y-1 border-b border-rule pb-5 text-base">
+        <span>{data.late > 0
+          ? <><b className="font-bold text-late">{formatMoney(data.late)} late</b> from {data.lateCount} {data.lateCount === 1 ? 'person' : 'people'}</>
+          : <b className="font-semibold text-paid">Nobody is late</b>}</span>
+        <span><b className="font-semibold">{formatMoney(data.comingUp)}</b> coming up</span>
+        <span><b className="font-semibold">{formatMoney(data.collected)}</b> collected in {month}</span>
+      </p>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full opacity-60" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Expected</p>
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Receipt className="h-4 w-4 text-blue-500" />
-                </div>
-              </div>
-              <p className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900">{formatCurrency(stats.expected)}</p>
-              <p className="text-xs font-medium text-slate-500 mt-1">{stats.tenantCount} tenants this month</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/payments" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full opacity-60" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Collected</p>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                </div>
-              </div>
-              <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{formatCurrency(stats.collected)}</p>
-              <p className="text-xs font-medium text-emerald-500 mt-1">
-                {collectionPercentage > 0 ? `${collectionPercentage}% collected` : "No payments yet"}
-              </p>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/invoices" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 to-transparent rounded-bl-full opacity-60" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Outstanding</p>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-amber-500" />
-                </div>
-              </div>
-              <p className="text-lg sm:text-2xl font-bold tracking-tight text-amber-600">{formatCurrency(stats.outstanding)}</p>
-              <p className="text-xs font-medium text-slate-500 mt-1">
-                {stats.outstanding > 0 ? "Awaiting payment" : "All paid up"}
-              </p>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/tenants" className="block group">
-          <div className="relative overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/5 hover:border-red-200 hover:-translate-y-0.5">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-50 to-transparent rounded-bl-full opacity-60" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Overdue</p>
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                </div>
-              </div>
-              <p className={`text-2xl font-bold tracking-tight ${stats.overdue > 0 ? 'text-red-500' : 'text-slate-900'}`}>
-                {stats.overdue > 0 ? `${stats.overdue}` : "0"}
-              </p>
-              <p className={`text-xs font-medium mt-1 ${stats.overdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                {stats.overdue > 0 ? `${stats.overdue} tenant${stats.overdue !== 1 ? 's' : ''} need attention` : "No overdue"}
-              </p>
-            </div>
-          </div>
-        </Link>
+      <div className="mt-5">
+        <Group title="Chase these first" items={late} landlordId={user.id} onChanged={load} />
+        <Group title="Coming up" items={coming} landlordId={user.id} onChanged={load} />
+        {data.items.length === 0 && (
+          <p className="py-6 text-[17px]">Everyone is paid up. Enjoy the quiet.</p>
+        )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
-        <Link to="/invoices">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <Receipt className="h-3.5 w-3.5 mr-1.5" />
-            Create Invoice
-          </Button>
-        </Link>
-        <Link to="/tenants">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <Users className="h-3.5 w-3.5 mr-1.5" />
-            Add Tenant
-          </Button>
-        </Link>
-        <Link to="/payments">
-          <Button variant="outline" size="sm" className="rounded-full px-4 text-xs font-medium">
-            <DollarSign className="h-3.5 w-3.5 mr-1.5" />
-            Record Payment
-          </Button>
-        </Link>
-      </div>
-
-      {/* Two Column: Recent Activity + Overdue */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Recent Activity Feed */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Recent Activity</h2>
-            {recentPayments.length > 0 && (
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Last 5</span>
-            )}
+      {data.recent.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between pb-2">
+            <h2 className="text-[15px] font-semibold">Just collected</h2>
+            <Link to="/payments" className="text-sm font-medium text-shell underline">All payments</Link>
           </div>
-          <div className="p-6">
-            {recentPayments.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 p-4 inline-block mb-3">
-                  <DollarSign className="h-5 w-5 text-slate-300" />
-                </div>
-                <p className="text-sm text-slate-400">No activity yet</p>
-                <p className="text-xs text-slate-300 mt-1">Payments will appear here</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentPayments.slice(0, 5).map((payment) => (
-                  <div key={payment.id} className="flex items-center gap-3 group">
-                    <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
-                      <DollarSign className="h-4 w-4 text-emerald-500" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-900">
-                        <span className="font-medium">{payment.tenant_first_name} {payment.tenant_last_name}</span>
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {formatCurrency(payment.amount)} · {payment.property_name}{payment.unit_name ? `, ${payment.unit_name}` : ''}
-                      </p>
-                    </div>
-                    <span className="text-[11px] text-slate-300 font-medium shrink-0">
-                      {timeAgo(payment.payment_date)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {recentPayments.length > 0 && (
-            <div className="px-6 py-3 border-t border-slate-100/60 bg-slate-50/30">
-              <Link to="/payments" className="text-sm font-medium text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
-                View all payments
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Overdue Tenants */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100/60 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Overdue Tenants</h2>
-            {overdueTenants.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600 uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                {overdueTenants.length} overdue
-              </span>
-            )}
-          </div>
-          <div className="p-6">
-            {overdueTenants.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 p-4 inline-block mb-3">
-                  <AlertTriangle className="h-5 w-5 text-slate-300" />
-                </div>
-                <p className="text-sm text-slate-400">All tenants are up to date</p>
-                <p className="text-xs text-slate-300 mt-1">No overdue payments</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {overdueTenants.map((tenant) => (
-                  <div key={tenant.id} className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-white transition-all duration-200">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-red-500">
-                            {tenant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{tenant.name}</p>
-                          <p className="text-xs text-slate-400">{tenant.unit} · {formatCurrency(tenant.amount)}</p>
-                        </div>
-                      </div>
-                      <StatusBadge variant="overdue">{tenant.daysOverdue}d late</StatusBadge>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        disabled={sendingReminder === tenant.invoice_id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSendReminder(tenant.tenant_id, tenant.invoice_id);
-                        }}
-                      >
-                        {sendingReminder === tenant.invoice_id ? (
-                          <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Sending...</>
-                        ) : (
-                          'Send Reminder'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {overdueTenants.length > 0 && (
-            <div className="px-6 py-3 border-t border-slate-100/60 bg-slate-50/30">
-              <Link to="/tenants?status=overdue" className="text-sm font-medium text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 transition-colors duration-150">
-                View all
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
+          <ul>
+            {data.recent.map((p) => (
+              <li key={p.id} className="grid grid-cols-[1fr_auto_auto] gap-4 border-t border-rule py-2 text-sm">
+                <span className="truncate">{p.name}</span>
+                <span className="text-quiet">{formatDate(p.date)}</span>
+                <span className="num font-medium">{formatMoney(p.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

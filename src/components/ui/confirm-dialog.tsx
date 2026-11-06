@@ -7,7 +7,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -44,21 +43,21 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
+      <DialogContent className="max-w-md">
+        <DialogHeader className="pr-8">
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className="text-[15px] text-quiet">{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
             {cancelLabel}
           </Button>
           <Button
             variant={variant === "destructive" ? "destructive" : "default"}
             onClick={handleConfirm}
             disabled={loading}
+            aria-busy={loading}
           >
-            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {confirmLabel}
           </Button>
         </div>

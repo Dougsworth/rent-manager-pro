@@ -3,13 +3,27 @@ import { useParams } from 'react-router-dom';
 import { getInvoiceByToken, uploadProofImagePublic, submitProofByToken } from '@/services/publicPayment';
 import type { PublicInvoiceData } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Upload, Loader2, CheckCircle, XCircle, Clock, X, AlertCircle, CreditCard } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
+import { formatMoney as formatCurrency } from '@/lib/money';
 
-function formatCurrency(amount: number): string {
-  return `J$${amount.toLocaleString()}`;
+function CopyValue({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-t border-rule py-2.5">
+      <div className="min-w-0">
+        <dt className="text-[13.5px] text-quiet">{label}</dt>
+        <dd className="num truncate text-base font-semibold">{value}</dd>
+      </div>
+      <button
+        type="button"
+        onClick={async () => { try { await navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ } }}
+        className="min-h-11 cursor-pointer px-2 text-sm font-semibold text-shell underline"
+        aria-label={`Copy ${label.toLowerCase()}`}
+      >
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </div>
+  );
 }
 
 export default function PublicPayment() {
@@ -113,25 +127,20 @@ export default function PublicPayment() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading invoice...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-ground" aria-busy="true">
+        <p className="text-quiet">Opening your invoice</p>
       </div>
     );
   }
 
   if (error && !invoice) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Payment Link Error</h2>
-            <p className="text-gray-600">{error}</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-ground px-5 py-10">
+        <div className="mx-auto max-w-md">
+          <p className="display text-lg font-bold">EasyCollect</p>
+          <h1 className="mt-8 text-2xl font-semibold">This payment link does not work</h1>
+          <p className="mt-2 text-base text-quiet">{error} Ask the person who sent it for a new link.</p>
+        </div>
       </div>
     );
   }
@@ -141,185 +150,92 @@ export default function PublicPayment() {
   const latestProof = invoice.proofs?.[0];
   const hasBankDetails = invoice.bank_name || invoice.bank_account_name || invoice.bank_account_number;
   const canUpload = invoice.status !== 'paid' && (!latestProof || latestProof.status === 'rejected');
+  const paid = invoice.status === 'paid' || latestProof?.status === 'approved';
+  const pendingReview = latestProof?.status === 'pending' || submitted;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    <div className="min-h-screen bg-ground text-ink">
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      <div className="bg-white border-b">
-        <div className="max-w-2xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-gray-900">Payment Invoice</h1>
-          <p className="text-gray-600">for {invoice.tenant_name}</p>
-        </div>
-      </div>
+      <header className="bg-shell px-5 py-3 text-white">
+        <div className="mx-auto max-w-lg display text-lg font-bold">EasyCollect</div>
+      </header>
 
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
-        {/* Invoice Details */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-500">{invoice.invoice_number}</p>
-                <p className="font-medium text-gray-900">{invoice.description || 'Monthly Rent'}</p>
-              </div>
-              <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                <p>Due: {formatDate(invoice.due_date)}</p>
-                <p>Issued: {formatDate(invoice.issue_date)}</p>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
-            </div>
-          </CardContent>
-        </Card>
+      <main className="mx-auto max-w-lg px-5 pb-16 pt-7">
+        <p className="text-[15px] text-quiet">For {invoice.tenant_name}</p>
+        <h1 className="display num mt-1 text-[48px] font-bold leading-none">{formatCurrency(invoice.amount)}</h1>
+        <p className="mt-2 text-base">
+          {invoice.description || 'Rent'}, {paid ? <b className="font-semibold text-paid">paid. Thank you.</b> : <>due {formatDate(invoice.due_date)}</>}
+        </p>
+        <p className="mt-1 text-[13.5px] text-quiet">Invoice {invoice.invoice_number}, issued {formatDate(invoice.issue_date)}</p>
 
-        {/* Pay Online */}
-        {invoice.status !== 'paid' && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="h-5 w-5 text-gray-900" />
-                <h2 className="font-semibold text-gray-900">Pay Online</h2>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">Pay securely via HandyPay</p>
-              <Button
-                className="w-full"
-                onClick={handlePayOnline}
-                disabled={checkingOut}
-              >
-                {checkingOut ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CreditCard className="h-4 w-4 mr-2" />
-                )}
-                {checkingOut ? 'Redirecting to payment...' : `Pay ${formatCurrency(invoice.amount)} Online`}
-              </Button>
-            </CardContent>
-          </Card>
+        {error && (
+          <p role="alert" className="mt-5 border-t border-late pt-3 text-[15px] font-medium text-late">{error}</p>
         )}
 
-        {/* Bank Transfer Details */}
-        {hasBankDetails && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">{invoice.status !== 'paid' ? 'Or pay via bank transfer' : 'Bank Transfer Details'}</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Transfer your rent to the account below, then upload a screenshot of your confirmation.
-              </p>
-              <div className="space-y-2 text-sm">
-                {invoice.bank_name && (
-                  <p><span className="text-gray-500">Bank:</span> <strong>{invoice.bank_name}</strong></p>
-                )}
-                {invoice.bank_account_name && (
-                  <p><span className="text-gray-500">Account Name:</span> <strong>{invoice.bank_account_name}</strong></p>
-                )}
-                {invoice.bank_account_number && (
-                  <p><span className="text-gray-500">Account Number:</span> <strong>{invoice.bank_account_number}</strong></p>
-                )}
-                {invoice.bank_branch && (
-                  <p><span className="text-gray-500">Branch:</span> <strong>{invoice.bank_branch}</strong></p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Error banner */}
-        {error && invoice && (
-          <div className="bg-red-50 text-red-800 p-4 rounded-lg text-sm flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            {error}
+        {pendingReview && !paid && (
+          <div role="status" className="mt-6 border-t border-ink pt-4">
+            <h2 className="text-lg font-semibold">We got your proof</h2>
+            <p className="mt-1 text-[15px]">Your landlord will check it and you will get a receipt once it is approved. You can close this page.</p>
           </div>
         )}
 
-        {/* Proof Status */}
-        {latestProof && !submitted && (
-          <div className={`flex items-center gap-2 p-4 rounded-lg text-sm ${
-            latestProof.status === 'pending' ? 'bg-yellow-50 text-yellow-800' :
-            latestProof.status === 'approved' ? 'bg-green-50 text-green-800' :
-            'bg-red-50 text-red-800'
-          }`}>
-            {latestProof.status === 'pending' && <Clock className="h-4 w-4" />}
-            {latestProof.status === 'approved' && <CheckCircle className="h-4 w-4" />}
-            {latestProof.status === 'rejected' && <XCircle className="h-4 w-4" />}
-            <span className="font-medium">
-              {latestProof.status === 'pending' && 'Proof submitted — pending review'}
-              {latestProof.status === 'approved' && 'Payment approved'}
-              {latestProof.status === 'rejected' && 'Proof rejected'}
-            </span>
-            {latestProof.status === 'rejected' && latestProof.reviewer_note && (
-              <span className="ml-1">— {latestProof.reviewer_note}</span>
+        {latestProof?.status === 'rejected' && !submitted && (
+          <div role="status" className="mt-6 border-t border-late pt-4">
+            <h2 className="text-lg font-semibold text-late">Your last proof was not accepted</h2>
+            <p className="mt-1 text-[15px]">{latestProof.reviewer_note ? `The note says: ${latestProof.reviewer_note}` : 'Check the amount and account, then send a new screenshot.'}</p>
+          </div>
+        )}
+
+        {!paid && !pendingReview && (
+          <>
+            {hasBankDetails && (
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold">Pay by bank transfer</h2>
+                <p className="mb-3 mt-1 text-[15px] text-quiet">Send {formatCurrency(invoice.amount)} to this account, then send a screenshot of the confirmation below.</p>
+                <dl>
+                  {invoice.bank_name && <CopyValue label="Bank" value={invoice.bank_name} />}
+                  {invoice.bank_account_name && <CopyValue label="Account name" value={invoice.bank_account_name} />}
+                  {invoice.bank_account_number && <CopyValue label="Account number" value={invoice.bank_account_number} />}
+                  {invoice.bank_branch && <CopyValue label="Branch" value={invoice.bank_branch} />}
+                  <CopyValue label="Amount" value={String(invoice.amount)} />
+                </dl>
+              </section>
             )}
-          </div>
-        )}
 
-        {/* Success banner after submission */}
-        {submitted && (
-          <div className="bg-green-50 text-green-800 p-4 rounded-lg text-sm flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span className="font-medium">Proof submitted successfully! Your landlord will review it shortly.</span>
-          </div>
-        )}
-
-        {/* Upload UI */}
-        {canUpload && (
-          <Card>
-            <CardContent className="p-6">
-              {previewUrl ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-700">Preview</p>
-                    <button onClick={cancelUpload} className="p-1 hover:bg-gray-100 rounded">
-                      <X className="h-4 w-4 text-gray-500" />
-                    </button>
+            {canUpload && (
+              <section className="mt-8 border-t border-ink pt-5">
+                <h2 className="text-lg font-semibold">Send your proof</h2>
+                {previewUrl ? (
+                  <div className="mt-3">
+                    <img src={previewUrl} alt="Your payment screenshot" className="mx-auto max-h-72 border border-rule object-contain" />
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <Button size="lg" onClick={handleSubmitProof} disabled={submitting}>{submitting ? 'Sending' : 'Send proof'}</Button>
+                      <Button size="lg" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={submitting}>Choose another</Button>
+                    </div>
+                    <button onClick={cancelUpload} className="mt-2 min-h-11 cursor-pointer text-sm text-quiet underline">Cancel</button>
                   </div>
-                  <img src={previewUrl} alt="Payment proof" className="max-h-64 rounded-lg object-contain mx-auto" />
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Change Image
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={handleSubmitProof}
-                      disabled={submitting}
-                    >
-                      {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Submit Proof
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  I've Paid — Upload Proof
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <>
+                    <p className="mb-4 mt-1 text-[15px] text-quiet">A screenshot of your bank confirmation is enough. You do not need an account.</p>
+                    <Button size="lg" className="w-full" onClick={() => fileInputRef.current?.click()}>I have paid, add screenshot</Button>
+                  </>
+                )}
+              </section>
+            )}
+
+            <section className="mt-8 border-t border-rule pt-5">
+              <h2 className="text-lg font-semibold">Or pay by card</h2>
+              <p className="mb-3 mt-1 text-[15px] text-quiet">Through HandyPay. When it goes through you come back to this page.</p>
+              <Button size="lg" variant="outline" className="w-full" onClick={handlePayOnline} disabled={checkingOut}>
+                {checkingOut ? 'Opening HandyPay' : `Pay ${formatCurrency(invoice.amount)} online`}
+              </Button>
+            </section>
+          </>
         )}
 
-        {invoice.status === 'paid' && !latestProof && (
-          <div className="bg-green-50 text-green-800 p-4 rounded-lg text-sm flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span className="font-medium">This invoice has been paid.</span>
-          </div>
-        )}
-      </div>
+        <p className="mt-12 text-[13.5px] text-quiet">Sent with EasyCollect. Questions about this amount go to your landlord.</p>
+      </main>
     </div>
   );
 }

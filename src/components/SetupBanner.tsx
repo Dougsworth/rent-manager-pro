@@ -1,48 +1,28 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
 
+/** One line: how far setup is, and the next thing to do. */
 export function SetupBanner() {
   const navigate = useNavigate();
   const { completedSteps, totalSteps, isComplete, isDismissed, loading, dismiss } = useSetupStatus();
 
   if (loading || isComplete || isDismissed) return null;
 
-  const nextAction = completedSteps === 0
-    ? 'add a property to get started.'
+  const next = completedSteps === 0
+    ? { text: 'Next, add a property.', action: 'Add a property', href: '/properties' }
     : completedSteps === 1
-    ? 'add units to your property.'
-    : 'add your first tenant.';
-
-  const nextHref = completedSteps < 2 ? '/properties' : '/tenants';
+    ? { text: 'Next, add units to your property.', action: 'Add units', href: '/properties' }
+    : { text: 'Next, add your first tenant.', action: 'Add a tenant', href: '/tenants' };
 
   return (
-    <div className="mb-6 bg-white rounded-2xl border border-slate-200/60 p-5 relative">
-      <button
-        onClick={dismiss}
-        className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-      >
-        <X className="h-4 w-4" />
-      </button>
-
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-          <CheckCircle2 className="h-5 w-5 text-slate-500" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-slate-900">Complete your setup</h3>
-          <p className="text-sm text-slate-500 mt-0.5">
-            {completedSteps} of {totalSteps} steps complete — {nextAction}
-          </p>
-          <Button
-            size="sm"
-            className="mt-3"
-            onClick={() => navigate(nextHref)}
-          >
-            Get Started
-          </Button>
-        </div>
+    <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-rule py-3">
+      <p className="min-w-0 flex-1 text-[15px]">
+        <span className="num font-semibold">{completedSteps} of {totalSteps}</span> setup steps done. {next.text}
+      </p>
+      <div className="flex items-center gap-4">
+        <Button size="sm" onClick={() => navigate(next.href)}>{next.action}</Button>
+        <button type="button" onClick={dismiss} className="min-h-9 cursor-pointer text-sm text-quiet underline hover:text-ink">Hide</button>
       </div>
     </div>
   );

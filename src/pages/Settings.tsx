@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -13,26 +13,90 @@ import {
 import { getLateFeeSettings, upsertLateFeeSettings } from '@/services/lateFees';
 import { seedTestNotifications } from '@/utils/seedNotifications';
 import { getRecurringInvoiceSettings, upsertRecurringInvoiceSettings } from '@/services/recurringInvoices';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import {
-  Save, User, Building, Bell, CreditCard, Shield, Loader2, Check,
-  Home, CheckCircle2, Mail, Eye, EyeOff, Landmark, Clock, Wallet, RefreshCw
-} from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/PageHeader';
 import { useToast } from '@/components/ui/toast';
-import { Select } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+
+type SectionId = 'profile' | 'company' | 'bank' | 'payment' | 'properties' | 'notifications' | 'late-fees' | 'recurring' | 'billing' | 'security';
+
+const SECTIONS: { id: SectionId; label: string }[] = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'company', label: 'Business' },
+  { id: 'bank', label: 'Bank details' },
+  { id: 'payment', label: 'Online payments' },
+  { id: 'properties', label: 'Properties and units' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'late-fees', label: 'Late fees' },
+  { id: 'recurring', label: 'Recurring invoices' },
+  { id: 'billing', label: 'Plan' },
+  { id: 'security', label: 'Password' },
+];
+
+const isSection = (s: string | null): s is SectionId => !!s && SECTIONS.some((x) => x.id === s);
+
+const fieldClass = 'mt-1.5';
+const selectClass =
+  'mt-1.5 h-10 w-full cursor-pointer rounded-[3px] border border-input bg-transparent px-3 text-sm text-ink hover:border-quiet focus:border-paid focus:outline-2 focus:outline-offset-0 focus:outline-paid';
+
+function Field({ id, label, hint, className, children }: { id: string; label: string; hint?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="block text-sm font-medium text-ink">{label}</label>
+      {children}
+      {hint && <p className="mt-1 text-[13.5px] text-quiet">{hint}</p>}
+    </div>
+  );
+}
+
+/** A yes or no preference: a checkbox, its name and one line on what it does. */
+function Preference({ id, label, description, checked, onChange }: { id: string; label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-start gap-3 border-t border-rule py-3.5">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
+      <label htmlFor={id} className="min-w-0 cursor-pointer">
+        <span className="block text-[15px] font-medium text-ink">{label}</span>
+        <span className="block text-[13.5px] text-quiet">{description}</span>
+      </label>
+    </div>
+  );
+}
+
+/** One Save per section, with the result said in words beside it. */
+function SaveRow({ label, onClick, saving, saved, error, type = 'button' }: { label: string; onClick?: () => void; saving: boolean; saved: boolean; error?: string; type?: 'button' | 'submit' }) {
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rule pt-5">
+      <Button type={type} onClick={onClick} disabled={saving} className="max-sm:h-12 max-sm:w-full max-sm:text-base">
+        {saving ? 'Saving' : label}
+      </Button>
+      <p role="status" aria-live="polite" className="text-sm">
+        {error ? <span className="font-medium text-late">{error}</span> : saved ? <span className="font-medium text-paid">Saved.</span> : null}
+      </p>
+    </div>
+  );
+}
+
+function SectionTitle({ title, description }: { title: string; description?: React.ReactNode }) {
+  return (
+    <div className="mb-5">
+      <h2 className="text-xl font-semibold text-ink">{title}</h2>
+      {description && <p className="mt-1 max-w-xl text-[15px] text-quiet">{description}</p>}
+    </div>
+  );
+}
+
+const SAVE_FAILED = 'Could not save. Check your connection and try again.';
 
 export default function Settings() {
   const { user, profile, refreshProfile } = useAuth();
-  const [searchParams] = useSearchParams();
-  const [activeSection, setActiveSection] = useState(() => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState<SectionId>(() => {
     const section = searchParams.get('section');
-    return section && ['profile', 'company', 'bank', 'payment', 'properties', 'notifications', 'late-fees', 'recurring', 'billing', 'security'].includes(section)
-      ? section
-      : 'profile';
+    return isSection(section) ? section : 'profile';
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -58,13 +122,14 @@ export default function Settings() {
   const [bankAccountNumber, setBankAccountNumber] = useState(profile?.bank_account_number ?? '');
   const [bankBranch, setBankBranch] = useState(profile?.bank_branch ?? '');
 
-  // Payment gateway — HandyPay API key is stored server-side
+  // Payment gateway: the HandyPay API key is stored server side
 
   // Notification preferences state
   const defaultPrefs = { payments: true, overdue: true, invoices: true, auto_remind: false };
   const [notifPrefs, setNotifPrefs] = useState(defaultPrefs);
   const [savingNotifs, setSavingNotifs] = useState(false);
   const [savedNotifs, setSavedNotifs] = useState(false);
+  const [notifError, setNotifError] = useState('');
 
   // Security form state
   const [newPassword, setNewPassword] = useState('');
@@ -89,7 +154,7 @@ export default function Settings() {
   const [riEnabled, setRiEnabled] = useState(false);
   const [riDayOfMonth, setRiDayOfMonth] = useState('1');
   const [riSendEmails, setRiSendEmails] = useState(true);
-  const [riDescTemplate, setRiDescTemplate] = useState('Monthly Rent — {month} {year}');
+  const [riDescTemplate, setRiDescTemplate] = useState('Rent for {month} {year}');
   const [savingRecurring, setSavingRecurring] = useState(false);
   const [savedRecurring, setSavedRecurring] = useState(false);
   const [recurringLoading, setRecurringLoading] = useState(false);
@@ -98,11 +163,28 @@ export default function Settings() {
   // Seed notifications state
   const [seeding, setSeeding] = useState(false);
 
-  // Billing "Get Notified" state
-  const [proEmail, setProEmail] = useState('');
-  const [proEmailSubmitted, setProEmailSubmitted] = useState(false);
-
   const { toast } = useToast();
+
+  // Follow ?section= when it changes, for example from a link on another page
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (isSection(section)) setActiveSection(section);
+  }, [searchParams]);
+
+  // Keep the current tab in view on phones, where the tabs scroll sideways
+  const phoneTabsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = phoneTabsRef.current;
+    const tab = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (nav && tab) nav.scrollLeft = tab.offsetLeft - nav.clientWidth / 2 + tab.offsetWidth / 2;
+  }, [activeSection]);
+
+  const openSection = (id: SectionId) => {
+    setActiveSection(id);
+    setSaved(false);
+    setSaveError('');
+    setSearchParams({ section: id }, { replace: true });
+  };
 
   // Sync form fields when profile loads asynchronously
   useEffect(() => {
@@ -121,23 +203,9 @@ export default function Settings() {
     setBankAccountName(profile.bank_account_name ?? '');
     setBankAccountNumber(profile.bank_account_number ?? '');
     setBankBranch(profile.bank_branch ?? '');
-    // payment_link no longer used (HandyPay API key is server-side)
     const prefs = (profile as any)?.notification_preferences;
-    if (prefs) setNotifPrefs(prefs);
+    if (prefs) setNotifPrefs({ ...defaultPrefs, ...prefs });
   }, [profile]);
-
-  const sections = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'company', label: 'Company', icon: Building },
-    { id: 'bank', label: 'Bank Details', icon: Landmark },
-    { id: 'payment', label: 'Payment Gateway', icon: Wallet },
-    { id: 'properties', label: 'Properties', icon: Home },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'late-fees', label: 'Late Fees', icon: Clock },
-    { id: 'recurring', label: 'Recurring Invoices', icon: RefreshCw },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'security', label: 'Security', icon: Shield },
-  ];
 
   const loadLateFeeSettings = async () => {
     if (!user) return;
@@ -222,206 +290,170 @@ export default function Settings() {
       }
       await refreshProfile();
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Failed to save:', err);
+      setSaveError(SAVE_FAILED);
     } finally {
       setSaving(false);
     }
   };
 
   const renderProfileSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="firstName">First Name</Label>
-            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="lastName">Last Name</Label>
-            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-        </div>
+    <>
+      <SectionTitle title="Profile" description="Your name and how tenants and borrowers can reach you." />
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        <Field id="firstName" label="First name">
+          <Input id="firstName" autoComplete="given-name" className={fieldClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        </Field>
+        <Field id="lastName" label="Last name">
+          <Input id="lastName" autoComplete="family-name" className={fieldClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+        </Field>
+        <Field id="email" label="Email">
+          <Input id="email" type="email" autoComplete="email" className={fieldClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field id="phone" label="Phone">
+          <Input id="phone" type="tel" autoComplete="tel" className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </Field>
       </div>
-    </div>
+      <SaveRow label="Save profile" onClick={handleSave} saving={saving} saved={saved} error={saveError} />
+    </>
   );
 
   const renderCompanySection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Company Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <Label htmlFor="companyName">Company Name</Label>
-            <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-          </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="city">City</Label>
-            <Input id="city" value={companyCity} onChange={(e) => setCompanyCity(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="country">Country</Label>
-            <Input id="country" value={companyCountry} onChange={(e) => setCompanyCountry(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="website">Website</Label>
-            <Input id="website" value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="taxId">Tax ID</Label>
-            <Input id="taxId" value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} />
-          </div>
-        </div>
+    <>
+      <SectionTitle title="Business" description="Shown on invoices and receipts. Leave it blank if you collect under your own name." />
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        <Field id="companyName" label="Business name" className="sm:col-span-2">
+          <Input id="companyName" autoComplete="organization" className={fieldClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+        </Field>
+        <Field id="address" label="Address" className="sm:col-span-2">
+          <Input id="address" autoComplete="street-address" className={fieldClass} value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
+        </Field>
+        <Field id="city" label="Town or city">
+          <Input id="city" className={fieldClass} value={companyCity} onChange={(e) => setCompanyCity(e.target.value)} />
+        </Field>
+        <Field id="country" label="Country">
+          <Input id="country" autoComplete="country-name" className={fieldClass} value={companyCountry} onChange={(e) => setCompanyCountry(e.target.value)} />
+        </Field>
+        <Field id="website" label="Website">
+          <Input id="website" type="url" className={fieldClass} value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} />
+        </Field>
+        <Field id="taxId" label="TRN or tax ID">
+          <Input id="taxId" className={fieldClass} value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} />
+        </Field>
       </div>
-    </div>
+      <SaveRow label="Save business details" onClick={handleSave} saving={saving} saved={saved} error={saveError} />
+    </>
   );
 
   const renderBankSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Details</h3>
-        <p className="text-sm text-gray-500 mb-4">These details will be included in payment reminder emails sent to your tenants.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <Label htmlFor="bankName">Bank Name</Label>
-            <Input id="bankName" placeholder="e.g. National Commercial Bank" value={bankName} onChange={(e) => setBankName(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="bankAccountName">Account Name</Label>
-            <Input id="bankAccountName" placeholder="e.g. John Smith Properties" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="bankAccountNumber">Account Number</Label>
-            <Input id="bankAccountNumber" placeholder="e.g. 1234567890" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="bankBranch">Branch / Routing Number</Label>
-            <Input id="bankBranch" placeholder="e.g. Half Way Tree" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)} />
-          </div>
-        </div>
+    <>
+      <SectionTitle title="Bank details" description="Tenants see these on their pay link and in reminder emails, so they know where to send money." />
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        <Field id="bankName" label="Bank" className="sm:col-span-2">
+          <Input id="bankName" placeholder="National Commercial Bank" className={fieldClass} value={bankName} onChange={(e) => setBankName(e.target.value)} />
+        </Field>
+        <Field id="bankAccountName" label="Name on the account">
+          <Input id="bankAccountName" className={fieldClass} value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
+        </Field>
+        <Field id="bankAccountNumber" label="Account number">
+          <Input id="bankAccountNumber" inputMode="numeric" className={cn(fieldClass, 'num')} value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
+        </Field>
+        <Field id="bankBranch" label="Branch">
+          <Input id="bankBranch" placeholder="Half Way Tree" className={fieldClass} value={bankBranch} onChange={(e) => setBankBranch(e.target.value)} />
+        </Field>
       </div>
-    </div>
+      <SaveRow label="Save bank details" onClick={handleSave} saving={saving} saved={saved} error={saveError} />
+    </>
   );
 
   const renderPaymentGatewaySection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Payment Gateway</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Accept online payments from tenants via HandyPay. When tenants view their invoices, they'll see a "Pay Online" button with the exact amount pre-filled.
-        </p>
-        <div className="p-4 border rounded-lg bg-green-50 flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-          <div>
-            <p className="font-medium text-green-900">HandyPay Connected</p>
-            <p className="text-sm text-green-700">Online payments are enabled for all invoices.</p>
-          </div>
-        </div>
+    <>
+      <SectionTitle title="Online payments" description="Tenants can pay by card through HandyPay from their pay link. The amount is filled in for them." />
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-rule py-3.5">
+        <span className="text-[15px] font-medium">HandyPay</span>
+        <StatusBadge variant="paid">On for every invoice</StatusBadge>
       </div>
-    </div>
+      <p className="border-t border-rule pt-3.5 text-[13.5px] text-quiet">
+        Bank transfer stays the main way to pay. Card payments are an extra option for tenants who prefer it.
+      </p>
+    </>
   );
 
   const renderPropertiesSection = () => (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500">
-        Properties are now managed on a dedicated page with full CRUD, occupancy tracking, and more.
-      </p>
-      <Link to="/properties">
-        <Button className="w-full py-6 text-base">
-          <Home className="h-5 w-5 mr-2" />
-          Go to Properties
-        </Button>
-      </Link>
-    </div>
+    <>
+      <SectionTitle title="Properties and units" description="Add, rename or remove properties and their units on the Properties page. Each unit holds its rent amount." />
+      <Link to="/properties" className={buttonVariants({ className: 'max-sm:h-12 max-sm:w-full max-sm:text-base' })}>Open properties</Link>
+    </>
   );
 
   const handleSaveNotifs = async () => {
     if (!user) return;
     setSavingNotifs(true);
     setSavedNotifs(false);
+    setNotifError('');
     try {
       await updateNotificationPreferences(user.id, notifPrefs);
       await refreshProfile();
       setSavedNotifs(true);
-      setTimeout(() => setSavedNotifs(false), 2000);
+      setTimeout(() => setSavedNotifs(false), 3000);
     } catch (err) {
       console.error('Failed to save notification preferences:', err);
+      setNotifError(SAVE_FAILED);
     } finally {
       setSavingNotifs(false);
     }
   };
 
   const renderNotificationsSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Email Notifications</h3>
-        <div className="space-y-4">
-          {[
-            { id: 'payments' as const, label: 'Payment Received', description: 'Get notified when tenants make payments' },
-            { id: 'overdue' as const, label: 'Overdue Payments', description: 'Get alerts for overdue rent payments' },
-            { id: 'invoices' as const, label: 'Invoice Sent', description: 'Confirmation when invoices are sent to tenants' },
-            { id: 'auto_remind' as const, label: 'Automatic Reminders', description: 'Automatically email tenants daily when their invoices are overdue' },
-          ].map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
-              <div>
-                <p className="font-medium text-gray-900">{item.label}</p>
-                <p className="text-sm text-gray-500">{item.description}</p>
-              </div>
-              <Switch
-                checked={notifPrefs[item.id]}
-                onCheckedChange={(checked) => setNotifPrefs({ ...notifPrefs, [item.id]: checked })}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="pt-4 flex gap-3">
-          <Button className="" onClick={handleSaveNotifs} disabled={savingNotifs}>
-            {savingNotifs ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : savedNotifs ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {savedNotifs ? 'Saved!' : 'Save Preferences'}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={seeding}
-            onClick={async () => {
-              if (!user) return;
-              setSeeding(true);
-              try {
-                const count = await seedTestNotifications(user.id);
-                toast(`${count} test notifications created!`, 'success');
-              } catch (err) {
-                console.error('Failed to seed notifications:', err);
-                toast('Failed to seed notifications.', 'error');
-              } finally {
-                setSeeding(false);
-              }
-            }}
-          >
-            {seeding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
-            Seed Test Notifications
-          </Button>
-        </div>
-      </div>
-    </div>
+    <>
+      <SectionTitle title="Notifications" description="Choose which emails you get, and whether late tenants are reminded for you." />
+      <h3 className="pb-1 text-[15px] font-semibold">Reminders to tenants</h3>
+      <Preference
+        id="pref-auto_remind"
+        label="Send reminders automatically"
+        description="Late tenants get an email each day until they pay. It includes the amount, your bank details and a pay link."
+        checked={notifPrefs.auto_remind}
+        onChange={(v) => setNotifPrefs({ ...notifPrefs, auto_remind: v })}
+      />
+      <h3 className="mt-6 pb-1 text-[15px] font-semibold">Emails to you</h3>
+      {[
+        { id: 'payments' as const, label: 'A payment comes in', description: 'When a tenant pays or sends proof of payment.' },
+        { id: 'overdue' as const, label: 'Rent goes late', description: 'When an invoice passes its due date.' },
+        { id: 'invoices' as const, label: 'An invoice is sent', description: 'A copy each time an invoice goes to a tenant.' },
+      ].map((item) => (
+        <Preference
+          key={item.id}
+          id={`pref-${item.id}`}
+          label={item.label}
+          description={item.description}
+          checked={notifPrefs[item.id]}
+          onChange={(v) => setNotifPrefs({ ...notifPrefs, [item.id]: v })}
+        />
+      ))}
+      <SaveRow label="Save notifications" onClick={handleSaveNotifs} saving={savingNotifs} saved={savedNotifs} error={notifError} />
+      <button
+        type="button"
+        disabled={seeding}
+        className="mt-6 min-h-11 cursor-pointer text-sm text-quiet underline hover:text-ink disabled:opacity-50"
+        onClick={async () => {
+          if (!user) return;
+          setSeeding(true);
+          try {
+            const count = await seedTestNotifications(user.id);
+            toast(`${count} test notifications added.`, 'success');
+          } catch (err) {
+            console.error('Failed to seed notifications:', err);
+            toast('Could not add test notifications.', 'error');
+          } finally {
+            setSeeding(false);
+          }
+        }}
+      >
+        {seeding ? 'Adding test notifications' : 'Add test notifications'}
+      </button>
+    </>
   );
 
   const handleSaveLateFees = async () => {
@@ -449,101 +481,73 @@ export default function Settings() {
         auto_apply: lfAutoApply,
       });
       setSavedLateFees(true);
-      toast('Late fee settings saved!', 'success');
-      setTimeout(() => setSavedLateFees(false), 2000);
+      setTimeout(() => setSavedLateFees(false), 3000);
     } catch (err) {
       console.error('Failed to save late fee settings:', err);
-      toast('Failed to save late fee settings.', 'error');
+      setLateFeeError(SAVE_FAILED);
     } finally {
       setSavingLateFees(false);
     }
   };
 
+  const loadingFields = (
+    <div aria-busy="true" className="space-y-4">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-10 w-full max-w-md" />
+    </div>
+  );
+
   const renderLateFeesSection = () => {
-    if (lateFeesLoading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-        </div>
-      );
-    }
+    if (lateFeesLoading) return loadingFields;
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">Late Fee Configuration</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Configure automatic late fees for overdue invoices. Fees are applied once per invoice after the grace period.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="lf-type">Fee Type</Label>
-              <Select
-                id="lf-type"
-                value={lfFeeType}
-                onValueChange={(val) => setLfFeeType(val as 'flat' | 'percentage')}
-                className="mt-1"
-                options={[
-                  { value: 'flat', label: 'Flat Amount (J$)' },
-                  { value: 'percentage', label: 'Percentage (%)' },
-                ]}
-              />
-            </div>
-            <div>
-              <Label htmlFor="lf-value">
-                {lfFeeType === 'flat' ? 'Fee Amount (J$)' : 'Fee Percentage (%)'}
-              </Label>
-              <Input
-                id="lf-value"
-                type="number"
-                min="0"
-                step={lfFeeType === 'percentage' ? '0.1' : '1'}
-                value={lfFeeValue}
-                onChange={(e) => setLfFeeValue(e.target.value)}
-                placeholder={lfFeeType === 'flat' ? 'e.g. 2000' : 'e.g. 5'}
-              />
-            </div>
-            <div>
-              <Label htmlFor="lf-grace">Grace Period (days)</Label>
-              <Input
-                id="lf-grace"
-                type="number"
-                min="0"
-                value={lfGraceDays}
-                onChange={(e) => setLfGraceDays(e.target.value)}
-                placeholder="e.g. 3"
-              />
-              <p className="text-xs text-gray-400 mt-1">Days after due date before late fee applies</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
-            <div>
-              <p className="font-medium text-gray-900">Auto-Apply Late Fees</p>
-              <p className="text-sm text-gray-500">Automatically apply late fees to overdue invoices daily</p>
-            </div>
-            <Switch
-              checked={lfAutoApply}
-              onCheckedChange={setLfAutoApply}
+      <>
+        <SectionTitle title="Late fees" description="A late fee is added once to an invoice after the grace period ends." />
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Field id="lf-type" label="Fee type">
+            <select id="lf-type" className={selectClass} value={lfFeeType} onChange={(e) => setLfFeeType(e.target.value as 'flat' | 'percentage')}>
+              <option value="flat">Fixed amount in J$</option>
+              <option value="percentage">Percent of the invoice</option>
+            </select>
+          </Field>
+          <Field id="lf-value" label={lfFeeType === 'flat' ? 'Amount in J$' : 'Percent'}>
+            <Input
+              id="lf-value"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step={lfFeeType === 'percentage' ? '0.1' : '1'}
+              className={cn(fieldClass, 'num')}
+              value={lfFeeValue}
+              onChange={(e) => setLfFeeValue(e.target.value)}
+              placeholder={lfFeeType === 'flat' ? '2000' : '5'}
             />
-          </div>
-
-          {lateFeeError && <p className="text-sm text-red-600 mt-2">{lateFeeError}</p>}
-
-          <div className="pt-4">
-            <Button onClick={handleSaveLateFees} disabled={savingLateFees}>
-              {savingLateFees ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : savedLateFees ? (
-                <Check className="h-4 w-4 mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {savedLateFees ? 'Saved!' : 'Save Late Fee Settings'}
-            </Button>
-          </div>
+          </Field>
+          <Field id="lf-grace" label="Grace period in days" hint="Days after the due date before the fee is added.">
+            <Input
+              id="lf-grace"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              className={cn(fieldClass, 'num')}
+              value={lfGraceDays}
+              onChange={(e) => setLfGraceDays(e.target.value)}
+              placeholder="3"
+            />
+          </Field>
         </div>
-      </div>
+        <div className="mt-6">
+          <Preference
+            id="lf-auto"
+            label="Add late fees automatically"
+            description="Each day, late invoices past the grace period get the fee added."
+            checked={lfAutoApply}
+            onChange={setLfAutoApply}
+          />
+        </div>
+        <SaveRow label="Save late fees" onClick={handleSaveLateFees} saving={savingLateFees} saved={savedLateFees} error={lateFeeError} />
+      </>
     );
   };
 
@@ -572,170 +576,91 @@ export default function Settings() {
         description_template: riDescTemplate,
       });
       setSavedRecurring(true);
-      toast('Recurring invoice settings saved!', 'success');
-      setTimeout(() => setSavedRecurring(false), 2000);
+      setTimeout(() => setSavedRecurring(false), 3000);
     } catch (err: any) {
       console.error('Failed to save recurring invoice settings:', err);
-      const msg = err?.message ?? 'Failed to save recurring invoice settings.';
-      setRecurringError(msg);
-      toast(msg, 'error');
+      setRecurringError(err?.message ?? SAVE_FAILED);
     } finally {
       setSavingRecurring(false);
     }
   };
 
   const renderRecurringSection = () => {
-    if (recurringLoading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-        </div>
-      );
-    }
+    if (recurringLoading) return loadingFields;
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">Recurring Invoice Automation</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Automatically generate invoices for all active tenants on a specific day each month, using each tenant's unit rent amount.
-          </p>
-
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50 mb-4">
-            <div>
-              <p className="font-medium text-gray-900">Enable Auto-Generation</p>
-              <p className="text-sm text-gray-500">Invoices will be created automatically each month</p>
-            </div>
-            <Switch
-              checked={riEnabled}
-              onCheckedChange={setRiEnabled}
+      <>
+        <SectionTitle title="Recurring invoices" description="Create an invoice for every active tenant on the same day each month, using the rent set on their unit." />
+        <Preference
+          id="ri-enabled"
+          label="Create invoices each month"
+          description="Invoices are made for you on the day below."
+          checked={riEnabled}
+          onChange={setRiEnabled}
+        />
+        <Preference
+          id="ri-emails"
+          label="Email each invoice to the tenant"
+          description="The tenant gets the invoice with a pay link as soon as it is made."
+          checked={riSendEmails}
+          onChange={setRiSendEmails}
+        />
+        <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Field id="ri-day" label="Day of the month" hint="Any day from 1 to 28, so it works in every month.">
+            <Input
+              id="ri-day"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max="28"
+              className={cn(fieldClass, 'num')}
+              value={riDayOfMonth}
+              onChange={(e) => setRiDayOfMonth(e.target.value)}
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="ri-day">Day of Month</Label>
-              <Input
-                id="ri-day"
-                type="number"
-                min="1"
-                max="28"
-                value={riDayOfMonth}
-                onChange={(e) => setRiDayOfMonth(e.target.value)}
-              />
-              <p className="text-xs text-gray-400 mt-1">Invoices are generated on this day (1–28)</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between p-4 border border-gray-200 rounded-xl transition-colors hover:bg-gray-50/50">
-            <div>
-              <p className="font-medium text-gray-900">Send Invoice Emails</p>
-              <p className="text-sm text-gray-500">Email tenants when invoices are auto-generated</p>
-            </div>
-            <Switch
-              checked={riSendEmails}
-              onCheckedChange={setRiSendEmails}
-            />
-          </div>
-
-          <div className="mt-4">
-            <Label htmlFor="ri-desc">Description Template</Label>
+          </Field>
+          <Field
+            id="ri-desc"
+            label="Invoice description"
+            className="sm:col-span-2"
+            hint="Write {month} and {year} where the month and year should go."
+          >
             <Input
               id="ri-desc"
+              className={fieldClass}
               value={riDescTemplate}
               onChange={(e) => setRiDescTemplate(e.target.value)}
-              placeholder="Monthly Rent — {month} {year}"
+              placeholder="Rent for {month} {year}"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Use <code className="bg-gray-100 px-1 rounded">{'{month}'}</code> and <code className="bg-gray-100 px-1 rounded">{'{year}'}</code> as placeholders
-            </p>
-          </div>
-
-          {recurringError && <p className="text-sm text-red-600 mt-2">{recurringError}</p>}
-
-          <div className="pt-4">
-            <Button onClick={handleSaveRecurring} disabled={savingRecurring}>
-              {savingRecurring ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : savedRecurring ? (
-                <Check className="h-4 w-4 mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {savedRecurring ? 'Saved!' : 'Save Recurring Settings'}
-            </Button>
-          </div>
+          </Field>
         </div>
-      </div>
+        <SaveRow label="Save recurring invoices" onClick={handleSaveRecurring} saving={savingRecurring} saved={savedRecurring} error={recurringError} />
+      </>
     );
   };
 
   const renderBillingSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Current Plan</h3>
-        <div className="p-4 border rounded-lg bg-blue-50">
-          <p className="font-medium text-gray-900">Free Plan</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">J$0<span className="text-sm font-normal">/month</span></p>
-          <ul className="mt-3 space-y-2 text-sm text-gray-600">
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-              Up to 10 properties
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-              Email reminders
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-              CSV export
-            </li>
-          </ul>
-        </div>
+    <>
+      <SectionTitle title="Plan" />
+      <div className="border-t border-rule py-4">
+        <p className="text-lg font-semibold">EasyCollect is free for now.</p>
+        <p className="mt-1 max-w-xl text-[15px] text-quiet">Everything in the app is included. There is nothing to pay and no card on file.</p>
       </div>
-      <div>
-        <div className="p-4 border rounded-lg bg-gray-50">
-          <p className="font-medium text-gray-900">Pro Plan &mdash; Coming Soon</p>
-          <p className="text-sm text-gray-500 mt-1">Unlimited properties, custom branding, priority support</p>
-          {proEmailSubmitted ? (
-            <div className="mt-4 flex items-center gap-2 text-sm text-green-600 font-medium">
-              <Check className="h-4 w-4" />
-              We'll notify you when Pro is available!
-            </div>
-          ) : (
-            <div className="mt-4 flex gap-2">
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={proEmail}
-                onChange={(e) => setProEmail(e.target.value)}
-                className="max-w-xs"
-              />
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (proEmail.trim()) setProEmailSubmitted(true);
-                }}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Get Notified
-              </Button>
-            </div>
-          )}
-        </div>
+      <div className="border-t border-rule py-4">
+        <p className="text-[15px] font-semibold">A Pro plan is coming</p>
+        <p className="mt-1 max-w-xl text-[15px] text-quiet">It does not have a price yet. You do not need to do anything now.</p>
       </div>
-    </div>
+    </>
   );
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
     if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
+      setPasswordError('Use at least 6 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match.');
+      setPasswordError('The two passwords do not match.');
       return;
     }
     setSavingPassword(true);
@@ -747,79 +672,45 @@ export default function Settings() {
       setConfirmPassword('');
       setTimeout(() => setSavedPassword(false), 3000);
     } catch (err: any) {
-      setPasswordError(err.message || 'Failed to update password.');
+      setPasswordError(err.message || 'Could not change your password. Try again.');
     } finally {
       setSavingPassword(false);
     }
   };
 
-  const renderSecuritySection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-          <div>
-            <Label htmlFor="newPassword">New Password</Label>
-            <div className="relative">
-              <Input
-                id="newPassword"
-                type={showNewPassword ? 'text' : 'password'}
-                required
-                minLength={6}
-                value={newPassword}
-                onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
-                placeholder="Min 6 characters"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                required
-                value={confirmPassword}
-                onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-                placeholder="Re-enter new password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-          {passwordError && (
-            <p className="text-sm text-red-600">{passwordError}</p>
-          )}
-          {savedPassword && (
-            <p className="text-sm text-green-600 flex items-center gap-1">
-              <Check className="h-4 w-4" /> Password updated successfully.
-            </p>
-          )}
-          <Button type="submit" className="" disabled={savingPassword}>
-            {savingPassword ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Shield className="h-4 w-4 mr-2" />
-            )}
-            Update Password
-          </Button>
-        </form>
+  const passwordField = (id: string, label: string, value: string, set: (v: string) => void, shown: boolean, toggle: () => void, extra: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <Field id={id} label={label}>
+      <div className="relative mt-1.5">
+        <Input
+          id={id}
+          type={shown ? 'text' : 'password'}
+          required
+          value={value}
+          onChange={(e) => { set(e.target.value); setPasswordError(''); }}
+          className="pr-16"
+          {...extra}
+        />
+        <button
+          type="button"
+          onClick={toggle}
+          aria-pressed={shown}
+          className="absolute inset-y-0 right-0 min-w-14 cursor-pointer px-3 text-sm text-quiet underline hover:text-ink"
+        >
+          {shown ? 'Hide' : 'Show'}
+        </button>
       </div>
-    </div>
+    </Field>
+  );
+
+  const renderSecuritySection = () => (
+    <>
+      <SectionTitle title="Password" description="Choose a new password for signing in. Use at least 6 characters." />
+      <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
+        {passwordField('newPassword', 'New password', newPassword, setNewPassword, showNewPassword, () => setShowNewPassword(!showNewPassword), { minLength: 6, autoComplete: 'new-password' })}
+        {passwordField('confirmPassword', 'Type it again', confirmPassword, setConfirmPassword, showConfirmPassword, () => setShowConfirmPassword(!showConfirmPassword), { autoComplete: 'new-password' })}
+        <SaveRow type="submit" label="Change password" saving={savingPassword} saved={savedPassword} error={passwordError} />
+      </form>
+    </>
   );
 
   const renderContent = () => {
@@ -839,58 +730,51 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        {(activeSection === 'profile' || activeSection === 'company' || activeSection === 'bank') && (
-          <div className="flex items-center gap-3">
-            {saveError && <p className="text-sm text-red-600">{saveError}</p>}
-          <Button className="" onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : saved ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
+    <>
+      <PageHeader title="Settings" />
+
+      {/* Phones: sections as underline tabs */}
+      <nav ref={phoneTabsRef} aria-label="Settings sections" className="relative -mx-4 mb-6 flex gap-5 overflow-x-auto border-b border-rule px-4 sm:-mx-8 sm:px-8 lg:hidden">
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => openSection(s.id)}
+            aria-current={activeSection === s.id ? 'page' : undefined}
+            className={cn(
+              '-mb-px min-h-11 shrink-0 cursor-pointer whitespace-nowrap border-b-2 text-sm',
+              activeSection === s.id ? 'border-ink font-semibold text-ink' : 'border-transparent text-quiet hover:text-ink'
             )}
-            {saved ? 'Saved!' : 'Save Changes'}
-          </Button>
-          </div>
-        )}
-      </div>
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-64">
-          <nav className="bg-white rounded-2xl border border-slate-200/60 p-3 space-y-1">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-blue-100 text-blue-900 border border-blue-200'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {section.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-11">
+        {/* Desktop: a plain list marked like the rail */}
+        <nav aria-label="Settings sections" className="hidden self-start border-t border-rule pt-2 lg:block">
+          {SECTIONS.map((s) => {
+            const on = activeSection === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => openSection(s.id)}
+                aria-current={on ? 'page' : undefined}
+                className={cn(
+                  'block w-full cursor-pointer py-2 pl-4 pr-2 text-left text-[15px] transition-colors duration-100',
+                  on ? 'font-semibold text-ink shadow-[inset_3px_0_0_var(--color-marker)]' : 'text-quiet hover:text-ink'
+                )}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </nav>
 
-        <div className="flex-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>{sections.find(s => s.id === activeSection)?.label}</CardTitle>
-            </CardHeader>
-            <CardContent>{renderContent()}</CardContent>
-          </Card>
-        </div>
+        <section className="min-w-0 max-w-[680px] lg:border-t lg:border-rule lg:pt-5">{renderContent()}</section>
       </div>
-    </div>
+    </>
   );
 }

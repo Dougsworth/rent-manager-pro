@@ -7,42 +7,18 @@ interface StatCardProps {
   subtext?: string;
   valueColor?: string;
   subtextColor?: string;
+  /** Accepted for compatibility. Figures are plain type and show no icon. */
   icon?: LucideIcon;
   className?: string;
 }
 
-export function StatCard({
-  label,
-  value,
-  subtext,
-  valueColor = "text-slate-900",
-  subtextColor = "text-slate-500",
-  icon: Icon,
-  className,
-}: StatCardProps) {
+/** A plain figure: label, value, note. Never a box. */
+export function StatCard({ label, value, subtext, valueColor = "text-ink", subtextColor = "text-quiet", className }: StatCardProps) {
   return (
-    <div className={cn(
-      "rounded-xl bg-slate-50/60 border border-slate-100 p-5 transition-all duration-200 hover:bg-slate-50",
-      className
-    )}>
-      <div className="flex items-start justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-3">
-            {label}
-          </p>
-          <p className={cn("text-2xl font-bold tracking-tight mb-1", valueColor)}>{value}</p>
-          {subtext && (
-            <p className={cn("text-xs font-medium", subtextColor)}>
-              {subtext}
-            </p>
-          )}
-        </div>
-        {Icon && (
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/60 border border-slate-100/80">
-            <Icon className="h-5 w-5 text-slate-400" />
-          </div>
-        )}
-      </div>
+    <div className={cn("min-w-0", className)}>
+      <p className="text-[13.5px] text-quiet">{label}</p>
+      <p className={cn("num text-xl font-semibold", valueColor)}>{value}</p>
+      {subtext && <p className={cn("text-[13.5px]", subtextColor)}>{subtext}</p>}
     </div>
   );
 }

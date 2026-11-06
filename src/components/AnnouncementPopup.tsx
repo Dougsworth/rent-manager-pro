@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -11,6 +10,7 @@ interface Announcement {
   cta_link: string | null;
 }
 
+/** One line above the page with a title, the message and a way to dismiss it. */
 export function AnnouncementBanner() {
   const { user } = useAuth();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
@@ -58,67 +58,41 @@ export function AnnouncementBanner() {
         user_id: user.id,
       });
     }
-    setTimeout(() => setAnnouncement(null), 300);
+    setTimeout(() => setAnnouncement(null), 150);
   };
 
   if (!announcement) return null;
 
+  const hasCta = !!(announcement.cta_text && announcement.cta_link);
+
   return (
     <div
-      className={`transition-all duration-300 overflow-hidden ${
-        visible ? 'opacity-100' : 'max-h-0 opacity-0'
-      }`}
+      role="region"
+      aria-label="Announcement"
+      className={`border-b border-rule transition-opacity duration-150 ${visible ? 'opacity-100' : 'opacity-0'}`}
     >
-      <div className="bg-slate-900 text-white">
-        {/* Collapsed bar */}
-        <div className="px-4 py-2.5">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex-1 min-w-0 text-left flex items-center gap-2"
-            >
-              <span className="text-sm font-medium truncate">{announcement.title}</span>
-              <span className="text-sm text-slate-400 truncate hidden sm:inline flex-1">
-                — {announcement.message}
-              </span>
-              {!expanded && (
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-              )}
-              {expanded && (
-                <ChevronUp className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-              )}
-            </button>
-            <button
-              onClick={handleDismiss}
-              className="p-1 rounded hover:bg-white/10 transition-colors flex-shrink-0"
-            >
-              <X className="h-3.5 w-3.5 text-slate-400" />
-            </button>
-          </div>
-        </div>
-
-        {/* Expanded content */}
-        <div
-          className={`transition-all duration-300 overflow-hidden ${
-            expanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="px-4 pb-4">
-            <div className="max-w-7xl mx-auto">
-              <p className="text-sm text-slate-300 leading-relaxed mb-3">
-                {announcement.message}
-              </p>
-              {announcement.cta_text && announcement.cta_link && (
-                <a
-                  href={announcement.cta_link}
-                  onClick={handleDismiss}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  {announcement.cta_text} &rarr;
-                </a>
-              )}
-            </div>
-          </div>
+      <div className="mx-auto flex max-w-[1180px] items-baseline gap-4 px-4 py-2.5 text-sm sm:px-8 lg:px-11">
+        <p className={`min-w-0 flex-1 ${expanded ? '' : 'truncate'}`}>
+          <span className="mr-2 font-semibold text-ink">{announcement.title}</span>{' '}
+          <span className="text-quiet">{announcement.message}</span>
+          {expanded && hasCta && (
+            <a href={announcement.cta_link!} onClick={handleDismiss} className="ml-2 font-semibold text-shell underline">
+              {announcement.cta_text}
+            </a>
+          )}
+        </p>
+        <div className="flex shrink-0 items-baseline gap-4">
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            className="min-h-8 cursor-pointer font-medium text-shell underline"
+          >
+            {expanded ? 'Less' : 'More'}
+          </button>
+          <button type="button" onClick={handleDismiss} className="min-h-8 cursor-pointer text-quiet underline hover:text-ink">
+            Dismiss
+          </button>
         </div>
       </div>
     </div>

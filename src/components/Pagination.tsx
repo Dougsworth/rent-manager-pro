@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PaginationProps {
   currentPage: number;
@@ -6,6 +6,8 @@ interface PaginationProps {
   pageSize: number;
   onPageChange: (page: number) => void;
 }
+
+const step = 'inline-flex h-10 min-w-10 cursor-pointer items-center justify-center px-2 text-sm font-medium text-shell transition-colors duration-100 hover:bg-secondary disabled:pointer-events-none disabled:text-quiet disabled:opacity-60';
 
 export function Pagination({ currentPage, totalItems, pageSize, onPageChange }: PaginationProps) {
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -15,59 +17,44 @@ export function Pagination({ currentPage, totalItems, pageSize, onPageChange }: 
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, totalItems);
 
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter((page) => totalPages <= 7 || page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+    .reduce<(number | 'gap')[]>((acc, page, idx, arr) => {
+      if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push('gap');
+      acc.push(page);
+      return acc;
+    }, []);
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <p className="text-sm text-gray-500 font-medium">
-        {start}–{end} of {totalItems}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => onPageChange(currentPage - 1)}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-all duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <ChevronLeft className="h-4 w-4" />
+    <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-rule pt-2">
+      <p className="num text-[13.5px] text-quiet">{start} to {end} of {totalItems}</p>
+      <div className="flex items-center">
+        <button type="button" className={step} disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>
+          Previous
         </button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1)
-          .filter(page => {
-            if (totalPages <= 7) return true;
-            if (page === 1 || page === totalPages) return true;
-            if (Math.abs(page - currentPage) <= 1) return true;
-            return false;
-          })
-          .reduce<(number | 'ellipsis')[]>((acc, page, idx, arr) => {
-            if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
-              acc.push('ellipsis');
-            }
-            acc.push(page);
-            return acc;
-          }, [])
-          .map((item, idx) =>
-            item === 'ellipsis' ? (
-              <span key={`e-${idx}`} className="px-1.5 text-sm text-gray-300">...</span>
+        <span className="hidden items-center sm:flex">
+          {pages.map((item, idx) =>
+            item === 'gap' ? (
+              <span key={`gap-${idx}`} aria-hidden="true" className="px-1 text-sm text-quiet">...</span>
             ) : (
               <button
                 key={item}
+                type="button"
+                aria-current={item === currentPage ? 'page' : undefined}
+                aria-label={`Page ${item}`}
                 onClick={() => onPageChange(item)}
-                className={`h-8 min-w-[2rem] inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-150 ${
-                  item === currentPage
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                className={cn(step, 'num', item === currentPage && 'font-bold text-ink underline decoration-2 underline-offset-[6px]')}
               >
                 {item}
               </button>
             )
           )}
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-all duration-150 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <ChevronRight className="h-4 w-4" />
+        </span>
+        <button type="button" className={step} disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>
+          Next
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
+vi.mock('@/lib/supabase', () => ({ supabase: { from: () => ({}), auth: {}, functions: {} } }));
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'test-user' },
@@ -11,24 +13,21 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('@/services/dashboard', () => ({
-  getDashboardStats: vi.fn().mockResolvedValue({
-    expected: 200000,
+vi.mock('@/services/collections', () => ({
+  summarizeHistory: () => 'No payment history yet.',
+  isoDate: () => '2026-01-20',
+  getCollections: vi.fn().mockResolvedValue({
+    owed: 200000,
+    late: 50000,
+    comingUp: 150000,
     collected: 150000,
-    outstanding: 50000,
-    overdue: 2,
-    tenantCount: 5,
+    lateCount: 1,
+    isEmpty: false,
+    recent: [{ id: 'p1', name: 'John Doe', amount: 50000, date: '2026-01-15' }],
+    items: [
+      { key: 'invoice-i1', kind: 'rent', personId: 't1', name: 'Late Payer', what: 'B2', amount: 50000, dueDate: '2026-01-15', daysLate: 5, daysUntilDue: 0, history: [], invoiceId: 'i1', paymentToken: 'x' },
+    ],
   }),
-  getRecentPayments: vi.fn().mockResolvedValue([
-    {
-      id: 'p1', amount: 50000, payment_date: '2026-01-15', status: 'completed',
-      tenant_first_name: 'John', tenant_last_name: 'Doe', unit_name: 'A1', property_name: 'Sunset',
-      invoice_number: 'INV-001', payment_number: 'PAY-001', method: 'bank_transfer',
-    },
-  ]),
-  getOverdueTenants: vi.fn().mockResolvedValue([
-    { id: 'i1', tenant_id: 't1', invoice_id: 'i1', name: 'Late Payer', unit: 'B2', amount: 50000, daysOverdue: 5 },
-  ]),
 }));
 
 vi.mock('@/services/reminders', () => ({

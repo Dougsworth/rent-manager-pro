@@ -13,102 +13,45 @@ import { FilterTabs } from "@/components/FilterTabs";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Pagination, paginate } from "@/components/Pagination";
-import {
-  Bell,
-  CheckCheck,
-  Trash2,
-  DollarSign,
-  FileText,
-  UserPlus,
-  AlertTriangle,
-  ImageIcon,
-  Clock,
-  Info,
-  X,
-} from "lucide-react";
 import { NotificationsSkeleton } from "@/components/skeletons/NotificationsSkeleton";
+import { formatDate } from "@/utils/formatDate";
+import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "unread" | "read";
 
 const NOTIFICATION_TYPE_OPTIONS: { value: NotificationType | "all"; label: string }[] = [
-  { value: "all", label: "All Types" },
-  { value: "payment_received", label: "Payment Received" },
-  { value: "payment_overdue", label: "Payment Overdue" },
-  { value: "invoice_created", label: "Invoice Created" },
-  { value: "proof_submitted", label: "Proof Submitted" },
-  { value: "proof_approved", label: "Proof Approved" },
-  { value: "proof_rejected", label: "Proof Rejected" },
-  { value: "tenant_added", label: "Tenant Added" },
-  { value: "lease_expiring", label: "Lease Expiring" },
-  { value: "late_fee_applied", label: "Late Fee Applied" },
-  { value: "system", label: "System" },
+  { value: "all", label: "Every kind" },
+  { value: "payment_received", label: "Payment received" },
+  { value: "payment_overdue", label: "Payment late" },
+  { value: "invoice_created", label: "Invoice created" },
+  { value: "proof_submitted", label: "Proof sent" },
+  { value: "proof_approved", label: "Proof approved" },
+  { value: "proof_rejected", label: "Proof not accepted" },
+  { value: "tenant_added", label: "Tenant added" },
+  { value: "lease_expiring", label: "Lease ending" },
+  { value: "late_fee_applied", label: "Late fee added" },
+  { value: "system", label: "From EasyCollect" },
 ];
 
-function getNotificationIcon(type: NotificationType) {
-  switch (type) {
-    case "payment_received":
-      return <DollarSign className="h-4 w-4 text-emerald-500" />;
-    case "payment_overdue":
-      return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    case "invoice_created":
-      return <FileText className="h-4 w-4 text-blue-500" />;
-    case "proof_submitted":
-      return <ImageIcon className="h-4 w-4 text-amber-500" />;
-    case "proof_approved":
-      return <DollarSign className="h-4 w-4 text-emerald-500" />;
-    case "proof_rejected":
-      return <X className="h-4 w-4 text-red-500" />;
-    case "tenant_added":
-      return <UserPlus className="h-4 w-4 text-blue-500" />;
-    case "lease_expiring":
-      return <Clock className="h-4 w-4 text-amber-500" />;
-    case "late_fee_applied":
-      return <AlertTriangle className="h-4 w-4 text-orange-500" />;
-    case "system":
-      return <Info className="h-4 w-4 text-slate-500" />;
-  }
-}
-
-function getNotificationColor(type: NotificationType) {
-  switch (type) {
-    case "payment_received":
-    case "proof_approved":
-      return "bg-emerald-50";
-    case "payment_overdue":
-    case "proof_rejected":
-      return "bg-red-50";
-    case "invoice_created":
-    case "tenant_added":
-      return "bg-blue-50";
-    case "proof_submitted":
-    case "lease_expiring":
-      return "bg-amber-50";
-    case "late_fee_applied":
-      return "bg-orange-50";
-    case "system":
-      return "bg-slate-50";
-  }
-}
-
-function timeAgo(dateStr: string): string {
-  const now = new Date();
+function whenLabel(dateStr: string): string {
   const date = new Date(dateStr);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return formatDate(dateStr);
 }
 
 export default function Notifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<NotificationType | "all">("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,6 +59,7 @@ export default function Notifications() {
 
   const loadNotifications = async () => {
     if (!user) return;
+    setError(false);
     try {
       const filters: { isRead?: boolean; type?: NotificationType } = {};
       if (statusFilter === "unread") filters.isRead = false;
@@ -126,6 +70,7 @@ export default function Notifications() {
       setNotifications(data);
     } catch (err) {
       console.error("Failed to load notifications:", err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -142,9 +87,7 @@ export default function Notifications() {
   const handleMarkAsRead = async (id: string) => {
     try {
       await markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
@@ -171,7 +114,7 @@ export default function Notifications() {
 
   const handleClearAll = async () => {
     if (!user) return;
-    if (!confirm("Clear all notifications? This cannot be undone.")) return;
+    if (!confirm("Remove every notification? You cannot get them back.")) return;
     try {
       await clearAllNotifications(user.id);
       setNotifications([]);
@@ -182,6 +125,7 @@ export default function Notifications() {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const paginatedNotifications = paginate(notifications, currentPage, PAGE_SIZE);
+  const filtered = statusFilter !== "all" || typeFilter !== "all";
 
   const statusTabs = [
     { value: "all" as const, label: "All", count: notifications.length },
@@ -195,126 +139,86 @@ export default function Notifications() {
     <>
       <PageHeader
         title="Notifications"
-        description="Stay updated on payments, invoices, and tenant activity"
-        count={notifications.length}
+        description="Payments, proofs, late rent and other things worth knowing."
         action={
           notifications.length > 0 ? (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
-                <CheckCheck className="h-4 w-4 mr-1" />
-                Mark all read
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleClearAll}>
-                <Trash2 className="h-4 w-4 mr-1" />
-                Clear all
-              </Button>
-            </div>
+            <>
+              {unreadCount > 0 && <Button variant="outline" size="sm" onClick={handleMarkAllRead}>Mark all read</Button>}
+              <Button variant="ghost" size="sm" onClick={handleClearAll}>Clear all</Button>
+            </>
           ) : undefined
         }
       />
 
-      {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <FilterTabs<StatusFilter>
-          tabs={statusTabs}
-          activeTab={statusFilter}
-          onTabChange={setStatusFilter}
-        />
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as NotificationType | "all")}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-        >
-          {NOTIFICATION_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div className="min-w-0 flex-1">
+          <FilterTabs<StatusFilter> tabs={statusTabs} activeTab={statusFilter} onTabChange={setStatusFilter} />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-quiet">
+          Show
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as NotificationType | "all")}
+            className="h-10 min-w-0 flex-1 cursor-pointer rounded-[3px] border border-input bg-transparent px-3 text-sm text-ink hover:border-quiet focus:border-paid focus:outline-2 focus:outline-offset-0 focus:outline-paid sm:flex-none"
+          >
+            {NOTIFICATION_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
-      {/* Notifications List */}
-      {notifications.length === 0 ? (
+      {error ? (
+        <div className="pt-4">
+          <h2 className="text-lg font-semibold">We could not load your notifications</h2>
+          <p className="mt-1 text-[15px] text-quiet">Check your connection and try again.</p>
+          <Button className="mt-4" onClick={() => { setLoading(true); loadNotifications(); }}>Try again</Button>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="[&>div]:border-t-0 [&>div]:pt-4">
         <EmptyState
-          icon={Bell}
-          message={
-            statusFilter !== "all" || typeFilter !== "all"
-              ? "No matching notifications"
-              : "No notifications yet"
-          }
+          message={filtered ? "Nothing matches these filters" : "No notifications yet"}
           description={
-            statusFilter === "all" && typeFilter === "all"
-              ? "You'll see notifications here when payments are received, invoices are created, and more."
-              : undefined
+            filtered
+              ? "Try another filter, or show everything."
+              : "You will see a note here when a tenant pays, sends proof of payment, or goes late."
+          }
+          action={
+            filtered ? (
+              <Button variant="outline" onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}>Show everything</Button>
+            ) : undefined
           }
         />
+        </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/60 divide-y divide-slate-100">
-          {paginatedNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`flex items-start gap-4 px-6 py-4 transition-colors duration-150 ${
-                !notification.is_read ? "bg-blue-50/30" : ""
-              }`}
-            >
-              <div
-                className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${getNotificationColor(
-                  notification.type
-                )}`}
-              >
-                {getNotificationIcon(notification.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p
-                      className={`text-sm ${
-                        !notification.is_read
-                          ? "font-semibold text-slate-900"
-                          : "font-medium text-slate-700"
-                      }`}
-                    >
-                      {notification.title}
-                    </p>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                      {notification.message}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-xs text-slate-400 whitespace-nowrap">
-                      {timeAgo(notification.created_at)}
-                    </span>
-                    {!notification.is_read && (
-                      <span className="w-2 h-2 rounded-full bg-blue-500 ml-1" />
-                    )}
-                  </div>
+        <>
+          <ul className="border-b border-rule [&>li:first-child]:border-t-0">
+            {paginatedNotifications.map((n) => (
+              <li key={n.id} className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-rule py-3.5 sm:grid-cols-[120px_minmax(0,1fr)_auto]">
+                <time dateTime={n.created_at} className="num text-[13.5px] leading-6 text-quiet">{whenLabel(n.created_at)}</time>
+                <div className="min-w-0">
+                  <p className={cn("text-[15px] leading-6", n.is_read ? "font-medium text-ink" : "font-semibold text-ink")}>
+                    {!n.is_read && <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 bg-ink align-middle" />}
+                    {!n.is_read && <span className="sr-only">Unread: </span>}
+                    {n.title}
+                  </p>
+                  <p className="text-[15px] text-quiet">{n.message}</p>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
-                  {!notification.is_read && (
-                    <button
-                      onClick={() => handleMarkAsRead(notification.id)}
-                      className="text-xs text-slate-500 hover:text-slate-700 transition-colors"
-                    >
-                      Mark as read
+                <div className="flex gap-4 text-sm sm:justify-end">
+                  {!n.is_read && (
+                    <button onClick={() => handleMarkAsRead(n.id)} className="min-h-11 cursor-pointer font-medium text-shell underline sm:min-h-6">
+                      Mark read
                     </button>
                   )}
-                  <button
-                    onClick={() => handleDelete(notification.id)}
-                    className="text-xs text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    Dismiss
+                  <button onClick={() => handleDelete(n.id)} className="min-h-11 cursor-pointer text-quiet underline hover:text-late sm:min-h-6">
+                    Remove
                   </button>
                 </div>
-              </div>
-            </div>
-          ))}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={notifications.length}
-            pageSize={PAGE_SIZE}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+              </li>
+            ))}
+          </ul>
+          <Pagination currentPage={currentPage} totalItems={notifications.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} />
+        </>
       )}
     </>
   );

@@ -1,63 +1,40 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
+import { Bell } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getNotifications, getUnreadCount, markAsRead, markAllAsRead } from "@/services/notifications";
-import type { Notification, NotificationType } from "@/types/app.types";
-import {
-  Bell,
-  DollarSign,
-  FileText,
-  AlertTriangle,
-  ImageIcon,
-  Info,
-  X,
-  CheckCheck,
-} from "lucide-react";
+import type { Notification } from "@/types/app.types";
+import { formatDate } from "@/utils/formatDate";
+import { cn } from "@/lib/utils";
 
-function getIcon(type: NotificationType) {
-  switch (type) {
-    case "payment_received":
-    case "proof_approved":
-      return <DollarSign className="h-3.5 w-3.5 text-emerald-500" />;
-    case "payment_overdue":
-    case "proof_rejected":
-      return <AlertTriangle className="h-3.5 w-3.5 text-red-500" />;
-    case "invoice_created":
-      return <FileText className="h-3.5 w-3.5 text-blue-500" />;
-    case "tenant_added":
-      return <FileText className="h-3.5 w-3.5 text-blue-500" />;
-    case "proof_submitted":
-      return <ImageIcon className="h-3.5 w-3.5 text-amber-500" />;
-    case "lease_expiring":
-      return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />;
-    case "late_fee_applied":
-      return <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />;
-    case "system":
-      return <Info className="h-3.5 w-3.5 text-slate-500" />;
-  }
-}
+const PANEL_WIDTH = 340;
 
-function timeAgo(dateStr: string): string {
-  const now = new Date();
+function whenLabel(dateStr: string): string {
   const date = new Date(dateStr);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return formatDate(dateStr);
 }
 
+/**
+ * The bell takes its colour from where it sits: white on the green phone
+ * header, ink on the light desktop bar. The unread count is a plain number.
+ */
 export function NotificationBell() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [recent, setRecent] = useState<Notification[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,28 +53,38 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open || !user) return;
     setLoadingRecent(true);
+    setLoadError(false);
     getNotifications(user.id)
-      .then((data) => {
-        console.log('NotificationBell: fetched', data.length, 'notifications');
-        setRecent(data.slice(0, 8));
+      .then((data) => setRecent(data.slice(0, 8)))
+      .catch((err) => {
+        console.error('NotificationBell: failed to fetch notifications', err);
+        setLoadError(true);
       })
-      .catch((err) => console.error('NotificationBell: failed to fetch notifications', err))
       .finally(() => setLoadingRecent(false));
   }, [open, user]);
 
-  // Close on outside click
+  // Close on outside click or Escape
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const onDown = (e: MouseEvent) => {
       const target = e.target as Node;
-      const inButton = ref.current?.contains(target);
-      const inDropdown = dropdownRef.current?.contains(target);
-      if (!inButton && !inDropdown) {
+      if (!ref.current?.contains(target) && !dropdownRef.current?.contains(target)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
         setOpen(false);
+        buttonRef.current?.focus();
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onResize = () => setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
   }, [open]);
 
   const handleMarkRead = async (id: string) => {
@@ -117,110 +104,89 @@ export function NotificationBell() {
     } catch {}
   };
 
+  const toggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const width = Math.min(PANEL_WIDTH, window.innerWidth - 16);
+      setDropdownPos({
+        top: rect.bottom + 6,
+        left: Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8),
+      });
+    }
+    setOpen(!open);
+  };
+
+  const countLabel = unreadCount > 99 ? "99+" : String(unreadCount);
+
   return (
     <div ref={ref} className="relative">
       <button
         ref={buttonRef}
-        onClick={() => {
-          if (!open && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setDropdownPos({
-              top: rect.bottom + 8,
-              left: Math.max(8, rect.right - 320),
-            });
-          }
-          setOpen(!open);
-        }}
-        className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-colors duration-150"
-        title="Notifications"
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        className="flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-[3px] px-2 text-ink transition-colors duration-100 lg:h-10 lg:hover:bg-secondary"
       >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
+        <Bell aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
+        {unreadCount > 0 && <span aria-hidden="true" className="num text-sm font-semibold">{countLabel}</span>}
       </button>
 
-      {open && dropdownPos && (
+      {open && dropdownPos && createPortal(
         <div
           ref={dropdownRef}
-          style={{ top: dropdownPos.top, left: dropdownPos.left }}
-          className="fixed w-80 bg-white rounded-xl shadow-lg border border-slate-200/60 z-50 overflow-hidden"
+          role="dialog"
+          aria-label="Recent notifications"
+          style={{ top: dropdownPos.top, left: dropdownPos.left, width: Math.min(PANEL_WIDTH, window.innerWidth - 16) }}
+          className="fixed z-50 border border-rule bg-popover text-ink shadow-lg"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllRead}
-                  className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
-                >
-                  <CheckCheck className="h-3.5 w-3.5" />
-                  Read all
-                </button>
-              )}
-              <button
-                onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-4 w-4" />
+          <div className="flex items-baseline justify-between gap-3 px-4 pb-2 pt-3">
+            <h2 className="text-[15px] font-semibold">Notifications</h2>
+            {unreadCount > 0 && (
+              <button type="button" onClick={handleMarkAllRead} className="min-h-8 cursor-pointer text-sm font-medium text-shell underline">
+                Mark all read
               </button>
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="max-h-80 overflow-y-auto">
-            {loadingRecent ? (
-              <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
-            ) : recent.length === 0 ? (
-              <div className="py-8 text-center">
-                <Bell className="h-6 w-6 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm text-slate-400">No notifications</p>
-              </div>
-            ) : (
-              recent.map((n) => (
-                  <button
-                    key={n.id}
-                    onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
-                    onMouseEnter={() => setExpandedId(n.id)}
-                    onMouseLeave={() => setExpandedId(null)}
-                    className={`group w-full flex items-start gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-slate-50 ${
-                      !n.is_read ? "bg-blue-50/30" : ""
-                    }`}
-                  >
-                    <div className="flex-shrink-0 mt-0.5">{getIcon(n.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-xs leading-tight ${
-                          !n.is_read ? "font-semibold text-slate-900" : "font-medium text-slate-600"
-                        }`}
-                      >
-                        {n.title}
-                      </p>
-                      <p className={`text-xs text-slate-500 mt-0.5 transition-all duration-200 ${expandedId === n.id ? "whitespace-normal" : "truncate"}`}>
-                        {n.message}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
-                    </div>
-                    {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
-                  </button>
-              ))
             )}
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-slate-100 px-4 py-2.5">
-            <Link
-              to="/notifications"
-              onClick={() => setOpen(false)}
-              className="text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              View all notifications
+          <div className="max-h-[min(360px,60vh)] overflow-y-auto overscroll-contain">
+            {loadingRecent ? (
+              <p className="border-t border-rule px-4 py-6 text-sm text-quiet">Loading</p>
+            ) : loadError ? (
+              <p className="border-t border-rule px-4 py-6 text-sm text-quiet">Could not load notifications. Check your connection.</p>
+            ) : recent.length === 0 ? (
+              <p className="border-t border-rule px-4 py-6 text-sm text-quiet">Nothing new. You will see payments, proofs and late rent here.</p>
+            ) : (
+              <ul>
+                {recent.map((n) => (
+                  <li key={n.id} className="border-t border-rule">
+                    <button
+                      type="button"
+                      onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                      className="block w-full cursor-pointer px-4 py-2.5 text-left transition-colors duration-100 hover:bg-secondary"
+                    >
+                      <span className={cn("block text-sm", n.is_read ? "font-medium" : "font-semibold")}>
+                        {!n.is_read && <span aria-hidden="true" className="mr-2 inline-block h-1.5 w-1.5 bg-ink align-middle" />}
+                        {!n.is_read && <span className="sr-only">Unread: </span>}
+                        {n.title}
+                      </span>
+                      <span className="block text-[13.5px] text-quiet">{n.message}</span>
+                      <span className="mt-0.5 block text-[13px] text-quiet">{whenLabel(n.created_at)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="border-t border-rule px-4 py-2">
+            <Link to="/notifications" onClick={() => setOpen(false)} className="inline-flex min-h-8 items-center text-sm font-semibold text-shell underline">
+              See all notifications
             </Link>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

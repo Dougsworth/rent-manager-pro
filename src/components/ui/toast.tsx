@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Toast {
   id: number;
@@ -30,7 +31,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div
+        aria-live="polite"
+        className="fixed inset-x-4 bottom-20 z-50 flex flex-col items-stretch gap-2 sm:inset-x-auto sm:right-6 sm:w-[380px] lg:bottom-6 print:hidden"
+      >
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={() => removeToast(t.id)} />
         ))}
@@ -39,32 +43,33 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Same drawn marks as StatusBadge, so a toast reads by shape and words, not colour. */
+const marks: Record<Toast['type'], string> = {
+  success: 'bg-paid',
+  error: 'border border-late hatch-late',
+  warning: 'border border-due',
+};
+
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   useEffect(() => {
     const timer = setTimeout(onDismiss, 4000);
     return () => clearTimeout(timer);
   }, [onDismiss]);
 
-  const icons = {
-    success: <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />,
-    error: <XCircle className="h-5 w-5 text-red-500 shrink-0" />,
-    warning: <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />,
-  };
-
-  const styles = {
-    success: 'border-emerald-200 bg-white',
-    error: 'border-red-200 bg-white',
-    warning: 'border-amber-200 bg-white',
-  };
-
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg animate-in slide-in-from-right ${styles[toast.type]}`}
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      className="flex items-start gap-3 border border-rule bg-popover py-3 pl-4 pr-1.5 text-ink shadow-lg"
     >
-      {icons[toast.type]}
-      <p className="text-sm font-medium text-gray-900 flex-1">{toast.message}</p>
-      <button onClick={onDismiss} className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
-        <X className="h-3.5 w-3.5" />
+      <span aria-hidden="true" className={cn('mt-1 h-3 w-1.5 shrink-0', marks[toast.type])} />
+      <p className={cn('flex-1 py-px text-[15px] leading-snug', toast.type === 'error' && 'font-medium')}>{toast.message}</p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="-my-1.5 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center text-quiet transition-colors duration-100 hover:bg-secondary hover:text-ink"
+      >
+        <X aria-hidden="true" className="h-4 w-4" />
       </button>
     </div>
   );

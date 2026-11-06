@@ -3,22 +3,28 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Printer, Download, Calendar, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate } from '@/utils/formatDate';
 import { generateReceiptPdf } from '@/utils/generateReceiptPdf';
+import { formatMoney } from '@/lib/money';
 import { toast } from 'sonner';
 
-function formatCurrency(amount: number): string {
-  return `J$${amount.toLocaleString()}`;
-}
-
 const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
+  bank_transfer: 'Bank transfer',
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
 };
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] gap-4 border-t border-rule py-2.5 text-[15px] sm:grid-cols-[180px_minmax(0,1fr)]">
+      <dt className="text-quiet">{label}</dt>
+      <dd className="min-w-0 break-words">{children}</dd>
+    </div>
+  );
+}
 
 export default function Receipt() {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +59,7 @@ export default function Receipt() {
       await generateReceiptPdf({ payment, profile });
     } catch (err) {
       console.error('Receipt PDF download failed', err);
-      toast.error('Could not generate the PDF. Please try again.');
+      toast.error('The PDF could not be made. Try again, or use Print instead.');
     } finally {
       setDownloading(false);
     }
@@ -61,16 +67,19 @@ export default function Receipt() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div aria-busy="true" aria-label="Loading receipt" className="mx-auto max-w-2xl">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="mt-6 h-14 w-64" />
+        <div className="mt-8 space-y-3">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
       </div>
     );
   }
 
   if (!payment) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Payment not found.</p>
+      <div className="mx-auto max-w-2xl py-6">
+        <h1 className="text-2xl font-semibold">We could not find that receipt</h1>
+        <p className="mt-1 text-quiet">The payment may have been removed. Check your payments list and try again.</p>
       </div>
     );
   }
@@ -79,141 +88,65 @@ export default function Receipt() {
   const invoice = payment.invoice as any;
   const unit = tenant?.unit as any;
   const property = unit?.property as any;
+  const tenantName = `${tenant?.first_name ?? ''} ${tenant?.last_name ?? ''}`.trim();
+  const landlordName = profile?.company_name || `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim();
+  const method = methodLabels[payment.method] ?? payment.method;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payment Receipt</h1>
-            <p className="text-gray-600">Receipt #{payment.payment_number}</p>
-          </div>
-          <div className="flex gap-3 print:hidden">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </Button>
-            <Button variant="outline" onClick={handleDownload} disabled={downloading}>
-              {downloading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-2" />
-              )}
-              Download PDF
-            </Button>
-          </div>
+    <article className="mx-auto max-w-2xl bg-ground print:max-w-none print:bg-white">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-5">
+        <div>
+          <h1 className="display text-[34px] font-bold leading-[1.05] sm:text-[40px]">Receipt</h1>
+          <p className="num mt-1 text-[15px] text-quiet">{payment.payment_number}</p>
         </div>
-
-        <Card>
-          <CardHeader className="text-center border-b">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </div>
-            <CardTitle className="text-xl text-green-600">Payment Received</CardTitle>
-            <p className="text-gray-600">Your payment has been successfully processed</p>
-          </CardHeader>
-
-          <CardContent className="p-4 sm:p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Payment Details</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Amount Paid:</span>
-                    <span className="font-semibold text-xl text-green-600">{formatCurrency(payment.amount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Method:</span>
-                    <span className="font-medium">{methodLabels[payment.method] ?? payment.method}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Number:</span>
-                    <span className="font-mono text-sm">{payment.payment_number}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Date:</span>
-                    <span className="font-medium">{formatDate(payment.payment_date)}</span>
-                  </div>
-                  {invoice?.description && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Description:</span>
-                      <span className="font-medium">{invoice.description}</span>
-                    </div>
-                  )}
-                  {invoice?.invoice_number && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Invoice:</span>
-                      <span className="font-medium">{invoice.invoice_number}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Property Information</h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-gray-600 block">Property:</span>
-                    <span className="font-medium">{property?.name ?? 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 block">Address:</span>
-                    <span className="font-medium">{property?.address ?? 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 block">Unit:</span>
-                    <span className="font-medium">{unit?.name ?? 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-8 border-t">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Tenant Information</h3>
-                  <div className="space-y-2">
-                    <p className="font-medium">{tenant?.first_name} {tenant?.last_name}</p>
-                    {tenant?.email && <p className="text-gray-600">{tenant.email}</p>}
-                    {tenant?.phone && <p className="text-gray-600">{tenant.phone}</p>}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Landlord Information</h3>
-                  <div className="space-y-2">
-                    <p className="font-medium">
-                      {profile?.company_name || `${profile?.first_name} ${profile?.last_name}`}
-                    </p>
-                    {profile?.email && <p className="text-gray-600">{profile.email}</p>}
-                    {profile?.phone && <p className="text-gray-600">{profile.phone}</p>}
-                    {profile?.company_address && <p className="text-gray-600">{profile.company_address}</p>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-8 border-t bg-gray-50 -mx-4 sm:-mx-8 -mb-4 sm:-mb-8 p-4 sm:p-8 rounded-b-lg">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="text-center sm:text-left">
-                  <p className="text-sm text-gray-600">
-                    This receipt serves as proof of payment.
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Keep this receipt for your records.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Calendar className="h-4 w-4" />
-                  Generated on {formatDate(new Date().toISOString())}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex gap-2 print:hidden">
+          <Button variant="outline" onClick={handlePrint}>Print</Button>
+          <Button onClick={handleDownload} disabled={downloading}>{downloading ? 'Making PDF' : 'Download PDF'}</Button>
+        </div>
       </div>
-    </div>
+
+      <section className="py-6">
+        <p className="text-[15px] text-quiet">Amount paid</p>
+        <p className="display num mt-0.5 text-[42px] font-bold leading-none sm:text-[56px]">{formatMoney(payment.amount)}</p>
+        <StatusBadge variant="paid" className="mt-3 text-[15px]">
+          Paid {formatDate(payment.payment_date)} by {method.toLowerCase()}
+        </StatusBadge>
+      </section>
+
+      <section>
+        <h2 className="pb-2 text-[15px] font-semibold">Payment</h2>
+        <dl className="num border-b border-rule">
+          <Row label="Payment number">{payment.payment_number}</Row>
+          <Row label="Date paid">{formatDate(payment.payment_date)}</Row>
+          <Row label="How">{method}</Row>
+          {invoice?.invoice_number && <Row label="Invoice">{invoice.invoice_number}</Row>}
+          {invoice?.description && <Row label="For">{invoice.description}</Row>}
+          <Row label="Property">{property?.name ?? 'Not recorded'}</Row>
+          {property?.address && <Row label="Address">{property.address}</Row>}
+          <Row label="Unit">{unit?.name ?? 'Not recorded'}</Row>
+        </dl>
+      </section>
+
+      <section className="mt-8 grid gap-8 sm:grid-cols-2">
+        <div>
+          <h2 className="border-b border-rule pb-2 text-[15px] font-semibold">Paid by</h2>
+          <p className="mt-2.5 font-medium">{tenantName || 'Not recorded'}</p>
+          {tenant?.email && <p className="text-[15px] text-quiet">{tenant.email}</p>}
+          {tenant?.phone && <p className="text-[15px] text-quiet">{tenant.phone}</p>}
+        </div>
+        <div>
+          <h2 className="border-b border-rule pb-2 text-[15px] font-semibold">Paid to</h2>
+          <p className="mt-2.5 font-medium">{landlordName || 'Not recorded'}</p>
+          {profile?.email && <p className="text-[15px] text-quiet">{profile.email}</p>}
+          {profile?.phone && <p className="text-[15px] text-quiet">{profile.phone}</p>}
+          {profile?.company_address && <p className="text-[15px] text-quiet">{profile.company_address}</p>}
+        </div>
+      </section>
+
+      <footer className="mt-10 border-t border-ink pt-4 text-[13.5px] text-quiet">
+        <p>This receipt is proof of payment. Keep it for your records.</p>
+        <p className="num mt-1">Made on {formatDate(new Date().toISOString())} with EasyCollect.</p>
+      </footer>
+    </article>
   );
 }

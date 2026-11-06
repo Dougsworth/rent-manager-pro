@@ -15,7 +15,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm",
+      "fixed inset-0 z-50 bg-ink/45",
       "data-[state=open]:animate-in data-[state=open]:fade-in-0",
       "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       className
@@ -40,8 +40,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2",
-        "max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200/60 bg-white p-7",
-        "shadow-[0_8px_30px_rgb(0,0,0,0.08),0_2px_8px_rgb(0,0,0,0.05)]",
+        "max-h-[90vh] overflow-y-auto border border-rule bg-popover p-6 shadow-lg max-sm:max-w-[calc(100vw-24px)]",
         "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
         "duration-150",
@@ -54,10 +53,10 @@ const DialogContent = React.forwardRef<
         <button
           type="button"
           className={cn(
-            "absolute right-4 top-4 z-10 rounded-lg p-1.5 transition-colors focus:outline-none focus:ring-2",
+            "absolute right-4 top-4 z-10 flex h-10 w-10 cursor-pointer items-center justify-center transition-colors",
             closeVariant === "dark"
-              ? "text-white/70 hover:text-white hover:bg-white/10 focus:ring-white/30"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 focus:ring-slate-300"
+              ? "text-white/70 hover:text-white hover:bg-white/10"
+              : "text-quiet hover:text-ink hover:bg-secondary"
           )}
         >
           <X className="h-4 w-4" />

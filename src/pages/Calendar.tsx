@@ -1,48 +1,39 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getInvoices } from "@/services/invoices";
 import { getPayments } from "@/services/payments";
 import { getTenants } from "@/services/tenants";
 import type { InvoiceWithTenant, PaymentWithDetails, TenantWithDetails } from "@/types/app.types";
 import { PageHeader } from "@/components/PageHeader";
-import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  CreditCard,
-  UserPlus,
-  UserMinus,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CalendarSkeleton } from "@/components/skeletons/CalendarSkeleton";
+import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
+
+type EventType = "invoice_due" | "payment" | "lease_start" | "lease_end";
+
+/** Marks mean the same as the louvre: paid is solid, late is hatched, due is outlined. */
+type Mark = "paid" | "late" | "due" | "lease";
 
 interface CalendarEvent {
-  type: "invoice_due" | "payment" | "lease_start" | "lease_end";
-  label: string;
-  detail: string;
+  type: EventType;
+  mark: Mark;
+  name: string;
+  tenantId?: string | null;
+  what: string;
+  amount?: number;
 }
 
-const EVENT_COLORS: Record<CalendarEvent["type"], string> = {
-  invoice_due: "bg-blue-500",
-  payment: "bg-emerald-500",
-  lease_start: "bg-amber-500",
-  lease_end: "bg-red-500",
+const MARKS: Record<Mark, string> = {
+  paid: "bg-paid",
+  late: "border border-late hatch-late",
+  due: "border border-paid",
+  lease: "bg-quiet w-[2px]",
 };
 
-const EVENT_LABELS: Record<CalendarEvent["type"], string> = {
-  invoice_due: "Invoice Due",
-  payment: "Payment",
-  lease_start: "Lease Start",
-  lease_end: "Lease End",
-};
-
-const EVENT_ICONS: Record<CalendarEvent["type"], React.ReactNode> = {
-  invoice_due: <FileText className="h-4 w-4 text-blue-500" />,
-  payment: <CreditCard className="h-4 w-4 text-emerald-500" />,
-  lease_start: <UserPlus className="h-4 w-4 text-amber-500" />,
-  lease_end: <UserMinus className="h-4 w-4 text-red-500" />,
-};
+const MARK_ORDER: Record<Mark, number> = { late: 0, due: 1, paid: 2, lease: 3 };
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -63,9 +54,17 @@ function toDateKey(dateStr: string): string {
   return dateStr.slice(0, 10);
 }
 
+function dayLabel(key: string, opts: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" }): string {
+  return new Date(key + "T12:00:00").toLocaleDateString("en-US", opts);
+}
+
 function isSameMonth(year: number, month: number): boolean {
   const now = new Date();
   return now.getFullYear() === year && now.getMonth() === month;
+}
+
+function EventMark({ mark, className }: { mark: Mark; className?: string }) {
+  return <span aria-hidden="true" className={cn("block h-3 w-1.5 shrink-0", MARKS[mark], className)} />;
 }
 
 export default function Calendar() {
@@ -112,48 +111,51 @@ export default function Calendar() {
     };
 
     for (const inv of invoices) {
+      const mark: Mark = inv.status === "overdue" ? "late" : inv.status === "paid" ? "paid" : "due";
       addEvent(toDateKey(inv.due_date), {
         type: "invoice_due",
-        label: `${inv.invoice_number} due`,
-        detail: `${inv.tenant_first_name} ${inv.tenant_last_name} — J$${inv.amount.toLocaleString()}`,
+        mark,
+        name: `${inv.tenant_first_name} ${inv.tenant_last_name}`,
+        tenantId: inv.tenant_id,
+        what: mark === "late" ? `${inv.invoice_number} due, not paid` : mark === "paid" ? `${inv.invoice_number} due, paid` : `${inv.invoice_number} due`,
+        amount: inv.amount,
       });
     }
 
     for (const pay of payments) {
       addEvent(toDateKey(pay.payment_date), {
         type: "payment",
-        label: `${pay.payment_number}`,
-        detail: `${pay.tenant_first_name} ${pay.tenant_last_name} paid J$${pay.amount.toLocaleString()}`,
+        mark: "paid",
+        name: `${pay.tenant_first_name} ${pay.tenant_last_name}`,
+        tenantId: pay.tenant_id,
+        what: `Paid, ${pay.payment_number}`,
+        amount: pay.amount,
       });
     }
 
     for (const t of tenants) {
       if (t.lease_start) {
-        addEvent(toDateKey(t.lease_start), {
-          type: "lease_start",
-          label: "Lease starts",
-          detail: `${t.first_name} ${t.last_name}`,
-        });
+        addEvent(toDateKey(t.lease_start), { type: "lease_start", mark: "lease", name: `${t.first_name} ${t.last_name}`, tenantId: t.id, what: "Lease starts" });
       }
       if (t.lease_end) {
-        addEvent(toDateKey(t.lease_end), {
-          type: "lease_end",
-          label: "Lease ends",
-          detail: `${t.first_name} ${t.last_name}`,
-        });
+        addEvent(toDateKey(t.lease_end), { type: "lease_end", mark: "lease", name: `${t.first_name} ${t.last_name}`, tenantId: t.id, what: "Lease ends" });
       }
     }
 
+    for (const list of map.values()) list.sort((a, b) => MARK_ORDER[a.mark] - MARK_ORDER[b.mark]);
     return map;
   }, [invoices, payments, tenants]);
 
-  // Stats for visible month
-  const monthStats = useMemo(() => {
-    const prefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
-    let invoicesDue = 0, paymentsMade = 0, leasesStarting = 0, leasesEnding = 0;
+  const prefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
 
+  // Counts for the visible month, in one line of words
+  const monthStats = useMemo(() => {
+    let invoicesDue = 0, paymentsMade = 0, leasesStarting = 0, leasesEnding = 0, late = 0;
     for (const inv of invoices) {
-      if (toDateKey(inv.due_date).startsWith(prefix)) invoicesDue++;
+      if (toDateKey(inv.due_date).startsWith(prefix)) {
+        invoicesDue++;
+        if (inv.status === "overdue") late++;
+      }
     }
     for (const pay of payments) {
       if (toDateKey(pay.payment_date).startsWith(prefix)) paymentsMade++;
@@ -162,229 +164,186 @@ export default function Calendar() {
       if (t.lease_start && toDateKey(t.lease_start).startsWith(prefix)) leasesStarting++;
       if (t.lease_end && toDateKey(t.lease_end).startsWith(prefix)) leasesEnding++;
     }
+    return { invoicesDue, paymentsMade, leasesStarting, leasesEnding, late };
+  }, [invoices, payments, tenants, prefix]);
 
-    return { invoicesDue, paymentsMade, leasesStarting, leasesEnding };
-  }, [invoices, payments, tenants, viewYear, viewMonth]);
+  // Every day in the visible month that has something on it, in order
+  const monthAgenda = useMemo(
+    () => [...eventMap.entries()].filter(([k]) => k.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b)),
+    [eventMap, prefix]
+  );
 
   const goToPrev = () => {
+    setSelectedDay(null);
     if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
     else setViewMonth(viewMonth - 1);
   };
 
   const goToNext = () => {
+    setSelectedDay(null);
     if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
     else setViewMonth(viewMonth + 1);
   };
 
   const goToToday = () => {
+    setSelectedDay(null);
     setViewYear(today.getFullYear());
     setViewMonth(today.getMonth());
   };
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
+  const trailing = (7 - ((firstDay + daysInMonth) % 7)) % 7;
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
-  const selectedDayEvents = selectedDay ? eventMap.get(selectedDay) || [] : [];
 
   if (loading) return <CalendarSkeleton />;
 
+  const agenda: [string, CalendarEvent[]][] = selectedDay ? [[selectedDay, eventMap.get(selectedDay) || []]] : monthAgenda;
+
+  const counts = [
+    monthStats.invoicesDue > 0 && `${monthStats.invoicesDue} ${monthStats.invoicesDue === 1 ? "invoice" : "invoices"} due`,
+    monthStats.paymentsMade > 0 && `${monthStats.paymentsMade} ${monthStats.paymentsMade === 1 ? "payment" : "payments"} in`,
+    monthStats.leasesStarting > 0 && `${monthStats.leasesStarting} ${monthStats.leasesStarting === 1 ? "lease starts" : "leases start"}`,
+    monthStats.leasesEnding > 0 && `${monthStats.leasesEnding} ${monthStats.leasesEnding === 1 ? "lease ends" : "leases end"}`,
+  ].filter(Boolean) as string[];
+
   return (
     <>
-      <PageHeader
-        title="Calendar"
-        description="Visual overview of invoices, payments, and lease milestones"
-      />
+      <PageHeader title="Calendar" description="When rent is due, when it came in, and when leases start or end." />
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Invoices Due", value: monthStats.invoicesDue, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Payments Made", value: monthStats.paymentsMade, color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Leases Starting", value: monthStats.leasesStarting, color: "text-amber-600", bg: "bg-amber-50" },
-          { label: "Leases Ending", value: monthStats.leasesEnding, color: "text-red-600", bg: "bg-red-50" },
-        ].map((stat) => (
-          <div key={stat.label} className={`rounded-xl border border-slate-200/60 bg-white px-4 py-3`}>
-            <p className="text-xs font-medium text-slate-500">{stat.label}</p>
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={goToPrev}>
-            <ChevronLeft className="h-4 w-4" />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={goToPrev} aria-label="Previous month">
+            <ChevronLeft aria-hidden="true" className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold text-slate-900 min-w-[180px] text-center">
-            {formatMonthYear(viewYear, viewMonth)}
-          </h2>
-          <Button variant="outline" size="sm" onClick={goToNext}>
-            <ChevronRight className="h-4 w-4" />
+          <h2 className="min-w-[168px] text-center text-xl font-semibold" aria-live="polite">{formatMonthYear(viewYear, viewMonth)}</h2>
+          <Button variant="ghost" size="icon" onClick={goToNext} aria-label="Next month">
+            <ChevronRight aria-hidden="true" className="h-5 w-5" />
           </Button>
         </div>
         {!isSameMonth(viewYear, viewMonth) && (
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
+          <Button variant="outline" size="sm" onClick={goToToday}>Back to this month</Button>
         )}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 text-xs text-slate-500">
-        {(["invoice_due", "payment", "lease_start", "lease_end"] as const).map((type) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${EVENT_COLORS[type]}`} />
-            {EVENT_LABELS[type]}
-          </div>
-        ))}
-      </div>
+      <p className="num mb-4 text-[15px]">
+        {counts.length > 0 ? `${counts.join(", ")}.` : "Nothing on this month."}
+        {monthStats.late > 0 && <b className="ml-2 font-semibold text-late">{monthStats.late} still late.</b>}
+      </p>
 
-      <div className="flex gap-6">
-        {/* Calendar Grid */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
-          {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-slate-100">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0">
+          <div className="grid grid-cols-7 border-b border-ink text-[13.5px] text-quiet">
             {DAYS_OF_WEEK.map((day) => (
-              <div key={day} className="py-2 text-center text-xs font-medium text-slate-500">
-                {day}
+              <div key={day} className="px-1.5 pb-1.5 sm:px-2">
+                <span className="sm:hidden">{day[0]}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
             ))}
           </div>
 
-          {/* Day Cells */}
-          <div className="grid grid-cols-7">
-            {/* Empty cells before first day */}
+          <div className="grid grid-cols-7 border-l border-rule">
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} className="min-h-[52px] sm:min-h-[80px] border-b border-r border-slate-50 bg-slate-25" />
+              <div key={`lead-${i}`} aria-hidden="true" className="min-h-[52px] border-b border-r border-rule sm:min-h-[88px]" />
             ))}
 
-            {/* Actual days */}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const dayNum = i + 1;
-              const dateKey = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+              const dateKey = `${prefix}-${String(dayNum).padStart(2, "0")}`;
               const events = eventMap.get(dateKey) || [];
               const isToday = dateKey === todayKey;
               const isSelected = dateKey === selectedDay;
-
-              // Deduplicate event types for dot display
-              const eventTypes = [...new Set(events.map((e) => e.type))];
+              const shown = events.slice(0, 5);
+              const late = events.some((e) => e.mark === "late");
 
               return (
-                <div
+                <button
                   key={dateKey}
-                  onClick={() => setSelectedDay(events.length > 0 ? dateKey : null)}
-                  className={`min-h-[52px] sm:min-h-[80px] border-b border-r border-slate-50 p-1.5 transition-colors duration-150 ${
-                    events.length > 0 ? "cursor-pointer hover:bg-slate-50" : ""
-                  } ${isSelected ? "bg-slate-100 ring-1 ring-inset ring-slate-300" : ""}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center justify-center w-7 h-7 text-sm rounded-full ${
-                        isToday
-                          ? "bg-slate-900 text-white font-bold"
-                          : "text-slate-700"
-                      }`}
-                    >
-                      {dayNum}
-                    </span>
-                    {events.length > 0 && (
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {events.length}
-                      </span>
-                    )}
-                  </div>
-                  {eventTypes.length > 0 && (
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      {eventTypes.map((type) => (
-                        <span
-                          key={type}
-                          className={`w-2 h-2 rounded-full ${EVENT_COLORS[type]}`}
-                        />
-                      ))}
-                    </div>
+                  type="button"
+                  onClick={() => setSelectedDay(isSelected || events.length === 0 ? null : dateKey)}
+                  aria-pressed={isSelected}
+                  aria-label={`${dayLabel(dateKey)}${isToday ? ", today" : ""}. ${events.length === 0 ? "Nothing on." : `${events.length} ${events.length === 1 ? "thing" : "things"} on${late ? ", something late" : ""}.`}`}
+                  className={cn(
+                    "flex min-h-[52px] flex-col items-start justify-between border-b border-r border-rule p-1 text-left transition-colors duration-100 sm:min-h-[88px] sm:p-1.5",
+                    events.length > 0 ? "cursor-pointer hover:bg-secondary" : "cursor-default",
+                    isSelected && "bg-secondary outline-2 -outline-offset-2 outline-ink"
                   )}
-                </div>
+                >
+                  <span
+                    className={cn(
+                      "num inline-flex h-6 min-w-6 items-center justify-center px-0.5 text-[13.5px] sm:h-7 sm:min-w-7 sm:text-sm",
+                      isToday ? "bg-ink font-bold text-white" : late ? "font-semibold text-ink" : "text-ink"
+                    )}
+                  >
+                    {dayNum}
+                  </span>
+                  {events.length > 0 && (
+                    <span aria-hidden="true" className="flex items-end gap-[3px]">
+                      {shown.map((e, idx) => <EventMark key={idx} mark={e.mark} />)}
+                      {events.length > shown.length && <span className="num text-[11px] leading-none text-quiet">+{events.length - shown.length}</span>}
+                    </span>
+                  )}
+                </button>
               );
             })}
-          </div>
-        </div>
 
-        {/* Day Detail Panel */}
-        {selectedDay && (
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="bg-white rounded-2xl border border-slate-200/60 p-4 sticky top-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </h3>
-                <button
-                  onClick={() => setSelectedDay(null)}
-                  className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  <X className="h-4 w-4 text-slate-400" />
-                </button>
-              </div>
-              {selectedDayEvents.length === 0 ? (
-                <p className="text-sm text-slate-400">No events this day.</p>
-              ) : (
-                <div className="space-y-3">
-                  {selectedDayEvents.map((event, idx) => (
-                    <div key={idx} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {EVENT_ICONS[event.type]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">{event.label}</p>
-                        <p className="text-xs text-slate-500">{event.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Day Detail — shown below calendar on small screens */}
-      {selectedDay && selectedDayEvents.length > 0 && (
-        <div className="lg:hidden mt-4 bg-white rounded-2xl border border-slate-200/60 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-900">
-              {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-            </h3>
-            <button
-              onClick={() => setSelectedDay(null)}
-              className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              <X className="h-4 w-4 text-slate-400" />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {selectedDayEvents.map((event, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  {EVENT_ICONS[event.type]}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-700">{event.label}</p>
-                  <p className="text-xs text-slate-500">{event.detail}</p>
-                </div>
-              </div>
+            {Array.from({ length: trailing }).map((_, i) => (
+              <div key={`trail-${i}`} aria-hidden="true" className="min-h-[52px] border-b border-r border-rule sm:min-h-[88px]" />
             ))}
           </div>
+
+          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-quiet">
+            <span className="inline-flex items-center gap-1.5"><EventMark mark="paid" />Paid</span>
+            <span className="inline-flex items-center gap-1.5"><EventMark mark="late" />Due and not paid</span>
+            <span className="inline-flex items-center gap-1.5"><EventMark mark="due" />Due</span>
+            <span className="inline-flex items-center gap-1.5"><EventMark mark="lease" />Lease starts or ends</span>
+            <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="inline-block h-3.5 w-3.5 bg-ink" />Today</span>
+          </p>
         </div>
-      )}
+
+        <section aria-label={selectedDay ? dayLabel(selectedDay) : `Everything in ${formatMonthYear(viewYear, viewMonth)}`} className="min-w-0">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <h2 className="text-base font-semibold">{selectedDay ? dayLabel(selectedDay) : "This month, day by day"}</h2>
+            {selectedDay && (
+              <button type="button" onClick={() => setSelectedDay(null)} className="min-h-10 cursor-pointer text-sm font-semibold text-shell underline underline-offset-[3px]">
+                Whole month
+              </button>
+            )}
+          </div>
+
+          {agenda.length === 0 ? (
+            <p className="border-t border-rule py-3 text-[15px] text-quiet">Nothing due, paid or changing this month.</p>
+          ) : (
+            <ol className="lg:max-h-[620px] lg:overflow-y-auto">
+              {agenda.map(([key, events]) => (
+                <li key={key} className="border-t border-rule py-2.5">
+                  {!selectedDay && (
+                    <p className={cn("num mb-1 text-[13.5px]", key === todayKey ? "font-semibold text-ink" : "text-quiet")}>
+                      {dayLabel(key, { weekday: "short", month: "short", day: "numeric" })}{key === todayKey && ", today"}
+                    </p>
+                  )}
+                  <ul className="space-y-1.5">
+                    {events.map((e, idx) => (
+                      <li key={idx} className="grid grid-cols-[6px_minmax(0,1fr)_auto] items-start gap-x-2.5">
+                        <EventMark mark={e.mark} className="mt-[5px]" />
+                        <span className="min-w-0">
+                          {e.tenantId ? (
+                            <Link to={`/tenants/${e.tenantId}`} className={cn("block truncate text-[15px] text-ink hover:underline", e.mark === "late" ? "font-semibold" : "font-medium")}>{e.name}</Link>
+                          ) : (
+                            <span className="block truncate text-[15px] font-medium">{e.name}</span>
+                          )}
+                          <span className={cn("num block text-[13.5px]", e.mark === "late" ? "text-late" : "text-quiet")}>{e.what}</span>
+                        </span>
+                        {e.amount != null && <span className="num text-[15px] font-medium">{formatMoney(e.amount)}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
     </>
   );
 }

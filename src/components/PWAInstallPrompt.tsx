@@ -1,27 +1,27 @@
 import { useState, useEffect } from 'react';
-import { X, Download, Share, Plus, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const MAX_SHOWS = 3;
 
 function getShowCount(): number {
-  return parseInt(localStorage.getItem('pwa-prompt-count') ?? '0', 10);
+  try { return parseInt(localStorage.getItem('pwa-prompt-count') ?? '0', 10); } catch { return MAX_SHOWS; }
 }
 function incrementShowCount() {
-  localStorage.setItem('pwa-prompt-count', String(getShowCount() + 1));
+  try { localStorage.setItem('pwa-prompt-count', String(getShowCount() + 1)); } catch { /* storage blocked */ }
 }
 function isPermaDismissed(): boolean {
-  return localStorage.getItem('pwa-install-dismissed') === 'true';
+  try { return localStorage.getItem('pwa-install-dismissed') === 'true'; } catch { return true; }
 }
 function permaDismiss() {
-  localStorage.setItem('pwa-install-dismissed', 'true');
+  try { localStorage.setItem('pwa-install-dismissed', 'true'); } catch { /* storage blocked */ }
 }
 
+/** A one line offer under the header to add EasyCollect to the home screen. */
 export function PWAInstallPrompt() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
   const [visible, setVisible] = useState(false);
-  const [animating, setAnimating] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -32,21 +32,16 @@ export function PWAInstallPrompt() {
     const timer = setTimeout(() => {
       incrementShowCount();
       setVisible(true);
-      setTimeout(() => setAnimating(true), 50);
     }, 2500);
 
     return () => clearTimeout(timer);
   }, [canInstall, isIOS, isInstalled]);
 
-  const handleSoftDismiss = () => {
-    setAnimating(false);
-    setTimeout(() => setVisible(false), 300);
-  };
+  const handleSoftDismiss = () => setVisible(false);
 
   const handleHardDismiss = () => {
     permaDismiss();
-    setAnimating(false);
-    setTimeout(() => setVisible(false), 300);
+    setVisible(false);
   };
 
   const handleInstall = async () => {
@@ -66,122 +61,56 @@ export function PWAInstallPrompt() {
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 bg-black/30 z-[60] transition-opacity duration-300 ${
-          animating ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={handleSoftDismiss}
-      />
-
-      {/* Popup */}
-      <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+      {!showGuide && (
         <div
-          className={`pointer-events-auto bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[320px] sm:max-w-sm overflow-hidden transition-all duration-300 ${
-            animating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
-          }`}
+          role="region"
+          aria-label="Install the app"
+          className="fixed inset-x-0 top-14 z-40 border-b border-rule bg-popover shadow-lg lg:left-[216px] lg:top-0"
         >
-          {/* Close */}
-          <button
-            onClick={handleHardDismiss}
-            className="absolute top-3 right-3 p-2 rounded-full hover:bg-slate-100 transition-colors z-10"
-          >
-            <X className="h-4 w-4 text-slate-400" />
-          </button>
-
-          <div className="px-5 sm:px-6 pt-7 sm:pt-8 pb-5 sm:pb-6 text-center">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-              <Smartphone className="h-6 w-6 sm:h-7 sm:w-7 text-slate-700" />
-            </div>
-
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1.5">
-              Install EasyCollect
-            </h2>
-            <p className="text-sm text-slate-500 leading-relaxed mb-5">
-              Add to your home screen for quick access — works like a native app.
+          <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-8 lg:px-11">
+            <p className="min-w-0 flex-1 text-sm">
+              <b className="font-semibold">Add EasyCollect to your home screen</b>
+              <span className="text-quiet"> so it opens in one tap.</span>
             </p>
-
-            <div className="flex flex-col gap-2">
-              <Button onClick={handleInstall} className="w-full h-10 sm:h-11 text-sm">
-                <Download className="h-4 w-4 mr-2" />
-                Install App
-              </Button>
-              <button
-                onClick={handleSoftDismiss}
-                className="text-sm text-slate-400 hover:text-slate-600 transition-colors py-1.5"
-              >
-                Maybe later
-              </button>
+            <div className="flex items-center gap-4">
+              <Button size="sm" onClick={handleInstall}>Install</Button>
+              <button type="button" onClick={handleSoftDismiss} className="min-h-9 cursor-pointer text-sm text-quiet underline hover:text-ink">Not now</button>
+              <button type="button" onClick={handleHardDismiss} className="min-h-9 cursor-pointer text-sm text-quiet underline hover:text-ink">Do not ask again</button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* iOS Guide */}
-      {showGuide && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="fixed inset-0 bg-black/40" onClick={() => { setShowGuide(false); handleSoftDismiss(); }} />
-          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-5 sm:p-6 pb-8 safe-bottom">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900">Install on iPhone</h3>
-              <button
-                onClick={() => { setShowGuide(false); handleSoftDismiss(); }}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="h-5 w-5 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Safari required notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-              <p className="text-xs text-amber-800">
-                <span className="font-semibold">Must use Safari</span> — this won't work in Chrome or other browsers on iPhone.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">1</div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Open in Safari</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Go to <span className="font-medium text-blue-600">easycollectja.com</span> in Safari
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">2</div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Tap the menu <span className="text-slate-400">(⋯)</span> or Share button</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Tap <span className="font-mono font-bold text-slate-700">⋯</span> next to the address bar, or tap <Share className="inline h-3.5 w-3.5 text-blue-500 -mt-0.5" /> at the bottom
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">3</div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Tap "Add to Home Screen"</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Scroll down if needed — look for <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700"><Plus className="h-3 w-3" /> Add to Home Screen</span>
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-600">4</div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Keep "Open as Web App" on, tap "Add"</p>
-                  <p className="text-xs text-slate-500 mt-0.5">EasyCollect will appear on your home screen and open like a native app</p>
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={() => { permaDismiss(); setShowGuide(false); setVisible(false); }} className="w-full mt-5 h-10 sm:h-11 text-sm">
-              Got it
-            </Button>
           </div>
         </div>
       )}
+
+      {/* iOS steps */}
+      <Dialog open={showGuide} onOpenChange={(o) => { if (!o) { setShowGuide(false); handleSoftDismiss(); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add EasyCollect on iPhone</DialogTitle>
+            <DialogDescription>This only works in Safari. Chrome and other browsers on iPhone cannot do it.</DialogDescription>
+          </DialogHeader>
+          <ol className="text-[15px]">
+            <li className="grid grid-cols-[24px_1fr] border-t border-rule py-3">
+              <span className="num font-semibold">1</span>
+              <span>Open <b className="font-semibold">easycollectja.com</b> in Safari.</span>
+            </li>
+            <li className="grid grid-cols-[24px_1fr] border-t border-rule py-3">
+              <span className="num font-semibold">2</span>
+              <span>Tap the Share button at the bottom of the screen, or the menu next to the address bar.</span>
+            </li>
+            <li className="grid grid-cols-[24px_1fr] border-t border-rule py-3">
+              <span className="num font-semibold">3</span>
+              <span>Tap <b className="font-semibold">Add to Home Screen</b>. Scroll down if you do not see it.</span>
+            </li>
+            <li className="grid grid-cols-[24px_1fr] border-y border-rule py-3">
+              <span className="num font-semibold">4</span>
+              <span>Leave <b className="font-semibold">Open as Web App</b> on and tap <b className="font-semibold">Add</b>. EasyCollect then opens from your home screen like any other app.</span>
+            </li>
+          </ol>
+          <Button size="lg" className="mt-5 w-full" onClick={() => { permaDismiss(); setShowGuide(false); setVisible(false); }}>
+            Done
+          </Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

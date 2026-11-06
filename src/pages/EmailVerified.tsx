@@ -1,38 +1,23 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
 import BrandLogo from '@/components/BrandLogo';
 import SEO from '@/components/SEO';
 
 export default function EmailVerified() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/80 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-ground text-ink">
       <SEO title="Email Verified" description="Your email has been verified. You can now sign in to EasyCollect." path="/email-verified" />
-      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
-        <div className="flex justify-center mb-8">
-          <Link to="/">
-            <BrandLogo className="text-2xl font-extrabold tracking-tight text-slate-900" />
-          </Link>
-        </div>
+      <header className="bg-shell px-4 py-3 text-white sm:px-8">
+        <Link to="/" className="text-lg"><BrandLogo /></Link>
+      </header>
 
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Email Verified</h2>
-            <p className="text-slate-500 mb-6">
-              Your email has been verified successfully. You can now sign in to your account.
-            </p>
-            <Link to="/login">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Continue to Login
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <main className="mx-auto max-w-md px-4 pt-14 sm:px-8">
+        <h1 className="display text-[34px] font-bold leading-[1.05] sm:text-[40px]">Your email is confirmed</h1>
+        <p className="mt-3 text-[17px] text-quiet">You can sign in now and pick up where you left off.</p>
+        <Link to="/login" className={buttonVariants({ size: 'lg', className: 'mt-6 w-full' })}>
+          Sign in
+        </Link>
+      </main>
     </div>
   );
 }

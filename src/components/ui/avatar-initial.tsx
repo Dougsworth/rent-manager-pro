@@ -17,7 +17,7 @@ export function AvatarInitial({ name, className }: AvatarInitialProps) {
   return (
     <div
       className={cn(
-        "w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm bg-slate-100 text-slate-600",
+        "w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm bg-secondary text-quiet",
         className
       )}
     >

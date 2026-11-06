@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 interface Segment {
   label: string;
   value: number;
+  /** A background class, for example `bg-paid` or `hatch-late`. */
   color: string;
 }
 
@@ -13,59 +14,56 @@ interface ProgressBarProps {
   className?: string;
 }
 
+/** A thin flat bar on a hairline track, with its words beside it. */
 export function ProgressBar({ value, label, segments, className }: ProgressBarProps) {
   const clampedValue = Math.min(100, Math.max(0, value));
 
   if (segments) {
     const total = segments.reduce((sum, s) => sum + s.value, 0);
-
     return (
-      <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
+      <div className={cn("min-w-0", className)}>
         {label && (
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">{label}</p>
-            <p className="text-2xl font-bold text-blue-600">{clampedValue}%</p>
-          </div>
+          <p className="mb-2 flex items-baseline justify-between gap-4 text-[15px]">
+            <span>{label}</span>
+            <span className="num font-semibold">{clampedValue}%</span>
+          </p>
         )}
-        {/* Segmented bar like the mockup */}
-        <div className="w-full flex gap-1 mb-4">
+        <div className="flex h-2 w-full gap-px bg-rule">
           {segments.map((seg, i) => {
             const pct = total > 0 ? (seg.value / total) * 100 : 0;
             if (pct === 0) return null;
-            const count = Math.max(1, Math.round(pct / 4));
-            return Array.from({ length: count }).map((_, j) => (
-              <div
-                key={`${i}-${j}`}
-                className={cn("h-3 flex-1 rounded-sm transition-all duration-500", seg.color)}
-              />
-            ));
+            return <div key={i} className={cn("h-full", seg.color)} style={{ width: `${pct}%` }} />;
           })}
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13.5px] text-quiet">
           {segments.map((seg, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-slate-400">
-              <span className={cn("w-2.5 h-2.5 rounded-full", seg.color)} />
-              <span>{seg.label}</span>
-            </div>
+            <span key={i} className="inline-flex items-center gap-1.5">
+              <span aria-hidden="true" className={cn("h-3 w-1.5", seg.color)} />
+              {seg.label}
+            </span>
           ))}
-        </div>
+        </p>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-2xl glass border border-white/60 p-6", className)}>
+    <div className={cn("min-w-0", className)}>
       {label && (
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-sm font-medium text-slate-900">{label}</p>
-          <p className="text-sm font-semibold text-slate-900">{clampedValue}%</p>
-        </div>
+        <p className="mb-2 flex items-baseline justify-between gap-4 text-[15px]">
+          <span>{label}</span>
+          <span className="num font-semibold">{clampedValue}%</span>
+        </p>
       )}
-      <div className="w-full bg-slate-100/80 rounded-full h-2 overflow-hidden">
-        <div
-          className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
-          style={{ width: `${clampedValue}%` }}
-        />
+      <div
+        role="progressbar"
+        aria-valuenow={clampedValue}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+        className="h-[3px] w-full bg-rule"
+      >
+        <div className="h-full bg-paid" style={{ width: `${clampedValue}%` }} />
       </div>
     </div>
   );

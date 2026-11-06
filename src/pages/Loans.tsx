@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getLoans, createLoan, updateLoan, getLoanInstallments, getLoanStats } from '@/services/loans';
 import { getLoanPaymentsForLoan } from '@/services/loanPayments';
@@ -13,20 +14,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { StatCard } from '@/components/ui/stat-card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
 import { Pagination, paginate } from '@/components/Pagination';
-import { Search, Plus, Loader2, Landmark, DollarSign, TrendingUp, AlertTriangle, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { exportToCsv } from '@/utils/exportCsv';
+import { formatMoney } from '@/lib/money';
+import { cn } from '@/lib/utils';
 
 type LoanStatus = 'all' | 'active' | 'paid_off' | 'defaulted';
-
-function formatCurrency(amount: number): string {
-  return `J$${amount.toLocaleString()}`;
-}
 
 function statusVariant(status: string) {
   if (status === 'paid' || status === 'paid_off') return 'paid' as const;
@@ -36,11 +35,16 @@ function statusVariant(status: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === 'paid_off') return 'Paid Off';
+  if (status === 'paid_off') return 'Paid off';
   if (status === 'defaulted') return 'Defaulted';
   if (status === 'active') return 'Active';
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
 }
+
+const emptyLoan = { borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' };
+
+/** Desktop columns. Below lg each loan stacks into two lines. */
+const COLS = 'lg:grid-cols-[minmax(180px,1fr)_100px_120px_120px_minmax(170px,200px)_128px]';
 
 export default function Loans() {
   const { user } = useAuth();
@@ -57,7 +61,7 @@ export default function Loans() {
   // Create loan modal
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [loanForm, setLoanForm] = useState({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' });
+  const [loanForm, setLoanForm] = useState(emptyLoan);
   const [formError, setFormError] = useState('');
 
   // Loan detail expansion
@@ -106,11 +110,14 @@ export default function Loans() {
   const tabs = [
     { value: 'all' as LoanStatus, label: 'All', count: loans.length },
     { value: 'active' as LoanStatus, label: 'Active', count: loans.filter(l => l.status === 'active').length },
-    { value: 'paid_off' as LoanStatus, label: 'Paid Off', count: loans.filter(l => l.status === 'paid_off').length },
+    { value: 'paid_off' as LoanStatus, label: 'Paid off', count: loans.filter(l => l.status === 'paid_off').length },
     { value: 'defaulted' as LoanStatus, label: 'Defaulted', count: loans.filter(l => l.status === 'defaulted').length },
   ];
 
-  const handleCreateLoan = async () => {
+  const openCreate = () => { setLoanForm(emptyLoan); setFormError(''); setShowCreate(true); };
+
+  const handleCreateLoan = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setFormError('');
     const result = createLoanSchema.safeParse(loanForm);
     if (!result.success) {
@@ -127,12 +134,12 @@ export default function Loans() {
         start_date: loanForm.start_date,
         notes: loanForm.notes || undefined,
       });
-      toast('Loan created successfully!');
+      toast('Loan created. Its repayment schedule is ready.', 'success');
       setShowCreate(false);
-      setLoanForm({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' });
+      setLoanForm(emptyLoan);
       await loadData();
     } catch (err) {
-      setFormError('Failed to create loan');
+      setFormError('That loan did not save. Check your connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -166,7 +173,8 @@ export default function Loans() {
     setShowPayment(true);
   };
 
-  const handleRecordPayment = async () => {
+  const handleRecordPayment = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setFormError('');
     const result = createLoanPaymentSchema.safeParse({ ...paymentForm, loan_id: paymentLoanId });
     if (!result.success) {
@@ -182,7 +190,7 @@ export default function Loans() {
         payment_date: paymentForm.payment_date || undefined,
         notes: paymentForm.notes || undefined,
       });
-      toast('Payment recorded!');
+      toast(`${formatMoney(Number(paymentForm.amount))} recorded.`, 'success');
       setShowPayment(false);
       // Refresh detail if expanded
       if (expandedLoanId === paymentLoanId) {
@@ -195,7 +203,7 @@ export default function Loans() {
       }
       await loadData();
     } catch (err) {
-      setFormError('Failed to record payment');
+      setFormError('That payment did not save. Check your connection and try again.');
     } finally {
       setRecording(false);
     }
@@ -230,13 +238,13 @@ export default function Loans() {
   };
 
   const handleMarkDefaulted = async (loanId: string) => {
-    if (!confirm('Mark this loan as defaulted?')) return;
+    if (!confirm('Mark this loan as defaulted? It stops counting as active.')) return;
     try {
       await updateLoan(loanId, { status: 'defaulted' });
-      toast('Loan marked as defaulted');
+      toast('Loan marked as defaulted.');
       await loadData();
     } catch (err) {
-      toast('Failed to update loan', 'error');
+      toast('That loan was not updated. Try again.', 'error');
     }
   };
 
@@ -252,233 +260,206 @@ export default function Loans() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-        <PageHeader title="Loans" />
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-20 rounded-xl bg-white/60 animate-pulse" />)}
-        </div>
-        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl bg-white/60 animate-pulse" />)}</div>
+      <div aria-busy="true" aria-label="Loading loans">
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="mt-6 h-6 w-full max-w-xl" />
+        <div className="mt-8 space-y-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-11 w-full" />)}</div>
       </div>
     );
   }
 
+  const paymentLoan = loans.find(l => l.id === paymentLoanId);
+
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+    <>
       <PageHeader
         title="Loans"
         count={loans.length}
-        action={
-          <div className="flex gap-2">
-            {loans.length > 0 && (
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-1.5" />
-                Export
-              </Button>
-            )}
-            <Button size="sm" onClick={() => { setLoanForm({ borrower_id: '', principal: '', interest_rate: '0', term_months: '', start_date: '', notes: '' }); setFormError(''); setShowCreate(true); }}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Loan
-            </Button>
-          </div>
-        }
+        description="Money you have lent, what has come back and what is still owed."
+        action={<Button onClick={openCreate}>New loan</Button>}
       />
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-        <StatCard label="Total Lent" value={formatCurrency(stats.totalLent)} icon={Landmark} />
-        <StatCard label="Collected" value={formatCurrency(stats.totalCollected)} icon={DollarSign} />
-        <StatCard label="Outstanding" value={formatCurrency(stats.totalOutstanding)} icon={TrendingUp} />
-        <StatCard label="Active Loans" value={String(stats.activeLoanCount)} icon={Landmark} />
-        <StatCard label="Overdue" value={String(stats.overdueInstallments)} icon={AlertTriangle} />
-      </div>
+      {loans.length > 0 && (
+        <p className="num mb-6 flex flex-wrap items-baseline gap-x-8 gap-y-1 border-b border-rule pb-5 text-base">
+          <span><b className="text-[22px] font-bold">{formatMoney(stats.totalOutstanding)}</b> still owed to you</span>
+          <span><b className="font-semibold">{formatMoney(stats.totalCollected)}</b> repaid of {formatMoney(stats.totalLent)} lent</span>
+          <span>{stats.activeLoanCount} active {stats.activeLoanCount === 1 ? 'loan' : 'loans'}</span>
+          <span>
+            {stats.overdueInstallments > 0
+              ? <b className="font-semibold text-late">{stats.overdueInstallments} {stats.overdueInstallments === 1 ? 'installment' : 'installments'} late</b>
+              : <b className="font-semibold text-paid">Nothing late</b>}
+          </span>
+        </p>
+      )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <FilterTabs tabs={tabs} activeTab={activeTab} onTabChange={(v) => { setActiveTab(v); setCurrentPage(1); }} />
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input placeholder="Search loans..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="pl-9" />
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <label htmlFor="loan-search" className="sr-only">Search loans</label>
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-quiet" />
+          <Input id="loan-search" placeholder="Search by borrower or loan number" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="pl-9" />
         </div>
+        {loans.length > 0 && <Button variant="ghost" onClick={handleExport} className="-ml-3.5 self-start sm:-mr-3.5 sm:ml-0 sm:self-auto">Export CSV</Button>}
       </div>
 
-      {/* Loan List */}
+      <FilterTabs tabs={tabs} activeTab={activeTab} onTabChange={(v) => { setActiveTab(v); setCurrentPage(1); }} />
+
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={Landmark}
-          message="No loans yet"
-          description="Create a loan to start tracking repayments"
-          action={<Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1.5" />New Loan</Button>}
-        />
+        loans.length === 0 ? (
+          <EmptyState
+            message="No loans yet"
+            description="Add a loan and EasyCollect builds the repayment schedule and tells you when a payment is late."
+            action={<Button onClick={openCreate}>New loan</Button>}
+          />
+        ) : (
+          <p className="py-8 text-[15px] text-quiet">No loans match. Try another name, number or tab.</p>
+        )
       ) : (
         <>
-          <div className="space-y-2">
-            {pageItems.map(loan => {
-              const isExpanded = expandedLoanId === loan.id;
-              const progress = loan.principal > 0 ? Math.min(100, Math.round((loan.total_paid / loan.principal) * 100)) : 0;
+          <div className="lg:overflow-x-auto">
+            <div className="lg:min-w-[800px]">
+              <div className={cn('hidden gap-x-4 py-2 text-[13.5px] text-quiet lg:grid', COLS)}>
+                <span>Borrower</span>
+                <span>Status</span>
+                <span className="text-right">Lent</span>
+                <span className="text-right">Each month</span>
+                <span>Repaid</span>
+                <span className="sr-only">Details</span>
+              </div>
+              <ul>
+                {pageItems.map(loan => {
+                  const isExpanded = expandedLoanId === loan.id;
+                  const progress = loan.principal > 0 ? Math.min(100, Math.round((loan.total_paid / loan.principal) * 100)) : 0;
+                  const detailId = `loan-detail-${loan.id}`;
 
-              return (
-                <div key={loan.id} className="bg-white rounded-xl border border-slate-200/60 overflow-hidden">
-                  {/* Loan Row */}
-                  <button
-                    onClick={() => toggleExpand(loan.id)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-slate-400">{loan.loan_number}</span>
-                          <StatusBadge variant={statusVariant(loan.status)}>
-                            {statusLabel(loan.status)}
-                          </StatusBadge>
+                  return (
+                    <li key={loan.id} className="border-t border-rule">
+                      <div className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3', COLS)}>
+                        <div className="min-w-0">
+                          <Link to={`/borrowers/${loan.borrower_id}`} className={cn('block truncate text-base text-ink hover:underline', loan.status === 'defaulted' ? 'font-semibold' : 'font-medium')}>
+                            {loan.borrower_first_name} {loan.borrower_last_name}
+                          </Link>
+                          <span className="num block text-[13.5px] text-quiet">{loan.loan_number}</span>
                         </div>
-                        <p className="text-sm font-medium text-slate-900 mt-0.5">
-                          {loan.borrower_first_name} {loan.borrower_last_name}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="hidden sm:flex items-center gap-6 text-right">
-                      <div>
-                        <p className="text-xs text-slate-400">Principal</p>
-                        <p className="text-sm font-medium text-slate-900">{formatCurrency(loan.principal)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-400">Monthly</p>
-                        <p className="text-sm font-medium text-slate-900">{formatCurrency(loan.monthly_installment)}</p>
-                      </div>
-                      <div className="w-24">
-                        <p className="text-xs text-slate-400 mb-1">Paid {progress}%</p>
-                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                        <span className="num text-right text-base font-semibold lg:order-3">{formatMoney(loan.principal)}</span>
+
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[13.5px] text-quiet lg:contents lg:text-sm">
+                          <StatusBadge variant={statusVariant(loan.status)} className="lg:order-2">{statusLabel(loan.status)}</StatusBadge>
+                          <span className="num lg:order-4 lg:text-right lg:text-ink">{formatMoney(loan.monthly_installment)}<span className="lg:hidden"> a month</span></span>
+                          <div className="flex items-center gap-2 lg:order-5">
+                            <span className="num whitespace-nowrap lg:text-ink">{progress}% repaid</span>
+                            <span aria-hidden="true" className="hidden h-[3px] min-w-12 flex-1 bg-rule lg:block">
+                              <span className="block h-full bg-paid" style={{ width: `${progress}%` }} />
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right lg:order-6">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(loan.id)}
+                            aria-expanded={isExpanded}
+                            aria-controls={detailId}
+                            className="inline-flex min-h-10 cursor-pointer items-center gap-1 whitespace-nowrap text-sm font-semibold text-shell hover:text-paid"
+                          >
+                            {isExpanded ? 'Hide schedule' : 'Schedule'}
+                            <ChevronDown aria-hidden="true" className={cn('h-4 w-4 transition-transform duration-150', isExpanded && 'rotate-180')} />
+                          </button>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="ml-3">
-                      {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
-                    </div>
-                  </button>
+                      {isExpanded && (
+                        <div id={detailId} className="pb-6 pt-1 lg:pl-0">
+                          {loadingDetail ? (
+                            <p className="py-4 text-[15px] text-quiet" aria-busy="true">Loading the schedule</p>
+                          ) : (
+                            <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
+                              <div className="min-w-0">
+                                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+                                  <div><dt className="text-[13.5px] text-quiet">Interest</dt><dd className="num text-[15px]">{loan.interest_rate}% a year</dd></div>
+                                  <div><dt className="text-[13.5px] text-quiet">Term</dt><dd className="num text-[15px]">{loan.term_months} months</dd></div>
+                                  <div><dt className="text-[13.5px] text-quiet">Started</dt><dd className="num text-[15px]">{formatDate(loan.start_date)}</dd></div>
+                                  <div><dt className="text-[13.5px] text-quiet">Ends</dt><dd className="num text-[15px]">{formatDate(loan.end_date)}</dd></div>
+                                </dl>
 
-                  {/* Mobile stats */}
-                  <div className="sm:hidden px-4 pb-3 flex items-center gap-4 text-xs text-slate-500">
-                    <span>{formatCurrency(loan.principal)}</span>
-                    <span>{formatCurrency(loan.monthly_installment)}/mo</span>
-                    <span>{progress}% paid</span>
-                  </div>
-
-                  {/* Expanded Detail */}
-                  {isExpanded && (
-                    <div className="border-t border-slate-100 p-4 bg-slate-50/50">
-                      {loadingDetail ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-500 py-4 justify-center">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {/* Loan Info */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                            <div><span className="text-slate-400">Interest Rate</span><p className="font-medium">{loan.interest_rate}%</p></div>
-                            <div><span className="text-slate-400">Term</span><p className="font-medium">{loan.term_months} months</p></div>
-                            <div><span className="text-slate-400">Start</span><p className="font-medium">{formatDate(loan.start_date)}</p></div>
-                            <div><span className="text-slate-400">End</span><p className="font-medium">{formatDate(loan.end_date)}</p></div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex gap-2">
-                            {loan.status === 'active' && (
-                              <>
-                                <Button size="sm" onClick={() => openPaymentModal(loan.id, loan.monthly_installment)}>
-                                  <DollarSign className="h-4 w-4 mr-1" />Record Payment
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => handleMarkDefaulted(loan.id)}>
-                                  Mark Defaulted
-                                </Button>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Installment Schedule */}
-                          <div>
-                            <h4 className="text-sm font-medium text-slate-900 mb-2">Installment Schedule</h4>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="text-left text-xs text-slate-400 border-b border-slate-200/60">
-                                    <th className="pb-2 font-medium">#</th>
-                                    <th className="pb-2 font-medium">Due Date</th>
-                                    <th className="pb-2 font-medium text-right">Amount</th>
-                                    <th className="pb-2 font-medium text-right">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {installments.map(inst => {
-                                    const isOverdue = inst.status === 'pending' && new Date(inst.due_date) < new Date();
-                                    return (
-                                      <tr key={inst.id} className="border-b border-slate-100 last:border-0">
-                                        <td className="py-2 text-slate-600">{inst.installment_number}</td>
-                                        <td className="py-2 text-slate-600">{formatDate(inst.due_date)}</td>
-                                        <td className="py-2 text-right text-slate-900 font-medium">{formatCurrency(inst.amount)}</td>
-                                        <td className="py-2 text-right">
-                                          <StatusBadge variant={isOverdue ? 'overdue' : statusVariant(inst.status)}>
-                                            {isOverdue ? 'Overdue' : statusLabel(inst.status)}
-                                          </StatusBadge>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-
-                          {/* Payment History */}
-                          {loanPayments.length > 0 && (
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-900 mb-2">Payment History</h4>
-                              <div className="space-y-1.5">
-                                {loanPayments.map(p => (
-                                  <div key={p.id} className="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2 border border-slate-100">
-                                    <div>
-                                      <span className="text-xs font-mono text-slate-400 mr-2">{p.payment_number}</span>
-                                      <span className="text-slate-600">{formatDate(p.payment_date)}</span>
-                                    </div>
-                                    <span className="font-medium text-slate-900">{formatCurrency(p.amount)}</span>
+                                {loan.status === 'active' && (
+                                  <div className="mt-4 flex flex-wrap gap-2">
+                                    <Button onClick={() => openPaymentModal(loan.id, loan.monthly_installment)}>Record payment</Button>
+                                    <Button variant="ghost" className="text-late" onClick={() => handleMarkDefaulted(loan.id)}>Mark defaulted</Button>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                )}
 
-                          {loan.notes && (
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-900 mb-1">Notes</h4>
-                              <p className="text-sm text-slate-500">{loan.notes}</p>
+                                <h3 className="mb-2 mt-6 text-[15px] font-semibold">Repayment schedule</h3>
+                                {installments.length === 0 ? (
+                                  <p className="border-t border-rule py-3 text-[15px] text-quiet">No installments yet.</p>
+                                ) : (
+                                  <ol>
+                                    {installments.map(inst => {
+                                      const isOverdue = inst.status === 'pending' && new Date(inst.due_date) < new Date();
+                                      return (
+                                        <li key={inst.id} className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 border-t border-rule py-2 text-[15px] sm:grid-cols-[28px_120px_minmax(0,1fr)_120px]">
+                                          <span className="num text-quiet">{inst.installment_number}</span>
+                                          <span className="num">{formatDate(inst.due_date)}</span>
+                                          <span className="num text-right font-medium sm:order-4">{formatMoney(inst.amount)}</span>
+                                          <StatusBadge variant={isOverdue ? 'overdue' : statusVariant(inst.status)} className="col-start-2 sm:col-start-auto">
+                                            {isOverdue ? 'Late' : statusLabel(inst.status)}
+                                          </StatusBadge>
+                                        </li>
+                                      );
+                                    })}
+                                  </ol>
+                                )}
+                              </div>
+
+                              <div className="min-w-0">
+                                <h3 className="mb-2 text-[15px] font-semibold">Payments received</h3>
+                                {loanPayments.length === 0 ? (
+                                  <p className="border-t border-rule py-3 text-[15px] text-quiet">Nothing received yet.</p>
+                                ) : (
+                                  <ul>
+                                    {loanPayments.map(p => (
+                                      <li key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 border-t border-rule py-2 text-[15px]">
+                                        <span className="num">{formatDate(p.payment_date)} <span className="text-[13.5px] text-quiet">{p.payment_number}</span></span>
+                                        <span className="num font-medium">{formatMoney(p.amount)}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                                {loan.notes && (
+                                  <>
+                                    <h3 className="mb-1 mt-6 text-[15px] font-semibold">Notes</h3>
+                                    <p className="text-[15px] text-quiet">{loan.notes}</p>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
                       )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
           <Pagination currentPage={currentPage} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} />
         </>
       )}
 
-      {/* Create Loan Modal */}
+      {/* New loan */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
-          <DialogHeader><DialogTitle>New Loan</DialogTitle></DialogHeader>
-          {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
-          <div className="space-y-4">
+          <DialogHeader><DialogTitle>New loan</DialogTitle></DialogHeader>
+          <form onSubmit={handleCreateLoan} className="space-y-4">
+            {formError && <p role="alert" className="text-sm font-medium text-late">{formError}</p>}
             <div>
-              <Label>Borrower *</Label>
+              <Label htmlFor="loan-borrower">Borrower</Label>
               <Select
+                id="loan-borrower"
+                className="mt-1"
                 value={loanForm.borrower_id}
                 onValueChange={(v: string) => setLoanForm(f => ({ ...f, borrower_id: v }))}
-                placeholder="Select borrower..."
+                placeholder="Choose a borrower"
                 options={borrowers.filter(b => b.status === 'active').map(b => ({
                   value: b.id,
                   label: `${b.first_name} ${b.last_name}`,
@@ -487,67 +468,72 @@ export default function Loans() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Loan Amount (J$) *</Label>
-                <Input type="number" value={loanForm.principal} onChange={e => setLoanForm(f => ({ ...f, principal: e.target.value }))} placeholder="e.g. 100000" />
+                <Label htmlFor="loan-principal">Amount lent (J$)</Label>
+                <Input id="loan-principal" className="num mt-1" type="number" inputMode="numeric" value={loanForm.principal} onChange={e => setLoanForm(f => ({ ...f, principal: e.target.value }))} placeholder="100000" />
               </div>
               <div>
-                <Label>Interest Rate (% annual)</Label>
-                <Input type="number" step="0.01" value={loanForm.interest_rate} onChange={e => setLoanForm(f => ({ ...f, interest_rate: e.target.value }))} placeholder="e.g. 10" />
+                <Label htmlFor="loan-rate">Interest, % a year</Label>
+                <Input id="loan-rate" className="num mt-1" type="number" step="0.01" value={loanForm.interest_rate} onChange={e => setLoanForm(f => ({ ...f, interest_rate: e.target.value }))} placeholder="10" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Term (months) *</Label>
-                <Input type="number" value={loanForm.term_months} onChange={e => setLoanForm(f => ({ ...f, term_months: e.target.value }))} placeholder="e.g. 12" />
+                <Label htmlFor="loan-term">Months to repay</Label>
+                <Input id="loan-term" className="num mt-1" type="number" inputMode="numeric" value={loanForm.term_months} onChange={e => setLoanForm(f => ({ ...f, term_months: e.target.value }))} placeholder="12" />
               </div>
               <div>
-                <Label>Start Date *</Label>
-                <Input type="date" value={loanForm.start_date} onChange={e => setLoanForm(f => ({ ...f, start_date: e.target.value }))} />
+                <Label htmlFor="loan-start">Start date</Label>
+                <Input id="loan-start" className="mt-1" type="date" value={loanForm.start_date} onChange={e => setLoanForm(f => ({ ...f, start_date: e.target.value }))} />
               </div>
             </div>
             <div>
-              <Label>Notes</Label>
-              <Input value={loanForm.notes} onChange={e => setLoanForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional notes" />
+              <Label htmlFor="loan-notes">Notes</Label>
+              <Input id="loan-notes" className="mt-1" value={loanForm.notes} onChange={e => setLoanForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
             </div>
 
-            {/* Preview */}
             {previewMonthly > 0 && (
-              <div className="bg-blue-50 rounded-lg p-3 text-sm space-y-1">
-                <p className="text-blue-700"><span className="font-medium">Monthly Payment:</span> {formatCurrency(previewMonthly)}</p>
-                <p className="text-blue-700"><span className="font-medium">Total Repayment:</span> {formatCurrency(previewTotal)}</p>
-                <p className="text-blue-600 text-xs">Total interest: {formatCurrency(previewTotal - Number(loanForm.principal))}</p>
-              </div>
+              <dl className="num grid grid-cols-3 gap-3 border-t border-rule pt-3 text-[15px]">
+                <div><dt className="text-[13.5px] text-quiet">Each month</dt><dd className="font-semibold">{formatMoney(previewMonthly)}</dd></div>
+                <div><dt className="text-[13.5px] text-quiet">Repaid in total</dt><dd>{formatMoney(previewTotal)}</dd></div>
+                <div><dt className="text-[13.5px] text-quiet">Interest</dt><dd>{formatMoney(previewTotal - Number(loanForm.principal))}</dd></div>
+              </dl>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button onClick={handleCreateLoan} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Create Loan
-              </Button>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button type="submit" disabled={creating}>{creating ? 'Creating' : 'Create loan'}</Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
-      {/* Record Payment Modal */}
+      {/* Record a loan payment */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Record Loan Payment</DialogTitle></DialogHeader>
-          {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
-          <div className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Record a loan payment</DialogTitle>
+            {paymentLoan && (
+              <p className="mt-1 text-[15px] text-quiet">
+                {paymentLoan.borrower_first_name} {paymentLoan.borrower_last_name}, <span className="num">{paymentLoan.loan_number}</span>
+              </p>
+            )}
+          </DialogHeader>
+          <form onSubmit={handleRecordPayment} className="space-y-4">
+            {formError && <p role="alert" className="text-sm font-medium text-late">{formError}</p>}
             <div>
-              <Label>Amount (J$) *</Label>
-              <Input type="number" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} />
+              <Label htmlFor="loanpay-amount">Amount received (J$)</Label>
+              <Input id="loanpay-amount" className="num mt-1" type="number" inputMode="numeric" autoFocus value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Method</Label>
+                <Label htmlFor="loanpay-method">How they paid</Label>
                 <Select
+                  id="loanpay-method"
+                  className="mt-1"
                   value={paymentForm.method}
                   onValueChange={(v: string) => setPaymentForm(f => ({ ...f, method: v }))}
                   options={[
-                    { value: 'bank_transfer', label: 'Bank Transfer' },
+                    { value: 'bank_transfer', label: 'Bank transfer' },
                     { value: 'cash', label: 'Cash' },
                     { value: 'card', label: 'Card' },
                     { value: 'other', label: 'Other' },
@@ -555,24 +541,21 @@ export default function Loans() {
                 />
               </div>
               <div>
-                <Label>Payment Date</Label>
-                <Input type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm(f => ({ ...f, payment_date: e.target.value }))} />
+                <Label htmlFor="loanpay-date">Date paid</Label>
+                <Input id="loanpay-date" className="mt-1" type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm(f => ({ ...f, payment_date: e.target.value }))} />
               </div>
             </div>
             <div>
-              <Label>Notes</Label>
-              <Input value={paymentForm.notes} onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
+              <Label htmlFor="loanpay-notes">Note</Label>
+              <Input id="loanpay-notes" className="mt-1" value={paymentForm.notes} onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowPayment(false)}>Cancel</Button>
-              <Button onClick={handleRecordPayment} disabled={recording}>
-                {recording && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Record Payment
-              </Button>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="ghost" onClick={() => setShowPayment(false)}>Cancel</Button>
+              <Button type="submit" disabled={recording}>{recording ? 'Saving' : 'Save payment'}</Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

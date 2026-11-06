@@ -6,19 +6,19 @@ function formatCurrency(amount: number): string {
 }
 
 const methodLabels: Record<string, string> = {
-  bank_transfer: 'Bank Transfer',
+  bank_transfer: 'Bank transfer',
   card: 'Card',
   cash: 'Cash',
   other: 'Other',
 };
 
-// Brand palette (EasyCollect blue + supporting tones)
-const BRAND: [number, number, number] = [33, 102, 240];
-const GREEN: [number, number, number] = [22, 163, 74];
-const GREEN_BG: [number, number, number] = [236, 253, 245];
-const SLATE: [number, number, number] = [30, 41, 59];
-const MUTED: [number, number, number] = [100, 116, 139];
-const LINE: [number, number, number] = [226, 232, 240];
+// EasyCollect palette (see DESIGN.md). Helvetica stands in for Archivo,
+// which jsPDF cannot embed from the self hosted woff2 files.
+const BRAND: [number, number, number] = [14, 59, 48]; // shell
+const GREEN: [number, number, number] = [14, 90, 71]; // paid
+const SLATE: [number, number, number] = [18, 36, 29]; // ink
+const MUTED: [number, number, number] = [85, 99, 91]; // quiet
+const LINE: [number, number, number] = [218, 216, 207]; // rule
 
 // Logo assets (served from /public)
 const BADGE_SRC = '/easycollect.png'; // white EC on blue tile — header badge
@@ -158,11 +158,11 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   setColor(SLATE);
-  doc.text('PAYMENT RECEIPT', right, y + 14, { align: 'right' });
+  doc.text('Receipt', right, y + 14, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   setColor(MUTED);
-  doc.text(`Receipt #${payment.payment_number}`, right, y + 30, { align: 'right' });
+  doc.text(String(payment.payment_number), right, y + 30, { align: 'right' });
   doc.text(formatDate(payment.payment_date), right, y + 43, { align: 'right' });
 
   y += badgeSize + 16;
@@ -171,34 +171,32 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
   doc.line(margin, y, right, y);
   y += 22;
 
-  // ---------------- Amount hero ----------------
+  // ---------------- Amount ----------------
   const heroH = 62;
   ensureSpace(heroH + 10);
-  setFill(GREEN_BG);
-  doc.roundedRect(margin, y, contentWidth, heroH, 8, 8, 'F');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
   setColor(MUTED);
-  doc.text('AMOUNT PAID', margin + 18, y + 22);
+  doc.text('Amount paid', margin, y + 10);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  setColor(GREEN);
-  doc.text(formatCurrency(payment.amount), margin + 18, y + 47);
+  doc.setFontSize(28);
+  setColor(SLATE);
+  doc.text(formatCurrency(payment.amount), margin, y + 40);
 
-  // "PAID" pill on the right
-  const pillW = 54;
-  const pillH = 22;
-  const pillX = right - 18 - pillW;
-  const pillY = y + (heroH - pillH) / 2;
+  // Paid: a small drawn mark plus the word, like the app's status marks
   setFill(GREEN);
-  doc.roundedRect(pillX, pillY, pillW, pillH, 11, 11, 'F');
+  doc.rect(margin, y + 50, 4, 9, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text('PAID', pillX + pillW / 2, pillY + 14.5, { align: 'center' });
+  setColor(GREEN);
+  doc.text('Paid', margin + 10, y + 58);
 
-  y += heroH + 26;
+  y += heroH + 16;
+  setStroke(LINE);
+  doc.setLineWidth(0.75);
+  doc.line(margin, y, right, y);
+  y += 22;
 
   // ---------------- Two columns: Billed To / Paid To ----------------
   const colGap = 24;
@@ -208,22 +206,22 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
 
   const heading = (text: string, x: number) => {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    setColor(BRAND);
-    doc.text(text.toUpperCase(), x, y);
+    doc.setFontSize(10);
+    setColor(SLATE);
+    doc.text(text, x, y);
   };
 
   const tenantLines: { text: string; bold?: boolean }[] = [
-    { text: `${tenant?.first_name ?? ''} ${tenant?.last_name ?? ''}`.trim() || 'N/A', bold: true },
+    { text: `${tenant?.first_name ?? ''} ${tenant?.last_name ?? ''}`.trim() || 'Not recorded', bold: true },
     ...(tenant?.email ? [{ text: tenant.email }] : []),
     ...(tenant?.phone ? [{ text: tenant.phone }] : []),
-    ...(unit?.name ? [{ text: `Unit: ${unit.name}` }] : []),
+    ...(unit?.name ? [{ text: unit.name }] : []),
   ];
 
   const landlordName =
     profile?.company_name || `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim();
   const landlordLines: { text: string; bold?: boolean }[] = [
-    { text: landlordName || 'N/A', bold: true },
+    { text: landlordName || 'Not recorded', bold: true },
     ...(profile?.email ? [{ text: profile.email }] : []),
     ...(profile?.phone ? [{ text: profile.phone }] : []),
     ...(profile?.company_address ? [{ text: profile.company_address }] : []),
@@ -232,8 +230,8 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
   const blockHeight = Math.max(tenantLines.length, landlordLines.length) * 14 + 16;
   ensureSpace(blockHeight + 10);
 
-  heading('Billed To', leftX);
-  heading('Paid To', rightX);
+  heading('Paid by', leftX);
+  heading('Paid to', rightX);
   const blockTop = y + 14;
 
   const drawBlock = (lines: { text: string; bold?: boolean }[], x: number) => {
@@ -253,22 +251,22 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
 
   // ---------------- Payment details table ----------------
   const detailRows: [string, string][] = [
-    ['Payment Number', String(payment.payment_number)],
-    ['Payment Method', methodLabels[payment.method] ?? payment.method],
-    ['Payment Date', formatDate(payment.payment_date)],
+    ['Payment number', String(payment.payment_number)],
+    ['How', methodLabels[payment.method] ?? payment.method],
+    ['Date paid', formatDate(payment.payment_date)],
   ];
   if (invoice?.invoice_number) detailRows.push(['Invoice', invoice.invoice_number]);
-  if (invoice?.description) detailRows.push(['Description', invoice.description]);
+  if (invoice?.description) detailRows.push(['For', invoice.description]);
   if (property?.name) detailRows.push(['Property', property.name]);
-  if (property?.address) detailRows.push(['Property Address', property.address]);
+  if (property?.address) detailRows.push(['Address', property.address]);
 
   const rowH = 26;
   ensureSpace(22 + rowH); // heading + at least one row before breaking
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  setColor(BRAND);
-  doc.text('PAYMENT DETAILS', margin, y);
+  doc.setFontSize(10);
+  setColor(SLATE);
+  doc.text('Payment', margin, y);
   y += 12;
   setStroke(LINE);
   doc.setLineWidth(1);
@@ -281,9 +279,9 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
     doc.setFontSize(10);
     setColor(MUTED);
     doc.text(label, margin + 4, rowMid);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('helvetica', 'normal');
     setColor(SLATE);
-    const wrapped = doc.splitTextToSize(String(value || 'N/A'), contentWidth * 0.55);
+    const wrapped = doc.splitTextToSize(String(value || 'Not recorded'), contentWidth * 0.55);
     doc.text(wrapped, right - 4, rowMid, { align: 'right' });
     y += rowH;
     setStroke(LINE);
@@ -312,9 +310,9 @@ export async function generateReceiptPdf({ payment, profile, options = {} }: Rec
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   setColor(MUTED);
-  doc.text('This receipt serves as proof of payment. Please keep it for your records.', margin, y);
+  doc.text('This receipt is proof of payment. Keep it for your records.', margin, y);
   y += 13;
-  doc.text(`Generated on ${formatDate(new Date().toISOString())} via EasyCollect`, margin, y);
+  doc.text(`Made on ${formatDate(new Date().toISOString())} with EasyCollect.`, margin, y);
 
   // ---------------- Page numbers (only if more than one page) ----------------
   const pageCount = doc.getNumberOfPages();

@@ -5,14 +5,10 @@ import { getInvoicesForTenant } from '@/services/invoices';
 import { uploadProofImage, submitPaymentProof, getProofsForInvoice } from '@/services/paymentProofs';
 import type { Invoice, PaymentProof, Profile } from '@/types/app.types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Calendar, Upload, Loader2, CheckCircle, XCircle, Clock, Image as ImageIcon, X, CreditCard } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 import { formatDate } from '@/utils/formatDate';
-
-function formatCurrency(amount: number): string {
-  return `J$${amount.toLocaleString()}`;
-}
+import { formatMoney } from '@/lib/money';
 
 interface TenantRecord {
   id: string;
@@ -21,22 +17,62 @@ interface TenantRecord {
   last_name: string;
 }
 
+function CopyValue({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-t border-rule py-2.5">
+      <div className="min-w-0">
+        <dt className="text-[13.5px] text-quiet">{label}</dt>
+        <dd className="num truncate text-base font-semibold">{value}</dd>
+      </div>
+      <button
+        type="button"
+        onClick={async () => { try { await navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ } }}
+        className="min-h-11 cursor-pointer px-2 text-sm font-semibold text-shell underline"
+        aria-label={`Copy ${label.toLowerCase()}`}
+      >
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
+function Shell({ children, onSignOut }: { children: React.ReactNode; onSignOut?: () => void }) {
+  return (
+    <div className="min-h-screen bg-ground text-ink">
+      <header className="bg-shell text-white">
+        <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-5">
+          <span className="text-lg"><BrandLogo /></span>
+          {onSignOut && (
+            <button type="button" onClick={onSignOut} className="min-h-11 cursor-pointer text-sm text-shell-ink underline hover:text-white">Sign out</button>
+          )}
+        </div>
+      </header>
+      <main className="mx-auto max-w-lg px-5 pb-16 pt-7">{children}</main>
+    </div>
+  );
+}
+
+/** What a signed in tenant sees: what they owe, where to send it, and a way to show they paid. */
 export default function TenantPayment() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [proofsByInvoice, setProofsByInvoice] = useState<Record<string, PaymentProof[]>>({});
   const [tenantRecord, setTenantRecord] = useState<TenantRecord | null>(null);
   const [landlordProfile, setLandlordProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [checkingOutFor, setCheckingOutFor] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     if (!user) return;
+    setLoadError(false);
     try {
       // Get tenant record linked to this profile
       const { data: tenant } = await supabase
@@ -74,6 +110,7 @@ export default function TenantPayment() {
       setProofsByInvoice(proofMap);
     } catch (err) {
       console.error('Failed to load tenant data:', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -87,6 +124,7 @@ export default function TenantPayment() {
     setUploadingFor(invoiceId);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setError(null);
     fileInputRef.current?.click();
   };
 
@@ -102,6 +140,7 @@ export default function TenantPayment() {
   const handleSubmitProof = async () => {
     if (!selectedFile || !uploadingFor || !tenantRecord) return;
     setSubmitting(true);
+    setError(null);
     try {
       const imageUrl = await uploadProofImage(selectedFile);
       await submitPaymentProof(uploadingFor, tenantRecord.id, tenantRecord.landlord_id, imageUrl);
@@ -111,6 +150,7 @@ export default function TenantPayment() {
       await loadData();
     } catch (err) {
       console.error('Failed to submit proof:', err);
+      setError('Your screenshot did not send. Check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -118,6 +158,7 @@ export default function TenantPayment() {
 
   const handlePayOnline = async (invoiceId: string) => {
     setCheckingOutFor(invoiceId);
+    setError(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('handypay-checkout', {
         body: { invoice_id: invoiceId },
@@ -132,6 +173,7 @@ export default function TenantPayment() {
       }
     } catch (err) {
       console.error('Checkout error:', err);
+      setError('HandyPay did not open. Try again, or pay by bank transfer.');
       setCheckingOutFor(null);
     }
   };
@@ -150,224 +192,154 @@ export default function TenantPayment() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <Shell>
+        <p aria-busy="true" className="text-quiet">Opening your invoices</p>
+      </Shell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Shell onSignOut={signOut}>
+        <h1 className="text-2xl font-semibold">We could not load your invoices</h1>
+        <p className="mt-2 text-base text-quiet">Check your connection and try again.</p>
+        <Button size="lg" className="mt-5 w-full" onClick={() => { setLoading(true); loadData(); }}>Try again</Button>
+      </Shell>
     );
   }
 
   if (!tenantRecord) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">No tenant record linked to your account.</p>
-      </div>
+      <Shell onSignOut={signOut}>
+        <h1 className="text-2xl font-semibold">Your account is not linked to a rental yet</h1>
+        <p className="mt-2 text-base text-quiet">Ask your landlord to add you as a tenant using the email you signed up with. Your invoices will show here after that.</p>
+      </Shell>
     );
   }
 
   const unpaidInvoices = invoices.filter(inv => inv.status !== 'paid');
   const paidInvoices = invoices.filter(inv => inv.status === 'paid');
+  const owed = unpaidInvoices.reduce((s, inv) => s + Number(inv.amount || 0), 0);
+  const lateCount = unpaidInvoices.filter(inv => inv.status === 'overdue').length;
 
   const hasBankDetails = landlordProfile?.bank_name || landlordProfile?.bank_account_name || landlordProfile?.bank_account_number;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    <Shell onSignOut={signOut}>
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Payments</h1>
-              <p className="text-gray-600">{tenantRecord.first_name} {tenantRecord.last_name}</p>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              {new Date().toLocaleDateString()}
-            </div>
-          </div>
-        </div>
-      </div>
+      <p className="text-[15px] text-quiet">For {tenantRecord.first_name} {tenantRecord.last_name}</p>
+      {unpaidInvoices.length > 0 ? (
+        <>
+          <h1 className="display num mt-1 text-[48px] font-bold leading-none">{formatMoney(owed)}</h1>
+          <p className="mt-2 text-base">
+            {lateCount > 0
+              ? <><b className="font-semibold text-late">Owed now, {lateCount === 1 ? '1 invoice is' : `${lateCount} invoices are`} late.</b></>
+              : <>Owed on {unpaidInvoices.length === 1 ? '1 invoice' : `${unpaidInvoices.length} invoices`}.</>}
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="display mt-1 text-[40px] font-bold leading-none">Nothing owed</h1>
+          <p className="mt-2 text-base">{invoices.length > 0 ? <b className="font-semibold text-paid">You are paid up. Thank you.</b> : 'Your landlord has not sent an invoice yet. When they do, it shows here.'}</p>
+        </>
+      )}
 
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Bank Transfer Instructions */}
-        {hasBankDetails && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-gray-900 mb-3">Bank Transfer Details</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Transfer your rent to the account below, then upload a screenshot of your confirmation.
-              </p>
-              <div className="space-y-2 text-sm">
-                {landlordProfile?.bank_name && (
-                  <p><span className="text-gray-500">Bank:</span> <strong>{landlordProfile.bank_name}</strong></p>
-                )}
-                {landlordProfile?.bank_account_name && (
-                  <p><span className="text-gray-500">Account Name:</span> <strong>{landlordProfile.bank_account_name}</strong></p>
-                )}
-                {landlordProfile?.bank_account_number && (
-                  <p><span className="text-gray-500">Account Number:</span> <strong>{landlordProfile.bank_account_number}</strong></p>
-                )}
-                {landlordProfile?.bank_branch && (
-                  <p><span className="text-gray-500">Branch:</span> <strong>{landlordProfile.bank_branch}</strong></p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {error && (
+        <p role="alert" className="mt-5 border-t border-late pt-3 text-[15px] font-medium text-late">{error}</p>
+      )}
 
-        {/* Unpaid Invoices */}
-        {unpaidInvoices.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Outstanding Invoices</h2>
-            <div className="space-y-4">
-              {unpaidInvoices.map((invoice) => {
-                const latestProof = getLatestProof(invoice.id);
-                const isUploading = uploadingFor === invoice.id;
+      {unpaidInvoices.length > 0 && hasBankDetails && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold">Pay by bank transfer</h2>
+          <p className="mb-3 mt-1 text-[15px] text-quiet">Send the amount to this account, then add a screenshot of the confirmation to the invoice below.</p>
+          <dl>
+            {landlordProfile?.bank_name && <CopyValue label="Bank" value={landlordProfile.bank_name} />}
+            {landlordProfile?.bank_account_name && <CopyValue label="Account name" value={landlordProfile.bank_account_name} />}
+            {landlordProfile?.bank_account_number && <CopyValue label="Account number" value={landlordProfile.bank_account_number} />}
+            {landlordProfile?.bank_branch && <CopyValue label="Branch" value={landlordProfile.bank_branch} />}
+          </dl>
+        </section>
+      )}
 
-                return (
-                  <Card key={invoice.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900">{invoice.description || 'Monthly Rent'}</p>
-                            <StatusBadge variant={invoice.status}>{invoice.status}</StatusBadge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                            <span>Due: {formatDate(invoice.due_date)}</span>
-                            <span>{invoice.invoice_number}</span>
-                          </div>
-                        </div>
-                        <p className="text-xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
-                      </div>
+      {unpaidInvoices.length > 0 && (
+        <section className="mt-8">
+          <h2 className="pb-2 text-lg font-semibold">{unpaidInvoices.length === 1 ? 'Invoice to pay' : 'Invoices to pay'}</h2>
+          <ul>
+            {unpaidInvoices.map((invoice) => {
+              const latestProof = getLatestProof(invoice.id);
+              const isUploading = uploadingFor === invoice.id;
+              const canAct = !latestProof || latestProof.status === 'rejected';
 
-                      {/* Proof status indicator */}
-                      {latestProof && !isUploading && (
-                        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm mb-3 ${
-                          latestProof.status === 'pending' ? 'bg-yellow-50 text-yellow-800' :
-                          latestProof.status === 'approved' ? 'bg-green-50 text-green-800' :
-                          'bg-red-50 text-red-800'
-                        }`}>
-                          {latestProof.status === 'pending' && <Clock className="h-4 w-4" />}
-                          {latestProof.status === 'approved' && <CheckCircle className="h-4 w-4" />}
-                          {latestProof.status === 'rejected' && <XCircle className="h-4 w-4" />}
-                          <span className="font-medium">
-                            {latestProof.status === 'pending' && 'Proof submitted — pending review'}
-                            {latestProof.status === 'approved' && 'Payment approved'}
-                            {latestProof.status === 'rejected' && 'Proof rejected'}
-                          </span>
-                          {latestProof.status === 'rejected' && latestProof.reviewer_note && (
-                            <span className="ml-1">— {latestProof.reviewer_note}</span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Pay Online */}
-                      {(!latestProof || latestProof.status === 'rejected') && !isUploading && (
-                        <Button
-                          className="w-full mb-3"
-                          onClick={() => handlePayOnline(invoice.id)}
-                          disabled={checkingOutFor === invoice.id}
-                        >
-                          {checkingOutFor === invoice.id ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <CreditCard className="h-4 w-4 mr-2" />
-                          )}
-                          {checkingOutFor === invoice.id ? 'Redirecting...' : `Pay ${formatCurrency(invoice.amount)} Online`}
-                        </Button>
-                      )}
-
-                      {/* Upload UI */}
-                      {isUploading && previewUrl ? (
-                        <div className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-700">Preview</p>
-                            <button onClick={cancelUpload} className="p-1 hover:bg-gray-100 rounded">
-                              <X className="h-4 w-4 text-gray-500" />
-                            </button>
-                          </div>
-                          <img src={previewUrl} alt="Payment proof" className="max-h-64 rounded-lg object-contain mx-auto" />
-                          <div className="flex gap-3">
-                            <Button
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => handleFileSelect(invoice.id)}
-                            >
-                              Change Image
-                            </Button>
-                            <Button
-                              className="flex-1"
-                              onClick={handleSubmitProof}
-                              disabled={submitting}
-                            >
-                              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                              Submit Proof
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Show upload button if no pending proof or was rejected */
-                        (!latestProof || latestProof.status === 'rejected') && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => handleFileSelect(invoice.id)}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            I've Paid — Upload Proof
-                          </Button>
-                        )
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Paid Invoices */}
-        {paidInvoices.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Paid Invoices</h2>
-            <div className="space-y-3">
-              {paidInvoices.map((invoice) => (
-                <Card key={invoice.id} className="bg-gray-50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{invoice.description || 'Monthly Rent'}</p>
-                          <StatusBadge variant="paid">paid</StatusBadge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <span>Due: {formatDate(invoice.due_date)}</span>
-                          <span>{invoice.invoice_number}</span>
-                        </div>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">{formatCurrency(invoice.amount)}</p>
+              return (
+                <li key={invoice.id} className="border-t border-ink pb-6 pt-4">
+                  <div className="grid grid-cols-[1fr_auto] gap-x-4">
+                    <p className="font-semibold">{invoice.description || 'Monthly rent'}</p>
+                    <p className="num text-right text-lg font-bold">{formatMoney(invoice.amount)}</p>
+                    <p className="text-[13.5px] text-quiet">Due {formatDate(invoice.due_date)}, invoice {invoice.invoice_number}</p>
+                    <div className="text-right">
+                      {latestProof?.status === 'pending'
+                        ? <StatusBadge variant="pending">Being checked</StatusBadge>
+                        : latestProof?.status === 'approved'
+                        ? <StatusBadge variant="paid">Approved</StatusBadge>
+                        : <StatusBadge variant={invoice.status === 'overdue' ? 'overdue' : 'pending'}>{invoice.status === 'overdue' ? 'Late' : 'Due'}</StatusBadge>}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+                  </div>
 
-        {invoices.length === 0 && (
-          <div className="text-center py-12">
-            <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No invoices yet.</p>
-          </div>
-        )}
-      </div>
-    </div>
+                  {latestProof && !isUploading && (
+                    <p role="status" className="mt-3 text-[15px]">
+                      {latestProof.status === 'pending' && 'We got your proof. Your landlord is checking it and you will get a receipt once it is approved.'}
+                      {latestProof.status === 'approved' && <span className="text-paid">Your payment was approved.</span>}
+                      {latestProof.status === 'rejected' && (
+                        <span className="text-late">
+                          Your last proof was not accepted.{' '}
+                          {latestProof.reviewer_note ? `The note says: ${latestProof.reviewer_note}` : 'Check the amount and account, then send a new screenshot.'}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
+                  {isUploading && previewUrl ? (
+                    <div className="mt-4">
+                      <img src={previewUrl} alt="Your payment screenshot" className="mx-auto max-h-72 border border-rule object-contain" />
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <Button size="lg" onClick={handleSubmitProof} disabled={submitting}>{submitting ? 'Sending' : 'Send proof'}</Button>
+                        <Button size="lg" variant="outline" onClick={() => handleFileSelect(invoice.id)} disabled={submitting}>Choose another</Button>
+                      </div>
+                      <button type="button" onClick={cancelUpload} className="mt-2 min-h-11 cursor-pointer text-sm text-quiet underline">Cancel</button>
+                    </div>
+                  ) : canAct && (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <Button size="lg" onClick={() => handleFileSelect(invoice.id)}>I have paid, add screenshot</Button>
+                      <Button size="lg" variant="outline" onClick={() => handlePayOnline(invoice.id)} disabled={checkingOutFor === invoice.id}>
+                        {checkingOutFor === invoice.id ? 'Opening HandyPay' : `Pay ${formatMoney(invoice.amount)} by card`}
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {paidInvoices.length > 0 && (
+        <section className="mt-8">
+          <h2 className="pb-2 text-lg font-semibold">Paid</h2>
+          <ul>
+            {paidInvoices.map((invoice) => (
+              <li key={invoice.id} className="grid grid-cols-[1fr_auto] gap-x-4 border-t border-rule py-3">
+                <p className="font-medium">{invoice.description || 'Monthly rent'}</p>
+                <p className="num text-right font-semibold">{formatMoney(invoice.amount)}</p>
+                <p className="text-[13.5px] text-quiet">Due {formatDate(invoice.due_date)}, invoice {invoice.invoice_number}</p>
+                <div className="text-right"><StatusBadge variant="paid">Paid</StatusBadge></div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <p className="mt-12 text-[13.5px] text-quiet">Questions about an amount go to your landlord.</p>
+    </Shell>
   );
 }
