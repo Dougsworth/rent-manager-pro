@@ -22,7 +22,7 @@ const onShell = 'bg-shell text-white [&_:focus-visible]:outline-shell-ink select
 
 /** The primary action on green, light so it is the brightest thing on the field. */
 const onGreenPrimary =
-  'inline-flex h-12 items-center justify-center whitespace-nowrap rounded-[3px] border border-[#ECEFEA] bg-[#ECEFEA] px-5 text-[15px] font-semibold text-shell transition-colors duration-100 hover:border-white hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2';
+  'inline-flex h-12 items-center justify-center whitespace-nowrap rounded-[3px] border border-[#ECEFEA] bg-[#ECEFEA] px-5 text-[15px] font-medium text-shell transition-[background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-white hover:bg-white active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2';
 
 function Shot({ src, width, height, alt, className }: {
   src: string; width: number; height: number; alt: string; className?: string;
@@ -85,14 +85,18 @@ export default function Landing() {
             <a href="#how" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">How it works</a>
             <a href="#facts" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">Price</a>
             <a href="#questions" className="hidden px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline md:block">Questions</a>
-            <Link to="/login" className="px-3 py-2 font-semibold text-white underline-offset-4 hover:underline">Log in</Link>
+            <Link to="/login" className="px-3 py-2 text-shell-ink underline-offset-4 hover:text-white hover:underline">Log in</Link>
+            <Link to="/signup" className="ml-1 inline-flex h-9 items-center rounded-[3px] bg-[#ECEFEA] px-4 font-medium text-shell transition-colors duration-150 hover:bg-white">
+              <span className="sm:hidden">Sign up</span>
+              <span className="hidden sm:inline">Create a free account</span>
+            </Link>
           </nav>
         </header>
 
-        <section className={cn(wrap, 'pb-12 pt-8 sm:pb-16 sm:pt-12 lg:pt-14')}>
-          <h1 className="display text-[44px] font-bold leading-[0.95] min-[400px]:text-[48px] sm:text-[84px] lg:text-[96px]">
-            <span className="block">Know what's owed.</span>
-            <span className="block text-shell-ink">Know what to do.</span>
+        <section className={cn(wrap, 'pb-12 pt-12 sm:pb-16 sm:pt-20 lg:pt-24')}>
+          <h1 className="display text-[44px] font-medium leading-[1.02] tracking-[-0.02em] sm:text-[64px] sm:tracking-[-0.03em] lg:text-[72px]">
+            <span className="block">Know what's owed</span>
+            <span className="block text-shell-ink">Know what to do</span>
           </h1>
           <p className="mt-6 max-w-[46ch] text-[18px] leading-snug text-shell-ink sm:mt-8 sm:text-[20px]">
             Rent and personal loans in one list, for landlords and lenders in Jamaica. See who owes you, how much and how late, and chase it in one click.
@@ -107,22 +111,22 @@ export default function Landing() {
       <main id="main">
         {/* The product itself, working, on the page */}
         <section aria-labelledby="today" className={cn(wrap, 'pb-16 pt-10 sm:pt-14 lg:pb-24')}>
-          <h2 id="today" className="mb-6 text-[15px] font-semibold">This is the page you open every day</h2>
+          <h2 id="today" className="mb-6 text-[15px] font-medium">This is the page you open every day</h2>
           <LedgerDemo />
         </section>
 
         <section id="how" aria-labelledby="how-h" className="scroll-mt-4 border-t border-rule">
           <div className={cn(wrap, 'py-16 lg:py-24')}>
-            <h2 id="how-h" className="display max-w-[22ch] text-[34px] font-bold leading-[1.05] sm:text-[44px]">Built around how money moves here</h2>
+            <h2 id="how-h" className="display max-w-[22ch] text-[34px] font-medium leading-[1.05] sm:text-[40px]">Built around how money moves here</h2>
             <p className="mt-3 max-w-[52ch] text-[17px] text-quiet">Bank transfers, screenshots and WhatsApp. EasyCollect keeps the record so you do not have to.</p>
             <div className="mt-10 grid gap-12 md:grid-cols-2 md:gap-11">
               {([['If you collect rent', rentSteps], ['If you lend money', loanSteps]] as const).map(([title, steps]) => (
                 <div key={title}>
-                  <h3 className="text-[19px] font-semibold">{title}</h3>
+                  <h3 className="text-[19px] font-medium">{title}</h3>
                   <ol className="mt-3 border-b border-rule">
                     {steps.map(([lead, rest]) => (
-                      <li key={lead} className="border-t border-rule py-3.5 text-[16px]">
-                        <span className="font-semibold">{lead}</span> <span className="text-quiet">{rest}</span>
+                      <li key={lead} className="border-t border-rule py-4 text-[16px]">
+                        <span className="font-medium">{lead}</span> <span className="text-quiet">{rest}</span>
                       </li>
                     ))}
                   </ol>
@@ -136,7 +140,7 @@ export default function Landing() {
         <section aria-labelledby="tenant-h" className={onShell}>
           <div className={cn(wrap, 'grid items-center gap-12 py-16 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-24 lg:py-24')}>
             <div>
-              <h2 id="tenant-h" className="display max-w-[14ch] text-[40px] font-bold leading-[1] sm:text-[56px]">No account, no app, any phone</h2>
+              <h2 id="tenant-h" className="display max-w-[14ch] text-[40px] font-medium leading-[1] sm:text-[48px]">No account, no app, any phone</h2>
               <p className="mt-5 max-w-[46ch] text-[17px] text-shell-ink">
                 Your tenant opens the link and sees what they owe, when it was due and where to send it. They pay the way they always do, then send the screenshot from the same page.
               </p>
@@ -156,11 +160,11 @@ export default function Landing() {
 
         <section aria-labelledby="else-h">
           <div className={cn(wrap, 'py-16 lg:py-24')}>
-            <h2 id="else-h" className="display text-[34px] font-bold leading-[1.05] sm:text-[44px]">What else it does</h2>
+            <h2 id="else-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">What else it does</h2>
             <dl className="mt-8 grid gap-x-11 sm:grid-cols-2 lg:grid-cols-3">
               {extras.map(([term, desc]) => (
                 <div key={term} className="border-t border-rule py-4">
-                  <dt className="font-semibold">{term}</dt>
+                  <dt className="font-medium">{term}</dt>
                   <dd className="mt-1 max-w-[40ch] text-[15px] text-quiet">{desc}</dd>
                 </div>
               ))}
@@ -171,16 +175,16 @@ export default function Landing() {
         <section id="facts" aria-labelledby="price-h" className="scroll-mt-4 border-t border-rule">
           <div className={cn(wrap, 'grid gap-12 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-11 lg:py-24')}>
             <div>
-              <h2 id="price-h" className="display text-[34px] font-bold leading-[1.05] sm:text-[44px]">Free for now</h2>
+              <h2 id="price-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">Free for now</h2>
               <p className="mt-4 max-w-[40ch] text-[17px]">Every feature on this page is free to use today. No card, no trial clock.</p>
               <p className="mt-3 max-w-[40ch] text-[17px] text-quiet">A Pro plan will come later. You will hear what it costs before anything changes.</p>
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold">Where your money and records go</h3>
+              <h3 className="text-[15px] font-medium">Where your money and records go</h3>
               <ul className="mt-3 border-b border-rule text-[16px]">
                 {facts.map(([lead, rest]) => (
                   <li key={lead} className="border-t border-rule py-4">
-                    <span className="font-semibold">{lead}</span> <span className="text-quiet">{rest}</span>
+                    <span className="font-medium">{lead}</span> <span className="text-quiet">{rest}</span>
                   </li>
                 ))}
               </ul>
@@ -194,7 +198,7 @@ export default function Landing() {
         <section id="questions" aria-labelledby="q-h" className="scroll-mt-4 border-t border-rule">
           <div className={cn(wrap, 'grid gap-8 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-11 lg:py-24')}>
             <div>
-              <h2 id="q-h" className="display text-[34px] font-bold leading-[1.05] sm:text-[44px]">Questions</h2>
+              <h2 id="q-h" className="display text-[34px] font-medium leading-[1.05] sm:text-[40px]">Questions</h2>
               <p className="mt-3 text-[17px] text-quiet">
                 Something else? Email <a href="mailto:support@easycollectja.com" className="text-shell underline underline-offset-[3px]">support@easycollectja.com</a>
               </p>
@@ -202,9 +206,9 @@ export default function Landing() {
             <div className="border-b border-rule">
               {faqs.map(([q, a]) => (
                 <details key={q} className="group border-t border-rule">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 text-[17px] font-semibold [&::-webkit-details-marker]:hidden">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 text-[17px] font-medium [&::-webkit-details-marker]:hidden">
                     {q}
-                    <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-quiet transition-transform duration-150 group-open:rotate-180" strokeWidth={1.75} />
+                    <ChevronDown aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-quiet transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-open:rotate-180" strokeWidth={1.5} />
                   </summary>
                   <p className="max-w-[60ch] pb-5 text-[16px] text-quiet">{a}</p>
                 </details>
@@ -217,14 +221,14 @@ export default function Landing() {
       {/* Ends on the green it started on */}
       <footer className={onShell}>
         <div className={cn(wrap, 'py-16 lg:py-24')}>
-          <p className="display max-w-[16ch] text-[40px] font-bold leading-[1] sm:text-[64px]">Start with one tenant or one loan.</p>
+          <p className="display max-w-[16ch] text-[40px] font-medium leading-[1] sm:text-[56px]">Start with one tenant or one loan</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
             <Link to="/signup" className={onGreenPrimary}>Create a free account</Link>
-            <Link to="/login" className="text-[15px] font-semibold text-white underline underline-offset-4">Log in</Link>
+            <Link to="/login" className="text-[15px] font-medium text-white underline underline-offset-4">Log in</Link>
           </div>
         </div>
         <div className={cn(wrap, 'flex flex-col gap-4 border-t border-white/15 py-8 text-[14px] text-shell-ink sm:flex-row sm:items-center sm:justify-between')}>
-          <p><span className="font-semibold text-white">EasyCollect</span> &copy; {new Date().getFullYear()}. Collect anything, easily.</p>
+          <p><span className="font-medium text-white">EasyCollect</span> &copy; {new Date().getFullYear()}. Collect anything, easily.</p>
           <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
             <Link to="/privacy" className="hover:text-white hover:underline">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white hover:underline">Terms of Service</Link>

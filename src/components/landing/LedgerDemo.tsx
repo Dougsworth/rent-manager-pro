@@ -123,12 +123,12 @@ export function LedgerDemo() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
         <div>
-          <p className="display num text-[44px] font-bold leading-none sm:text-[72px]" aria-hidden="true">
-            {formatMoney(shown)}<span className="ml-3 text-[22px] font-semibold tracking-normal sm:text-[30px]">still owed</span>
+          <p className="display num text-[44px] font-medium leading-none tracking-[-0.02em] sm:text-[72px] sm:tracking-[-0.03em]" aria-hidden="true">
+            {formatMoney(shown)}<span className="ml-3 text-[22px] font-normal tracking-normal text-quiet sm:text-[28px]">still owed</span>
           </p>
           <p className="sr-only" aria-live="polite">{formatMoney(owed)} still owed. {summary}</p>
           <p className="mt-3 text-[16px] sm:text-[17px]" aria-hidden="true">
-            {late.length ? <><span className="font-semibold text-late">{formatMoney(lateTotal)} of it is late</span>, from {late.length} {late.length === 1 ? 'person' : 'people'}.</> : 'Nobody is late.'}
+            {late.length ? <><span className="font-medium text-late">{formatMoney(lateTotal)} of it is late</span>, from {late.length} {late.length === 1 ? 'person' : 'people'}.</> : 'Nobody is late.'}
             {collected > 0 && <span className="text-quiet"> {formatMoney(collected)} collected just now.</span>}
           </p>
         </div>
@@ -147,16 +147,16 @@ export function LedgerDemo() {
           if (paid) pattern = pattern.slice(0, 11) + (r.days < 0 ? 'l' : 'p');
           return (
             <li key={r.id} className="border-t border-rule">
-              <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 py-3.5 lg:grid-cols-[minmax(190px,1fr)_200px_118px_110px_300px] lg:items-center lg:gap-x-6">
+              <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 py-4 lg:grid-cols-[minmax(190px,1fr)_200px_118px_110px_300px] lg:items-center lg:gap-x-6">
                 <div className="min-w-0">
-                  <div className={cn('truncate text-base', isLate ? 'font-semibold' : 'font-medium', paid && 'text-quiet')}>{r.name}</div>
+                  <div className={cn('truncate text-base', isLate ? 'font-medium' : 'font-normal', paid && 'text-quiet')}>{r.name}</div>
                   <div className="truncate text-[13.5px] text-quiet">{r.what}</div>
                 </div>
-                <div className={cn('num text-right text-base font-semibold lg:order-4', paid && 'text-quiet line-through decoration-1')}>{formatMoney(r.amount)}</div>
+                <div className={cn('num text-right text-base font-medium lg:order-4', paid && 'text-quiet line-through decoration-1')}>{formatMoney(r.amount)}</div>
                 <div className="col-span-2 text-sm lg:order-3 lg:col-span-1">
                   {paid
                     ? <span className="font-medium text-paid">Paid just now</span>
-                    : <span className={isLate ? 'font-semibold text-late' : ''}>{timing(r.days)}</span>}
+                    : <span className={isLate ? 'font-medium text-late' : ''}>{timing(r.days)}</span>}
                 </div>
                 <PaymentLouvre months={months(pattern, now)} className="col-span-2 lg:order-2 lg:col-span-1" />
                 <div className="col-span-2 flex min-h-10 gap-2 lg:order-5 lg:col-span-1 lg:justify-end">

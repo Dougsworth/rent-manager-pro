@@ -69,6 +69,10 @@ Tailwind's slate, gray, neutral, blue, emerald, green, amber, yellow, orange and
 - `collect/GlobalSearch`: tenants, borrowers, properties. `/` focuses it.
 - `collect/PersonParts`: owed line, actions, history section, timeline, facts list for person pages.
 
+## Landing page
+
+The landing page (`src/pages/Landing.tsx`) opens and closes on the shell green and uses a cooler limestone ground (#ECEFEA, rules #D2D8D0) set on its root, because the warm cream reads as the default AI surface. Display type there is weight 500, not bold: hero 44 / 64 / 72px, section headings 34 to 40px. Headlines end without a period. The hero's proof is `landing/LedgerDemo`, a working sample of the Today page with local state only; it is labelled as sample data and never touches the backend.
+
 ## Patterns
 
 - Lists: rows with `border-t border-rule py-3`, name links to the person page, the most important number right aligned, at most two actions.
