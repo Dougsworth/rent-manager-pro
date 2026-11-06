@@ -1,12 +1,19 @@
-import type { CSSProperties } from 'react';
+import { lazy, Suspense, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import SEO from '@/components/SEO';
 import BrandLogo from '@/components/BrandLogo';
-import { LedgerDemo } from '@/components/landing/LedgerDemo';
+import { LedgerDemo, DEMO_ROWS, type DemoStatus } from '@/components/landing/LedgerDemo';
+import type { FlatState } from '@/components/landing/KingstonScene';
 import { cn } from '@/lib/utils';
 
 const wrap = 'mx-auto max-w-[1180px] px-4 sm:px-8 lg:px-11';
+
+// Three.js loads in its own chunk after the page has painted; a poster stands in until then
+const KingstonScene = lazy(() => import('@/components/landing/KingstonScene'));
+
+/** The sample building before anyone touches the demo: flats 4 and 6 late, flat 3 due soon. */
+const BASE_FLATS: Record<number, FlatState> = { 1: 'paid', 2: 'paid', 3: 'due', 4: 'late', 5: 'paid', 6: 'late' };
 
 /**
  * The landing page sits on limestone rather than the app's warm ground: cooler,
@@ -72,6 +79,14 @@ const faqs: [string, string][] = [
 ];
 
 export default function Landing() {
+  const [status, setStatus] = useState<Record<string, DemoStatus>>({});
+  const [sceneReady, setSceneReady] = useState(false);
+  const flats = useMemo(() => {
+    const f = { ...BASE_FLATS };
+    for (const r of DEMO_ROWS) if (r.flat && status[r.id] === 'paid') f[r.flat] = 'paid';
+    return f;
+  }, [status]);
+
   return (
     <div style={limestone} className="min-h-screen bg-ground text-ink selection:bg-shell selection:text-white [&_h1]:text-balance [&_h2]:text-balance [&_p]:text-pretty [&_dd]:text-pretty [&_li]:text-pretty">
       <SEO path="/" />
@@ -93,18 +108,42 @@ export default function Landing() {
           </nav>
         </header>
 
-        <section className={cn(wrap, 'pb-12 pt-12 sm:pb-16 sm:pt-20 lg:pt-24')}>
-          <h1 className="display text-[44px] font-medium leading-[1.02] tracking-[-0.02em] sm:text-[64px] sm:tracking-[-0.03em] lg:text-[72px]">
-            <span className="block">Know what's owed</span>
-            <span className="block text-shell-ink">Know what to do</span>
-          </h1>
-          <p className="mt-6 max-w-[46ch] text-[18px] leading-snug text-shell-ink sm:mt-8 sm:text-[20px]">
-            Rent and personal loans in one list, for landlords and lenders in Jamaica. See who owes you, how much and how late, and chase it in one click.
-          </p>
-          <div className="mt-7 flex flex-col gap-x-5 gap-y-3 sm:flex-row sm:items-center">
-            <Link to="/signup" className={onGreenPrimary}>Create a free account</Link>
-            <p className="text-[14px] text-shell-ink">Free for now. Your tenants never need an account.</p>
+        <section className={cn(wrap, 'grid items-center gap-8 pb-10 pt-10 sm:pt-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-4 lg:pb-12 lg:pt-8')}>
+          <div className="lg:pb-8">
+            <h1 className="display text-[48px] font-medium leading-[1] tracking-[-0.02em] sm:text-[72px] sm:tracking-[-0.03em] lg:text-[76px]">
+              <span className="block">Stop chasing</span>
+              <span className="block text-shell-ink">Start collecting</span>
+            </h1>
+            <p className="mt-6 max-w-[40ch] text-[18px] leading-snug text-shell-ink sm:mt-8 sm:text-[20px]">
+              Rent and personal loans, tracked, reminded and receipted for you. Built for landlords and lenders in Jamaica.
+            </p>
+            <div className="mt-8 flex flex-col gap-x-5 gap-y-3 sm:flex-row sm:items-center">
+              <Link to="/signup" className={onGreenPrimary}>Create a free account</Link>
+              <p className="text-[14px] text-shell-ink">Free for now. Tenants never need an account.</p>
+            </div>
           </div>
+
+          <figure className="lg:-mr-11">
+            <div className="relative h-[320px] sm:h-[460px] lg:h-[600px]">
+              <img
+                src="/screens/kingston-poster.webp"
+                alt=""
+                aria-hidden="true"
+                width={1344}
+                height={1200}
+                decoding="async"
+                fetchPriority="high"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+                className={cn('absolute inset-0 h-full w-full object-contain transition-opacity duration-500', sceneReady && 'opacity-0')}
+              />
+              <Suspense fallback={null}>
+                <KingstonScene flats={flats} onReady={() => setSceneReady(true)} className="absolute inset-0" />
+              </Suspense>
+            </div>
+            <figcaption className="mt-2 max-w-[52ch] text-[13.5px] text-shell-ink lg:ml-auto lg:mr-11 lg:text-right">
+              Hope Pastures Flats, a sample building. Open louvres are paid up, half open are due soon, shut are late. Mark someone paid below and their louvres open.
+            </figcaption>
+          </figure>
         </section>
       </div>
 
@@ -112,7 +151,7 @@ export default function Landing() {
         {/* The product itself, working, on the page */}
         <section aria-labelledby="today" className={cn(wrap, 'pb-16 pt-10 sm:pt-14 lg:pb-24')}>
           <h2 id="today" className="mb-6 text-[15px] font-medium">This is the page you open every day</h2>
-          <LedgerDemo />
+          <LedgerDemo status={status} setStatus={setStatus} />
         </section>
 
         <section id="how" aria-labelledby="how-h" className="scroll-mt-4 border-t border-rule">

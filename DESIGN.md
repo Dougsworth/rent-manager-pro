@@ -71,7 +71,9 @@ Tailwind's slate, gray, neutral, blue, emerald, green, amber, yellow, orange and
 
 ## Landing page
 
-The landing page (`src/pages/Landing.tsx`) opens and closes on the shell green and uses a cooler limestone ground (#ECEFEA, rules #D2D8D0) set on its root, because the warm cream reads as the default AI surface. Display type there is weight 500, not bold: hero 44 / 64 / 72px, section headings 34 to 40px. Headlines end without a period. The hero's proof is `landing/LedgerDemo`, a working sample of the Today page with local state only; it is labelled as sample data and never touches the backend.
+The landing page (`src/pages/Landing.tsx`) opens and closes on the shell green and uses a cooler limestone ground (#ECEFEA, rules #D2D8D0) set on its root, because the warm cream reads as the default AI surface. Display type there is weight 500, not bold: hero 44 / 64 / 72px, section headings 34 to 40px. Headlines end without a period. The hero is "Stop chasing / Start collecting" beside `landing/KingstonScene`, a Three.js model of a Kingston apartment block (painted concrete, breeze block stair core, black water tanks, green jalousie louvres). Open louvres are flats that are paid up, half open are due soon, shut are late. It shares state with `landing/LedgerDemo`, the working sample of the Today page below it, so marking a flat's tenant paid opens that flat's louvres. Both use sample data with local state only and never touch the backend. The scene loads in its own chunk behind a poster (`public/screens/kingston-poster.webp`, rendered from the scene), renders only while visible and moving, caps pixel ratio, drops quality on slow devices, and skips the entrance and pointer tilt under reduced motion. Regenerate the poster whenever the scene changes.
+
+The logo is the wordmark with a coin as its "o" (`BrandLogo`, `CoinMark`). The coin turns once on load and on hover, never on a loop.
 
 ## Patterns
 

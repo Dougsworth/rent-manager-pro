@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
 import { PaymentLouvre, LouvreKey } from '@/components/collect/PaymentLouvre';
 import { formatMoney } from '@/lib/money';
@@ -10,7 +10,8 @@ import type { HistoryMonth, HistoryState } from '@/services/collections';
  * real components, local state only. Nothing here touches the backend.
  */
 
-type Status = 'open' | 'waiting' | 'reminded' | 'paid';
+export type DemoStatus = 'open' | 'waiting' | 'reminded' | 'paid';
+type Status = DemoStatus;
 
 interface Row {
   id: string;
@@ -21,14 +22,16 @@ interface Row {
   days: number;
   pattern: string; // 12 chars: p paid, l paid late, x late now, d due, n none
   remindable: boolean;
+  /** Flat number in the sample building, for rent rows. */
+  flat?: number;
 }
 
-const ROWS: Row[] = [
-  { id: 'ka', name: 'Kerry-Ann Williams', what: 'Flat 4, Hope Pastures Flats', amount: 110000, days: -5, pattern: 'ppplppplpppx', remindable: true },
-  { id: 'sc', name: 'Shanice Campbell', what: 'Unit 2A, Barbican Court', amount: 95000, days: -3, pattern: 'pppppplppppx', remindable: true },
+export const DEMO_ROWS: Row[] = [
+  { id: 'ka', name: 'Kerry-Ann Williams', what: 'Flat 4, Hope Pastures Flats', amount: 110000, days: -5, pattern: 'ppplppplpppx', remindable: true, flat: 4 },
+  { id: 'sc', name: 'Shanice Campbell', what: 'Flat 6, Hope Pastures Flats', amount: 95000, days: -3, pattern: 'pppppplppppx', remindable: true, flat: 6 },
   { id: 'tl', name: 'Tricia Lewis', what: 'Personal loan, payment 5 of 10', amount: 25000, days: -2, pattern: 'nnnnnnnpplpx', remindable: false },
   { id: 'dg', name: 'Delroy Graham', what: 'Personal loan, payment 4 of 12', amount: 40000, days: 3, pattern: 'nnnnnnnnpppd', remindable: false },
-  { id: 'dm', name: 'Dwight Morgan-Clarke', what: 'Flat 3, Hope Pastures Flats', amount: 120000, days: 8, pattern: 'pppppppppppd', remindable: true },
+  { id: 'dm', name: 'Dwight Morgan-Clarke', what: 'Flat 3, Hope Pastures Flats', amount: 120000, days: 8, pattern: 'pppppppppppd', remindable: true, flat: 3 },
 ];
 
 const CODE: Record<string, HistoryState> = { p: 'paid', l: 'paid-late', x: 'late', d: 'due', n: 'none' };
@@ -81,20 +84,24 @@ function useCountTo(target: number) {
   return shown;
 }
 
-export function LedgerDemo() {
+interface LedgerDemoProps {
+  status: Record<string, Status>;
+  setStatus: Dispatch<SetStateAction<Record<string, Status>>>;
+}
+
+export function LedgerDemo({ status, setStatus }: LedgerDemoProps) {
   const now = useMemo(() => new Date(), []);
-  const [status, setStatus] = useState<Record<string, Status>>({});
   const timers = useRef<Record<string, number>>({});
   useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
 
   const get = (id: string): Status => status[id] ?? 'open';
   const set = (id: string, s: Status) => setStatus((prev) => ({ ...prev, [id]: s }));
 
-  const open = ROWS.filter((r) => get(r.id) !== 'paid');
+  const open = DEMO_ROWS.filter((r) => get(r.id) !== 'paid');
   const owed = open.reduce((s, r) => s + r.amount, 0);
   const late = open.filter((r) => r.days < 0);
   const lateTotal = late.reduce((s, r) => s + r.amount, 0);
-  const collected = ROWS.filter((r) => get(r.id) === 'paid').reduce((s, r) => s + r.amount, 0);
+  const collected = DEMO_ROWS.filter((r) => get(r.id) === 'paid').reduce((s, r) => s + r.amount, 0);
   const shown = useCountTo(owed);
   const touched = Object.keys(status).length > 0;
 
@@ -139,7 +146,7 @@ export function LedgerDemo() {
       </div>
 
       <ul className="mt-8 border-b border-rule">
-        {ROWS.map((r) => {
+        {DEMO_ROWS.map((r) => {
           const s = get(r.id);
           const paid = s === 'paid';
           const isLate = r.days < 0 && !paid;
